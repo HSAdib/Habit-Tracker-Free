@@ -1,12 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 
 /**
- * HABIT TRACKER - MASTERY V13.1 (ULTRA STABLE)
- * 1. Interaction Fix: Hardened press-toggle logic to prevent double-firing and glitches.
- * 2. Scope Fix: Ensured getButtonStyles and all icons are correctly defined and accessible.
- * 3. Auto-Scroll: Maintained today's date positioning slightly down for visual comfort.
- * 4. Full Interactivity: Modal calendar now supports the same tap/hold logic as the main table.
- * 5. Credit: Developed by Adib | APM | RU
+ * 1. Credit: Developed by Adib | APM | RU
  */
 
 // --- Icons ---
@@ -359,13 +354,13 @@ export default function App() {
                     <div className="flex items-center gap-1.5" title="Mastery Score"><TargetIcon /><span className="text-xs font-black text-slate-700">{analytics.monthlyPct}%</span></div>
                     <button onClick={() => setShowAllNotes(true)} className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 transition-all p-1 rounded-lg hover:bg-blue-50/50 active:scale-95 group"><NoteIcon /><span className="text-xs font-black group-hover:text-blue-700">{analytics.noteCount}</span></button>
                     <div className="flex items-center gap-1.5" title="Full Wins"><TrophyIcon /><span className="text-xs font-black text-slate-700">{analytics.totalDone}</span></div>
-                    {/* Repositioned Text: Jan 1 - Dec 31 */}
+                    
                     <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest border-l border-slate-100 pl-3 ml-1">Jan 1 - Dec 31</span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <div className="flex gap-1 items-center">
-                    {/* Legened labels removed as requested */}
+                    
                     {[0,1,2,3,4].map(i => <div key={i} className={`w-2.5 h-2.5 rounded-sm ${['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'][i]}`}></div>)}
                   </div>
                   <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest leading-none">Deeper color = More consistent</p>
