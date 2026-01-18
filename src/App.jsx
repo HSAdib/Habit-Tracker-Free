@@ -79,8 +79,8 @@ export default function App() {
 
   const getButtonStyles = (val) => {
     if (!val) return theme === 'dark' ? 'bg-slate-800 text-red-500 border-slate-700' : 'bg-white text-red-500 border-slate-200 hover:bg-slate-50';
-    if (val < 100) return 'bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-900/20';
-    return 'bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-900/20';
+    if (val < 100) return 'bg-blue-600 text-white border-blue-700 shadow-md';
+    return 'bg-emerald-500 text-white border-emerald-600 shadow-lg';
   };
 
   const getContainerBg = () => theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900';
@@ -139,8 +139,7 @@ export default function App() {
         stats[h] = (stats[h] || 0) + val; totalEarnedPct += val;
       });
     });
-    const possible = (daysInMonth.length * habits.length * 100) || 1;
-    const monthlyPct = Math.round((totalEarnedPct / possible) * 100);
+    const monthlyPct = Math.round((totalEarnedPct / ((daysInMonth.length * habits.length * 100) || 1)) * 100);
     const habitPcts = {};
     habits.forEach(h => { habitPcts[h] = Math.round(((stats[h] || 0) / (daysInMonth.length * 100)) * 100) || 0; });
     return { habitPcts, monthlyPct, totalDone: Math.round(totalEarnedPct / 100), noteCount };
@@ -153,15 +152,14 @@ export default function App() {
       const key = getSafeKey(day); const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
       monthlyEarned += (typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0));
     });
-    const score = Math.round((monthlyEarned / (daysInMonth.length * 100)) * 100);
     const weeklyData = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i);
       const key = getSafeKey(d);
-      const raw = trackerData[getSafeKey(d)]?.[viewingHabitMap] ?? 0;
-      const val = typeof raw === 'number' ? raw : (raw ? 100 : 0);
-      weeklyData.push({ label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), val: val });
+      const raw = trackerData[key]?.[viewingHabitMap] ?? 0;
+      weeklyData.push({ label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), val: typeof raw === 'number' ? raw : (raw ? 100 : 0) });
     }
+    const score = Math.round((monthlyEarned / (daysInMonth.length * 100)) * 100);
     let currentStreak = 0;
     const todayIdx = daysInMonth.findIndex(d => getSafeKey(d) === getSafeKey(new Date()));
     if (todayIdx !== -1) {
@@ -183,7 +181,6 @@ export default function App() {
   }, [currentDate, trackerData, habits]);
 
   const trendPoints = useMemo(() => {
-    if (daysInMonth.length < 2) return [];
     return daysInMonth.map((day, idx) => {
       const key = getSafeKey(day); let totalPct = 0;
       habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += typeof r === 'number' ? r : (r ? 100 : 0); });
@@ -211,12 +208,21 @@ export default function App() {
   };
 
   const handleRename = (idx) => {
-    const old = habits[idx]; const renamed = tempHabitName.trim();
-    if (!renamed || renamed === old) { setEditingHabitIdx(null); return; }
-    const newHabits = [...habits]; newHabits[idx] = renamed;
-    const newData = { ...trackerData };
-    Object.keys(newData).forEach(k => { if(newData[k] && newData[k][old] !== undefined) { newData[k][renamed] = newData[k][old]; delete newData[k][old]; }});
-    setHabits(newHabits); setTrackerData(newData); save(newData, newHabits);
+    const old = habits[idx]; 
+    const renamed = tempHabitName.trim();
+    if (renamed === old) { setEditingHabitIdx(null); return; }
+    
+    if (!renamed) {
+      const newHabits = habits.filter((_, i) => i !== idx);
+      const newData = { ...trackerData };
+      Object.keys(newData).forEach(k => { if(newData[k]) delete newData[k][old]; });
+      setHabits(newHabits); setTrackerData(newData); save(newData, newHabits);
+    } else {
+      const newHabits = [...habits]; newHabits[idx] = renamed;
+      const newData = { ...trackerData };
+      Object.keys(newData).forEach(k => { if(newData[k] && newData[k][old] !== undefined) { newData[k][renamed] = newData[k][old]; delete newData[k][old]; }});
+      setHabits(newHabits); setTrackerData(newData); save(newData, newHabits);
+    }
     setEditingHabitIdx(null);
   };
 
@@ -317,8 +323,8 @@ export default function App() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 mb-8">
             {habits.map((habit, idx) => (
-              <div key={idx} className={`${getCardStyle()} p-3 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-colors`} onClick={() => setViewingHabitMap(habit)}>
-                <div className="flex items-center gap-1 mb-1 w-full justify-center px-2 min-h-[20px]">
+              <div key={idx} className={`${getCardStyle()} p-3 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-colors min-h-[100px] justify-center`} onClick={() => setViewingHabitMap(habit)}>
+                <div className="flex items-center gap-1 mb-1 w-full justify-center px-2 min-h-[24px]">
                     {editingHabitIdx === idx ? (
                       <input autoFocus className={`text-[8px] font-black w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleRename(idx)} onClick={(e) => e.stopPropagation()} />
                     ) : (
@@ -344,9 +350,9 @@ export default function App() {
                   <table className="w-full border-separate border-spacing-0">
                       <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                           <tr>
-                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[130px] z-40 text-left`}>Date Log</th>
-                            {habits.map((h, i) => (<th key={i} className={`p-2 border-r ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-600'} text-[9px] uppercase text-center font-bold min-w-[90px]`}>{h}</th>))}
-                            <th className={`p-4 font-black text-emerald-600 text-[9px] sticky top-0 right-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-l w-[100px] z-40 text-center pr-4`}>Efficiency</th>
+                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[130px] z-40 text-center`}>Date Log</th>
+                            {habits.map((h, i) => (<th key={i} className={`p-4 border-r ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-600'} text-[9px] uppercase text-center font-bold min-w-[90px]`}>{h}</th>))}
+                            <th className={`p-4 font-black text-emerald-600 text-[9px] sticky top-0 right-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-l w-[100px] z-40 text-center`}>Efficiency</th>
                           </tr>
                       </thead>
                       <tbody>
@@ -357,24 +363,22 @@ export default function App() {
                             const isToday = new Date().toDateString() === day.toDateString();
                             const isPassed = new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
 
+                            const rowBgStyle = isToday 
+                              ? (theme === 'dark' ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100') 
+                              : (theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100');
+
                             return (
                                 <tr key={key} id={`row-${key}`}>
-                                <td className={`p-4 sticky left-0 z-10 border-r border-b ${
-                                    isToday 
-                                    ? (theme === 'dark' ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100') 
-                                    : (theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-white')
-                                } flex items-center gap-3 transition-colors`}>
-                                    <button onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} title="Add reflection note"><NoteIcon /></button>
-                                    <div className="flex flex-col"><span className={`text-[8px] uppercase opacity-80 leading-none ${theme === 'dark' ? 'text-slate-500' : ''}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span><span className={`text-sm font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span></div>
+                                <td className={`p-4 sticky left-0 z-10 border-r border-b transition-colors ${rowBgStyle}`}>
+                                    <div className="flex items-center justify-center gap-3">
+                                      <button onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} title="Add reflection note"><NoteIcon /></button>
+                                      <div className="flex flex-col"><span className={`text-[8px] uppercase opacity-80 leading-none ${theme === 'dark' ? 'text-slate-500' : ''}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span><span className={`text-sm font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span></div>
+                                    </div>
                                 </td>
                                 {habits.map((h, i) => {
                                     const rawVal = dayData[h] ?? 0; const val = typeof rawVal === 'number' ? rawVal : (rawVal ? 100 : 0);
                                     return (
-                                    <td key={i} className={`p-3 border-r border-b transition-colors text-center ${
-                                        isToday 
-                                        ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-800' : 'bg-emerald-50/50 border-emerald-100') 
-                                        : (theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-white')
-                                    }`}>
+                                    <td key={i} className={`p-4 border-r border-b transition-colors text-center ${rowBgStyle}`}>
                                         <button className={`w-12 h-12 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} active:scale-90 touch-none select-none`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)} onContextMenu={(e) => e.preventDefault()}>
                                           <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
                                           <span className={`pointer-events-none font-bold ${val > 0 ? 'text-white' : (isPassed ? 'text-red-500' : 'text-white [text-shadow:_-1.5px_-1.5px_0_#000,_1.5px_-1.5px_0_#000,_-1.5px_1.5px_0_#000,_1.5px_1.5px_0_#000]')} ${val > 0 && val < 100 ? 'text-[10px]' : ''}`}>{val === 100 ? '✔' : val > 0 ? `${val}%` : '✘'}</span>
@@ -382,11 +386,7 @@ export default function App() {
                                     </td>
                                     );
                                 })}
-                                <td className={`p-4 sticky right-0 z-10 border-l border-b ${
-                                    isToday 
-                                    ? (theme === 'dark' ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100') 
-                                    : (theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-white')
-                                } text-center font-black text-sm transition-colors`}>
+                                <td className={`p-4 sticky right-0 z-10 border-l border-b transition-colors text-center font-black text-sm ${rowBgStyle}`}>
                                     <span className={progress === 100 ? 'text-emerald-600 font-bold' : progress > 0 ? 'text-blue-600' : theme === 'dark' ? 'text-slate-700' : 'text-slate-300'}>{progress}%</span>
                                 </td>
                                 </tr>
