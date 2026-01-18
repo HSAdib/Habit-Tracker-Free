@@ -79,8 +79,8 @@ export default function App() {
 
   const getButtonStyles = (val) => {
     if (!val) return theme === 'dark' ? 'bg-slate-800 text-red-500 border-slate-700' : 'bg-white text-red-500 border-slate-200 hover:bg-slate-50';
-    if (val < 100) return 'bg-blue-600 text-white border-blue-700 shadow-md';
-    return 'bg-emerald-500 text-white border-emerald-600 shadow-lg';
+    if (val < 100) return 'bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-900/20';
+    return 'bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-900/20';
   };
 
   const getContainerBg = () => theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900';
@@ -158,7 +158,7 @@ export default function App() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i);
       const key = getSafeKey(d);
-      const raw = trackerData[key]?.[viewingHabitMap] ?? 0;
+      const raw = trackerData[getSafeKey(d)]?.[viewingHabitMap] ?? 0;
       const val = typeof raw === 'number' ? raw : (raw ? 100 : 0);
       weeklyData.push({ label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), val: val });
     }
@@ -168,7 +168,7 @@ export default function App() {
       let i = todayIdx;
       while (i >= 0 && (typeof (trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap]) === 'number' ? trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap] : (trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap] ? 100 : 0)) >= 70) { currentStreak++; i--; }
     }
-    return { score, currentStreak, weeklyData, level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : score >= 25 ? "Apprentice" : "Seed" };
+    return { score, currentStreak, weeklyData, level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : "Apprentice" };
   }, [viewingHabitMap, trackerData, daysInMonth]);
 
   const heatmapData = useMemo(() => {
@@ -358,15 +358,23 @@ export default function App() {
                             const isPassed = new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
 
                             return (
-                                <tr key={key} id={`row-${key}`} className={isToday ? (theme === 'dark' ? 'bg-emerald-900/10' : 'bg-emerald-50/10') : ''}>
-                                <td className={`p-4 sticky left-0 z-10 border-r border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-white'} flex items-center gap-3 transition-colors`}>
+                                <tr key={key} id={`row-${key}`}>
+                                <td className={`p-4 sticky left-0 z-10 border-r border-b ${
+                                    isToday 
+                                    ? (theme === 'dark' ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100') 
+                                    : (theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-white')
+                                } flex items-center gap-3 transition-colors`}>
                                     <button onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} title="Add reflection note"><NoteIcon /></button>
                                     <div className="flex flex-col"><span className={`text-[8px] uppercase opacity-80 leading-none ${theme === 'dark' ? 'text-slate-500' : ''}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span><span className={`text-sm font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span></div>
                                 </td>
                                 {habits.map((h, i) => {
                                     const rawVal = dayData[h] ?? 0; const val = typeof rawVal === 'number' ? rawVal : (rawVal ? 100 : 0);
                                     return (
-                                    <td key={i} className={`p-3 border-r border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} text-center`}>
+                                    <td key={i} className={`p-3 border-r border-b transition-colors text-center ${
+                                        isToday 
+                                        ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-800' : 'bg-emerald-50/50 border-emerald-100') 
+                                        : (theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-white')
+                                    }`}>
                                         <button className={`w-12 h-12 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} active:scale-90 touch-none select-none`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)} onContextMenu={(e) => e.preventDefault()}>
                                           <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
                                           <span className={`pointer-events-none font-bold ${val > 0 ? 'text-white' : (isPassed ? 'text-red-500' : 'text-white [text-shadow:_-1.5px_-1.5px_0_#000,_1.5px_-1.5px_0_#000,_-1.5px_1.5px_0_#000,_1.5px_1.5px_0_#000]')} ${val > 0 && val < 100 ? 'text-[10px]' : ''}`}>{val === 100 ? '✔' : val > 0 ? `${val}%` : '✘'}</span>
@@ -374,7 +382,11 @@ export default function App() {
                                     </td>
                                     );
                                 })}
-                                <td className={`p-4 sticky right-0 z-10 border-l border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-white'} text-center font-black text-sm`}>
+                                <td className={`p-4 sticky right-0 z-10 border-l border-b ${
+                                    isToday 
+                                    ? (theme === 'dark' ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100') 
+                                    : (theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-white')
+                                } text-center font-black text-sm transition-colors`}>
                                     <span className={progress === 100 ? 'text-emerald-600 font-bold' : progress > 0 ? 'text-blue-600' : theme === 'dark' ? 'text-slate-700' : 'text-slate-300'}>{progress}%</span>
                                 </td>
                                 </tr>
