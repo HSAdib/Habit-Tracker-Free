@@ -153,6 +153,7 @@ export default function App() {
       const key = getSafeKey(day); const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
       monthlyEarned += (typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0));
     });
+    const score = Math.round((monthlyEarned / (daysInMonth.length * 100)) * 100);
     const weeklyData = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i);
@@ -161,14 +162,13 @@ export default function App() {
       const val = typeof raw === 'number' ? raw : (raw ? 100 : 0);
       weeklyData.push({ label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), val: val });
     }
-    const score = Math.round((monthlyEarned / (daysInMonth.length * 100)) * 100);
     let currentStreak = 0;
     const todayIdx = daysInMonth.findIndex(d => getSafeKey(d) === getSafeKey(new Date()));
     if (todayIdx !== -1) {
       let i = todayIdx;
       while (i >= 0 && (typeof (trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap]) === 'number' ? trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap] : (trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap] ? 100 : 0)) >= 70) { currentStreak++; i--; }
     }
-    return { score, currentStreak, weeklyData, level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : "Apprentice" };
+    return { score, currentStreak, weeklyData, level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : score >= 25 ? "Apprentice" : "Seed" };
   }, [viewingHabitMap, trackerData, daysInMonth]);
 
   const heatmapData = useMemo(() => {
@@ -183,6 +183,7 @@ export default function App() {
   }, [currentDate, trackerData, habits]);
 
   const trendPoints = useMemo(() => {
+    if (daysInMonth.length < 2) return [];
     return daysInMonth.map((day, idx) => {
       const key = getSafeKey(day); let totalPct = 0;
       habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += typeof r === 'number' ? r : (r ? 100 : 0); });
@@ -243,6 +244,10 @@ export default function App() {
     return cells;
   }, [viewingHabitMap, currentDate, daysInMonth]);
 
+  const currentMonthNotes = useMemo(() => {
+    return daysInMonth.map(d => ({ date: d, key: getSafeKey(d), note: trackerData[getSafeKey(d)]?.note })).filter(e => e.note && e.note.trim() !== "");
+  }, [daysInMonth, trackerData]);
+
   return (
     <div className={`min-h-screen ${getContainerBg()} font-sans pb-20 select-none overflow-x-hidden transition-colors duration-300`}>
       <div className="max-w-7xl mx-auto px-2 md:px-4 pt-8 flex flex-col min-h-screen">
@@ -289,7 +294,12 @@ export default function App() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-[3px] justify-center lg:justify-start">
-                {heatmapData.map((cell) => <div key={cell.key} className={`w-[11px] h-[11px] rounded-[2px] border-[0.5px] border-black/5 shadow-sm ${theme === 'dark' ? (cell.intensity === 0 ? 'bg-slate-800' : cell.intensity === 1 ? 'bg-emerald-900/40' : cell.intensity === 2 ? 'bg-emerald-800' : cell.intensity === 3 ? 'bg-emerald-600' : 'bg-emerald-400') : (cell.intensity === 0 ? 'bg-slate-100' : cell.intensity === 1 ? 'bg-emerald-100' : cell.intensity === 2 ? 'bg-emerald-300' : cell.intensity === 3 ? 'bg-emerald-500' : cell.intensity === 4 ? 'bg-emerald-700' : 'bg-emerald-100')}`}></div>)}
+                {heatmapData.map((cell) => {
+                  const intensityStyles = theme === 'dark' 
+                    ? ['bg-slate-800', 'bg-emerald-900/40', 'bg-emerald-800', 'bg-emerald-600', 'bg-emerald-400']
+                    : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'];
+                  return <div key={cell.key} className={`w-[11px] h-[11px] rounded-[2px] border-[0.5px] border-black/5 shadow-sm ${intensityStyles[cell.intensity]}`}></div>;
+                })}
               </div>
             </div>
             <div className={`${getCardStyle()} p-6 rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors`}>
@@ -345,6 +355,8 @@ export default function App() {
                             let totalPct = 0; habits.forEach(h => { const raw = dayData[h] ?? 0; totalPct += (typeof raw === 'number' ? raw : (raw ? 100 : 0)); });
                             const progress = habits.length > 0 ? Math.round(totalPct / habits.length) : 0;
                             const isToday = new Date().toDateString() === day.toDateString();
+                            const isPassed = new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+
                             return (
                                 <tr key={key} id={`row-${key}`} className={isToday ? (theme === 'dark' ? 'bg-emerald-900/10' : 'bg-emerald-50/10') : ''}>
                                 <td className={`p-4 sticky left-0 z-10 border-r border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-white'} flex items-center gap-3 transition-colors`}>
@@ -357,7 +369,7 @@ export default function App() {
                                     <td key={i} className={`p-3 border-r border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} text-center`}>
                                         <button className={`w-12 h-12 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} active:scale-90 touch-none select-none`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)} onContextMenu={(e) => e.preventDefault()}>
                                           <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
-                                          <span className={`pointer-events-none font-bold ${val > 0 ? 'text-white' : 'text-red-500'} ${val > 0 && val < 100 ? 'text-[10px]' : ''}`}>{val === 100 ? '✔' : val > 0 ? `${val}%` : '✘'}</span>
+                                          <span className={`pointer-events-none font-bold ${val > 0 ? 'text-white' : (isPassed ? 'text-red-500' : 'text-white [text-shadow:_-1.5px_-1.5px_0_#000,_1.5px_-1.5px_0_#000,_-1.5px_1.5px_0_#000,_1.5px_1.5px_0_#000]')} ${val > 0 && val < 100 ? 'text-[10px]' : ''}`}>{val === 100 ? '✔' : val > 0 ? `${val}%` : '✘'}</span>
                                         </button>
                                     </td>
                                     );
@@ -416,7 +428,9 @@ export default function App() {
                   {modalCalendarGrid.map((day, idx) => {
                     if (!day) return <div key={idx} className="aspect-square" />;
                     const key = getSafeKey(day); const v = typeof trackerData[key]?.[viewingHabitMap] === 'number' ? trackerData[key]?.[viewingHabitMap] : (trackerData[key]?.[viewingHabitMap] ? 100 : 0);
-                    return (<div key={idx} onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none active:scale-90 ${getButtonStyles(v)} ${new Date().toDateString() === day.toDateString() ? 'ring-2 ring-emerald-400 ring-offset-2 shadow-inner' : ''}`}><span className={`text-[8px] font-black pointer-events-none ${v > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-400')}`}>{day.getDate()}</span><span className={`text-xs font-black pointer-events-none ${v > 0 ? 'text-white' : 'text-red-500'}`}>{v === 100 ? '✔' : v > 0 ? `${v}%` : '✘'}</span></div>);
+                    const isToday = new Date().toDateString() === day.toDateString();
+                    const isPassed = new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+                    return (<div key={idx} onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none active:scale-90 ${getButtonStyles(v)} ${isToday ? 'ring-2 ring-emerald-400 ring-offset-2 shadow-inner' : ''}`}><span className={`text-[8px] font-black pointer-events-none ${v > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-400')}`}>{day.getDate()}</span><span className={`text-xs font-black pointer-events-none ${v > 0 ? 'text-white' : (isPassed ? 'text-red-500' : 'text-white [text-shadow:_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_1px_1px_0_#000]')}`}>{v === 100 ? '✔' : v > 0 ? `${v}%` : '✘'}</span></div>);
                   })}
                 </div>
               </div>
@@ -427,15 +441,18 @@ export default function App() {
       {activeSlider && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md animate-in fade-in duration-200 touch-none select-none" onPointerDown={() => setActiveSlider(null)}>
           <div className="absolute flex flex-col items-center animate-in zoom-in duration-300 p-8 rounded-[3rem]" style={{ left: activeSlider.x, top: activeSlider.y, transform: 'translate(-50%, -50%)' }} onPointerDown={(e) => e.stopPropagation()} onPointerMove={(e) => {
-              const track = document.getElementById('mastery-slider-track'); if (!track) return;
-              const rect = track.getBoundingClientRect(); const percentage = Math.max(0, Math.min(100, Math.round(((rect.height - (e.clientY - rect.top)) / rect.height) * 100)));
-              updateHabitValue(activeSlider.dateKey, activeSlider.habit, percentage); setActiveSlider(prev => ({ ...prev, value: percentage }));
+              if (e.buttons === 1 || e.pointerType === 'touch') {
+                const track = document.getElementById('mastery-slider-track'); if (!track) return;
+                const rect = track.getBoundingClientRect(); const percentage = Math.max(0, Math.min(100, Math.round(((rect.height - (e.clientY - rect.top)) / rect.height) * 100)));
+                updateHabitValue(activeSlider.dateKey, activeSlider.habit, percentage); setActiveSlider(prev => ({ ...prev, value: percentage }));
+              }
             }}>
             <p className="text-white font-black uppercase text-xs tracking-widest mb-6 opacity-80 drop-shadow-md">{activeSlider.habit}</p>
             <div id="mastery-slider-track" className="relative w-24 h-64 bg-white/20 rounded-[2.5rem] border-4 border-white/30 overflow-hidden shadow-2xl backdrop-blur-3xl ring-8 ring-white/5 cursor-ns-resize">
                 <div className="absolute bottom-0 w-full bg-white transition-all duration-75 shadow-[0_0_20px_rgba(255,255,255,0.4)]" style={{ height: `${activeSlider.value}%` }} />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className={`text-4xl font-black transition-colors ${activeSlider.value > 50 ? 'text-slate-800' : 'text-white'}`}>{activeSlider.value}%</span></div>
             </div>
+            <div className="mt-8 text-center text-white/40 font-bold text-[9px] uppercase tracking-widest">Drag to adjust | Tap outside to close</div>
           </div>
         </div>
       )}
