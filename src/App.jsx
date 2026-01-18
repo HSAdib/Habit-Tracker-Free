@@ -1,12 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 
 /**
- * HABIT TRACKER - MASTERY V13.6 (STABLE RELEASE)
- * 1. Interaction Fix: Hardened press-toggle logic to prevent double-firing.
- * 2. Dark Mode: Full system integration with persistence.
- * 3. Insight Bars: Fixed the "Last 7 Days" weekly activity bars in the modal.
- * 4. Credit: Developed by Adib | APM | RU with Facebook Profile link.
- * 5. Layout: Repositioned "Jan 1 - Dec 31" and heatmap consistency label.
+ 
+ * 1.Credit: Developed by Adib | APM | RU with Facebook Profile link.
+
  */
 
 // --- Icons (Internal SVGs for reliability) ---
