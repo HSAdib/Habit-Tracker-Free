@@ -1,15 +1,15 @@
-/* Credit: Adib | APM | RU | Bangladesh */
+/* Created by: Adib | APM | RU | Bangladesh | email:hasanshahriaradib@gmail.com */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 
 const ZapIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
 );
-const SunIcon = ({ size = 12 }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+const SunIcon = ({ size = 12, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
 );
 const YellowMoonIcon = ({ size = 12 }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="#FACC15" stroke="#EAB308" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="#ba8e23" stroke="#ba8e23" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
 );
 const EditIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -101,7 +101,15 @@ export default function App() {
   };
 
   const saveNote = (dateKey, noteText) => {
-    const newTrackerData = { ...trackerData, [dateKey]: { ...(trackerData[dateKey] || {}), note: noteText } };
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const newTrackerData = { 
+      ...trackerData, 
+      [dateKey]: { 
+        ...(trackerData[dateKey] || {}), 
+        note: noteText,
+        noteTime: noteText.trim() ? (trackerData[dateKey]?.noteTime || nowTime) : null 
+      } 
+    };
     setTrackerData(newTrackerData);
     save(newTrackerData, habits);
   };
@@ -139,7 +147,8 @@ export default function App() {
         stats[h] = (stats[h] || 0) + val; totalEarnedPct += val;
       });
     });
-    const monthlyPct = Math.round((totalEarnedPct / ((daysInMonth.length * habits.length * 100) || 1)) * 100);
+    const possible = (daysInMonth.length * habits.length * 100) || 1;
+    const monthlyPct = Math.round((totalEarnedPct / possible) * 100);
     const habitPcts = {};
     habits.forEach(h => { habitPcts[h] = Math.round(((stats[h] || 0) / (daysInMonth.length * 100)) * 100) || 0; });
     return { habitPcts, monthlyPct, totalDone: Math.round(totalEarnedPct / 100), noteCount };
@@ -156,8 +165,9 @@ export default function App() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - i);
       const key = getSafeKey(d);
-      const raw = trackerData[key]?.[viewingHabitMap] ?? 0;
-      weeklyData.push({ label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), val: typeof raw === 'number' ? raw : (raw ? 100 : 0) });
+      const raw = trackerData[getSafeKey(d)]?.[viewingHabitMap] ?? 0;
+      const val = typeof raw === 'number' ? raw : (raw ? 100 : 0);
+      weeklyData.push({ label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), val: val });
     }
     const score = Math.round((monthlyEarned / (daysInMonth.length * 100)) * 100);
     let currentStreak = 0;
@@ -173,7 +183,10 @@ export default function App() {
     const cells = []; const year = currentDate.getFullYear();
     for (let i = 0; i < (((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) ? 366 : 365); i++) {
       const d = new Date(year, 0, 1, 12); d.setDate(d.getDate() + i); const key = getSafeKey(d);
-      let totalPct = 0; habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += typeof r === 'number' ? r : (r ? 100 : 0); });
+      let totalPct = 0; habits.forEach(h => { 
+        const r = trackerData[key]?.[h] ?? 0; 
+        totalPct += typeof r === 'number' ? r : (r ? 100 : 0); 
+      });
       const avg = habits.length > 0 ? totalPct / (habits.length * 100) : 0;
       cells.push({ key, intensity: avg === 0 ? 0 : avg <= 0.25 ? 1 : avg <= 0.5 ? 2 : avg <= 0.75 ? 3 : 4 });
     }
@@ -181,9 +194,13 @@ export default function App() {
   }, [currentDate, trackerData, habits]);
 
   const trendPoints = useMemo(() => {
+    if (daysInMonth.length < 2) return [];
     return daysInMonth.map((day, idx) => {
       const key = getSafeKey(day); let totalPct = 0;
-      habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += typeof r === 'number' ? r : (r ? 100 : 0); });
+      habits.forEach(h => { 
+        const r = trackerData[key]?.[h] ?? 0; 
+        totalPct += typeof r === 'number' ? r : (r ? 100 : 0); 
+      });
       return { x: (idx / (daysInMonth.length - 1)) * 100, y: 100 - (habits.length > 0 ? totalPct / habits.length : 0) };
     });
   }, [daysInMonth, trackerData, habits]);
@@ -208,18 +225,14 @@ export default function App() {
   };
 
   const handleRename = (idx) => {
-    const old = habits[idx]; 
-    const renamed = tempHabitName.trim();
+    const old = habits[idx]; const renamed = tempHabitName.trim();
     if (renamed === old) { setEditingHabitIdx(null); return; }
-    
     if (!renamed) {
-      const newHabits = habits.filter((_, i) => i !== idx);
-      const newData = { ...trackerData };
+      const newHabits = habits.filter((_, i) => i !== idx); const newData = { ...trackerData };
       Object.keys(newData).forEach(k => { if(newData[k]) delete newData[k][old]; });
       setHabits(newHabits); setTrackerData(newData); save(newData, newHabits);
     } else {
-      const newHabits = [...habits]; newHabits[idx] = renamed;
-      const newData = { ...trackerData };
+      const newHabits = [...habits]; newHabits[idx] = renamed; const newData = { ...trackerData };
       Object.keys(newData).forEach(k => { if(newData[k] && newData[k][old] !== undefined) { newData[k][renamed] = newData[k][old]; delete newData[k][old]; }});
       setHabits(newHabits); setTrackerData(newData); save(newData, newHabits);
     }
@@ -265,8 +278,8 @@ export default function App() {
                 <h1 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} tracking-tight leading-none`}>Habit Mastery</h1>
                 <div onClick={toggleTheme} className={`group relative w-16 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-500 shadow-inner ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
                   <div className="absolute inset-0 flex items-center justify-between px-2.5 pointer-events-none">
-                    <div className={`transition-opacity duration-300 ${theme === 'dark' ? 'opacity-20' : 'opacity-100'}`}><SunIcon size={12} className="text-orange-500" /></div>
-                    <div className={`transition-opacity duration-300 ${theme === 'dark' ? 'opacity-100' : 'opacity-20'}`}><YellowMoonIcon size={12} /></div>
+                    <div className={`transition-opacity duration-300 ${theme === 'dark' ? 'opacity-50' : 'opacity-100'}`}><SunIcon size={12} className="text-orange-500" /></div>
+                    <div className={`transition-opacity duration-300 ${theme === 'dark' ? 'opacity-100' : 'opacity-50'}`}><YellowMoonIcon size={12} /></div>
                   </div>
                   <div className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-500 ease-in-out ${theme === 'dark' ? 'translate-x-8' : 'translate-x-0'}`} />
                 </div>
@@ -404,6 +417,35 @@ export default function App() {
         </footer>
       </div>
 
+      {showAllNotes && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4" onClick={() => setShowAllNotes(false)}>
+            <div className={`${theme === 'dark' ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl animate-in zoom-in duration-200 flex flex-col`} onClick={e => e.stopPropagation()}>
+                <div className={`p-8 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} flex items-center justify-between`}>
+                    <div>
+                        <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Journal Archive</h3>
+                        <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest mt-1`}>
+                          {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })} • {analytics.noteCount} Reflections
+                        </p>
+                    </div>
+                    <button onClick={() => setShowAllNotes(false)} className={`p-3 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+                    {currentMonthNotes.length > 0 ? currentMonthNotes.map((entry, idx) => (
+                        <div key={idx} className={`group border-l-4 border-emerald-500 pl-6 py-2 transition-all ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-slate-50'} rounded-r-2xl`}>
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className={`text-[10px] font-black text-emerald-600 uppercase ${theme === 'dark' ? 'bg-emerald-900/20' : 'bg-emerald-50'} px-2 py-1 rounded-md`}>
+                                    {entry.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', weekday: 'short' })} • {trackerData[entry.key]?.noteTime || 'Logged'}
+                                </span>
+                                <button onClick={() => { setShowAllNotes(false); setEditingNoteDate(entry.key); }} className={`opacity-0 group-hover:opacity-100 ${getTextMuted()} hover:text-blue-500 transition-all`}><EditIcon /></button>
+                            </div>
+                            <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'} font-medium leading-relaxed italic`}>"{entry.note}"</p>
+                        </div>
+                    )) : <div className={`h-40 flex flex-col items-center justify-center ${getTextMuted()} gap-3`}><NoteIcon /><p className="font-bold text-sm">No reflections recorded yet.</p></div>}
+                </div>
+            </div>
+        </div>
+      )}
+
       {viewingHabitMap && habitInsights && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewingHabitMap(null)}>
             <div className={`rounded-[2.5rem] w-full max-w-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col md:flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
@@ -442,7 +484,7 @@ export default function App() {
                     const key = getSafeKey(day); const v = typeof trackerData[key]?.[viewingHabitMap] === 'number' ? trackerData[key]?.[viewingHabitMap] : (trackerData[key]?.[viewingHabitMap] ? 100 : 0);
                     const isToday = new Date().toDateString() === day.toDateString();
                     const isPassed = new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
-                    return (<div key={idx} onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none active:scale-90 ${getButtonStyles(v)} ${isToday ? 'ring-2 ring-emerald-400 ring-offset-2 shadow-inner' : ''}`}><span className={`text-[8px] font-black pointer-events-none ${v > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-400')}`}>{day.getDate()}</span><span className={`text-xs font-black pointer-events-none ${v > 0 ? 'text-white' : (isPassed ? 'text-red-500' : 'text-white [text-shadow:_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_1px_1px_0_#000]')}`}>{v === 100 ? '✔' : v > 0 ? `${v}%` : '✘'}</span></div>);
+                    return (<div key={idx} onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none active:scale-90 ${getButtonStyles(v)} ${isToday ? 'ring-2 ring-emerald-400 ring-offset-2 shadow-inner' : ''}`}><span className={`text-[8px] font-black pointer-events-none ${v > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-400')}`}>{day.getDate()}</span><span className={`text-xs font-black pointer-events-none ${v > 0 ? 'text-white' : (isPassed ? 'text-red-500' : 'text-white [text-shadow:_-1.5px_-1.5px_0_#000,_1.5px_-1.5px_0_#000,_-1.5px_1.5px_0_#000,_1.5px_1.5px_0_#000]')}`}>{v === 100 ? '✔' : v > 0 ? `${v}%` : '✘'}</span></div>);
                   })}
                 </div>
               </div>
