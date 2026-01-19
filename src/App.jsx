@@ -251,7 +251,6 @@ export default function App() {
         clearTimeout(longPressTimer.current); 
         longPressTimer.current = null;
         const val = typeof currentVal === 'number' ? currentVal : (currentVal ? 100 : 0);
-        // Single Click: Fully toggle completion (100% or 0%)
         updateHabitValue(dateKey, habit, val >= 100 ? 0 : 100);
     }
   };
@@ -304,11 +303,12 @@ export default function App() {
 
   return (
     <div className={`min-h-screen ${getContainerBg()} font-sans pb-20 select-none overflow-x-hidden transition-colors duration-300`}>
-      {/* Analytics integration remains for your VS Code project */}
-      <Analytics />
+      
+       <Analytics />
       
       <div className="max-w-7xl mx-auto px-2 md:px-4 pt-8 flex flex-col min-h-screen">
         <div className="flex-grow">
+          {/* Dashboard Header */}
           <div className={`flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-6 ${getCardStyle()} p-6 rounded-[2.5rem] border transition-colors relative overflow-hidden`}>
             <div className="flex items-center gap-4 z-10">
               <div className="bg-emerald-600 p-3 rounded-2xl text-white shadow-lg animate-glow"><ZapIcon /></div>
@@ -381,6 +381,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Habit Insight Rings */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 mb-8">
             {habits.map((habit, idx) => (
               <div key={idx} className={`${getCardStyle()} p-3 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-colors min-h-[100px] justify-center`} onClick={() => setViewingHabitMap(habit)}>
@@ -548,7 +549,8 @@ export default function App() {
                     {habitInsights.weeklyData.map((day, idx) => (
                       <div key={idx} className="flex flex-col items-center flex-1 gap-2 group">
                         <div className={`w-full relative h-12 ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'} rounded-lg overflow-hidden border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                          <div className="absolute bottom-0 w-full bg-emerald-500 transition-all duration-75" style={{ height: `${day.val}%` }} />
+                          {/* Slower transition speed (duration-[1000ms] - 20% faster than 1200ms) applied here */}
+                          <div className="absolute bottom-0 w-full bg-emerald-500 transition-all duration-[1000ms] ease-out" style={{ height: `${day.val}%` }} />
                         </div>
                         <span className={`text-[9px] font-black ${theme === 'dark' ? 'text-slate-600' : 'text-slate-400'} group-hover:text-emerald-500`}>{day.label}</span>
                       </div>
@@ -572,10 +574,14 @@ export default function App() {
           </div>
       )}
 
-      {/* Dynamic Master Slider */}
+      {/* Dynamic Master Slider - Fixed close trigger precision */}
       {activeSlider && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md animate-in fade-in duration-200 touch-none select-none" onPointerDown={() => setActiveSlider(null)}>
-          <div className="absolute flex flex-col items-center animate-in zoom-in duration-300 p-8 rounded-[3rem]" style={{ left: activeSlider.x, top: activeSlider.y, transform: 'translate(-50%, -50%)' }} onPointerDown={(e) => e.stopPropagation()} onPointerMove={(e) => {
+          <div 
+            className="absolute flex flex-col items-center animate-in zoom-in duration-300 p-1 rounded-[3rem]" 
+            style={{ left: activeSlider.x, top: activeSlider.y, transform: 'translate(-50%, -50%)' }} 
+            onPointerDown={(e) => e.stopPropagation()} 
+            onPointerMove={(e) => {
               if (e.buttons === 1 || e.pointerType === 'touch') {
                 const track = document.getElementById('mastery-slider-track'); if (!track) return;
                 const rect = track.getBoundingClientRect(); 
@@ -583,7 +589,6 @@ export default function App() {
                 
                 const config = habitConfigs[activeSlider.habit];
                 let finalVal;
-                // If steps are used, snap to the nearest step value
                 if (config?.steps > 1) {
                   const currentStep = Math.round((percentage / 100) * config.steps);
                   finalVal = (currentStep / config.steps) * 100;
@@ -594,7 +599,8 @@ export default function App() {
                 updateHabitValue(activeSlider.dateKey, activeSlider.habit, finalVal); 
                 setActiveSlider(prev => ({ ...prev, value: finalVal }));
               }
-            }}>
+            }}
+          >
             <p className="text-white font-black uppercase text-xs tracking-widest mb-6 opacity-80 drop-shadow-md">{activeSlider.habit}</p>
             <div id="mastery-slider-track" className="relative w-24 h-64 bg-white/20 rounded-[2.5rem] border-4 border-white/30 overflow-hidden shadow-2xl backdrop-blur-3xl ring-8 ring-white/5 cursor-ns-resize">
                 <div className="absolute bottom-0 w-full bg-white transition-all duration-75 shadow-[0_0_20px_rgba(255,255,255,0.4)]" style={{ height: `${activeSlider.value}%` }} />
@@ -608,7 +614,7 @@ export default function App() {
                 </div>
             </div>
             <div className="mt-8 text-center text-white/40 font-bold text-[9px] uppercase tracking-widest">
-              {habitConfigs[activeSlider.habit]?.steps > 1 ? `Adjust Steps (0-${habitConfigs[activeSlider.habit].steps})` : 'Adjust Percentage (0-100%)'} | Tap outside to close
+              {habitConfigs[activeSlider.habit]?.steps > 1 ? `Adjust Steps (0-${habitConfigs[activeSlider.habit].steps})` : 'Adjust Percentage (0-100%)'}
             </div>
           </div>
         </div>
