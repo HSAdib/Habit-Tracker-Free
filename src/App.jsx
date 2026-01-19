@@ -1,6 +1,7 @@
 /* Credit: Adib | APM | RU | Bangladesh */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 
 const ZapIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -541,6 +542,7 @@ export default function App() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: ${theme === 'dark' ? '#334155' : '#cbd5e1'}; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: ${theme === 'dark' ? '#475569' : '#94a3b8'}; }
       `}} />
+      <Analytics />
     </div>
   );
 }
