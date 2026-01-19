@@ -268,7 +268,9 @@ export default function App() {
 
   return (
     <div className={`min-h-screen ${getContainerBg()} font-sans pb-20 select-none overflow-x-hidden transition-colors duration-300`}>
+      {/* VERCEL ANALYTICS COMPONENT */}
       <Analytics />
+      
       <div className="max-w-7xl mx-auto px-2 md:px-4 pt-8 flex flex-col min-h-screen">
         <div className="flex-grow">
           {/* Dashboard Header */}
@@ -446,7 +448,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Habit Details Modal */}
+      {/* Habit Details Modal - Enhanced with navigation (from Code 1) */}
       {viewingHabitMap && habitInsights && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewingHabitMap(null)}>
             <div className={`rounded-[2.5rem] w-full max-w-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col md:flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
@@ -462,7 +464,15 @@ export default function App() {
               </div>
               <div className="flex-1 p-8 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
-                  <div><h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight`}>{viewingHabitMap}</h3><div className="flex items-center gap-2 mt-1"><p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest text-center`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</p></div></div>
+                  <div>
+                    <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight`}>{viewingHabitMap}</h3>
+                    {/* Integrated Arrow Buttons for deeper exploration */}
+                    <div className={`flex items-center gap-1 mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
+                      <span className="text-[10px] font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
+                      <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
+                    </div>
+                  </div>
                   <button onClick={() => setViewingHabitMap(null)} className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500`}><XIcon /></button>
                 </div>
                 <div className="mb-8">
@@ -493,7 +503,7 @@ export default function App() {
           </div>
       )}
 
-      {/* Persistence Slider Overlay */}
+      {/* Slider persistence Overlay */}
       {activeSlider && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md animate-in fade-in duration-200 touch-none select-none" onPointerDown={() => setActiveSlider(null)}>
           <div className="absolute flex flex-col items-center animate-in zoom-in duration-300 p-8 rounded-[3rem]" style={{ left: activeSlider.x, top: activeSlider.y, transform: 'translate(-50%, -50%)' }} onPointerDown={(e) => e.stopPropagation()} onPointerMove={(e) => {
