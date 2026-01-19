@@ -1,59 +1,50 @@
 /* Credit: Adib | APM | RU | Bangladesh */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Analytics } from "@vercel/analytics/react";
 
+// --- Icons Section ---
 const ZapIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
 );
-
 const SunIcon = ({ size = 12, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
 );
-
 const YellowMoonIcon = ({ size = 12 }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="#ba8e23" stroke="#ba8e23" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
 );
-
 const EditIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
 );
-
 const PlusIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
 );
-
 const ChevronLeftIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
 );
-
 const ChevronRightIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
 );
-
 const XIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
 );
-
 const TrophyIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
 );
-
 const ActivityIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
 );
-
 const NoteIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
 );
-
 const TargetIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 );
-
 const FlameIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
 );
 
+// --- Helpers ---
 const getSafeKey = (date) => {
   if (!date) return "";
   const y = date.getFullYear();
@@ -74,6 +65,7 @@ export default function App() {
   const [editingNoteDate, setEditingNoteDate] = useState(null);
   const [showAllNotes, setShowAllNotes] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('adib_habit_theme') || 'light');
+  
   const [activeSlider, setActiveSlider] = useState(null); 
   const longPressTimer = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -195,10 +187,7 @@ export default function App() {
     const cells = []; const year = currentDate.getFullYear();
     for (let i = 0; i < (((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) ? 366 : 365); i++) {
       const d = new Date(year, 0, 1, 12); d.setDate(d.getDate() + i); const key = getSafeKey(d);
-      let totalPct = 0; habits.forEach(h => { 
-        const r = trackerData[key]?.[h] ?? 0; 
-        totalPct += typeof r === 'number' ? r : (r ? 100 : 0); 
-      });
+      let totalPct = 0; habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += typeof r === 'number' ? r : (r ? 100 : 0); });
       const avg = habits.length > 0 ? totalPct / (habits.length * 100) : 0;
       cells.push({ key, intensity: avg === 0 ? 0 : avg <= 0.25 ? 1 : avg <= 0.5 ? 2 : avg <= 0.75 ? 3 : 4 });
     }
@@ -209,12 +198,10 @@ export default function App() {
     if (daysInMonth.length < 2) return [];
     return daysInMonth.map((day, idx) => {
       const key = getSafeKey(day); let totalPct = 0;
-      habits.forEach(h => { 
-        const r = trackerData[key]?.[h] ?? 0; 
-        totalPct += typeof r === 'number' ? r : (r ? 100 : 0); 
-      });
-      return { x: (idx / (daysInMonth.length - 1)) * 100, y: 100 - (habits.length > 0 ? totalPct / habits.length : 0) };
-    });
+      habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += (typeof r === 'number' ? r : (r ? 100 : 0)); });
+      const avgPct = habits.length > 0 ? totalPct / habits.length : 0;
+      return { x: (idx / (daysInMonth.length - 1)) * 100, y: 100 - avgPct };
+    }).filter(p => !isNaN(p.x));
   }, [daysInMonth, trackerData, habits]);
 
   const handleHabitPressStart = (e, dateKey, habit, currentVal) => {
@@ -256,8 +243,8 @@ export default function App() {
     let d = `M ${points[0].x},${points[0].y}`;
     for (let i = 0; i < points.length - 1; i++) {
       const curr = points[i]; const next = points[i + 1];
-      const cp1x = curr.x + (next.x - curr.x) / 2;
-      d += ` C ${cp1x},${curr.y} ${cp1x},${next.y} ${next.x},${next.y}`;
+      const cp1x = curr.x + (next.x - curr.x) / 2; const cp2x = curr.x + (next.x - curr.x) / 2;
+      d += ` C ${cp1x},${curr.y} ${cp2x},${next.y} ${next.x},${next.y}`;
     }
     return d;
   };
@@ -281,8 +268,10 @@ export default function App() {
 
   return (
     <div className={`min-h-screen ${getContainerBg()} font-sans pb-20 select-none overflow-x-hidden transition-colors duration-300`}>
+      <Analytics />
       <div className="max-w-7xl mx-auto px-2 md:px-4 pt-8 flex flex-col min-h-screen">
         <div className="flex-grow">
+          {/* Dashboard Header */}
           <div className={`flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-4 ${getCardStyle()} p-5 rounded-[2rem] border transition-colors`}>
             <div className="flex items-center gap-4">
               <div className="bg-emerald-600 p-3 rounded-2xl text-white shadow-lg animate-glow"><ZapIcon /></div>
@@ -290,8 +279,8 @@ export default function App() {
                 <h1 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} tracking-tight leading-none`}>Habit Mastery</h1>
                 <div onClick={toggleTheme} className={`group relative w-16 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-500 shadow-inner ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
                   <div className="absolute inset-0 flex items-center justify-between px-2.5 pointer-events-none">
-                    <div className={`transition-opacity duration-300 ${theme === 'dark' ? 'opacity-90' : 'opacity-100'}`}><SunIcon size={12} className="text-orange-500" /></div>
-                    <div className={`transition-opacity duration-300 ${theme === 'dark' ? 'opacity-100' : 'opacity-90'}`}><YellowMoonIcon size={12} /></div>
+                    <div className={`transition-opacity duration-300 ${theme === 'dark' ? 'opacity-50' : 'opacity-100'}`}><SunIcon size={12} className="text-orange-500" /></div>
+                    <div className={`transition-opacity duration-300 ${theme === 'dark' ? 'opacity-100' : 'opacity-50'}`}><YellowMoonIcon size={12} /></div>
                   </div>
                   <div className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-500 ease-in-out ${theme === 'dark' ? 'translate-x-8' : 'translate-x-0'}`} />
                 </div>
@@ -305,6 +294,7 @@ export default function App() {
             <div className="hidden lg:block text-right pr-2"><span className={`text-[9px] font-black ${getTextMuted()} uppercase tracking-widest`}>Mastery Engine</span></div>
           </div>
 
+          {/* Graphical Analytics */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className={`lg:col-span-2 ${getCardStyle()} p-6 rounded-[2.5rem] border overflow-hidden flex flex-col transition-colors`}>
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
@@ -346,6 +336,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Habit Insight Rings */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 mb-8">
             {habits.map((habit, idx) => (
               <div key={idx} className={`${getCardStyle()} p-3 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-colors min-h-[100px] justify-center`} onClick={() => setViewingHabitMap(habit)}>
@@ -370,13 +361,19 @@ export default function App() {
             }} className={`${getCardStyle()} p-3 rounded-2xl border-2 border-dashed flex items-center justify-center ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'} min-h-[100px] transition-all`}><PlusIcon /></button>
           </div>
 
+          {/* Master Tracker Table - AUTO-ADJUST FIXED */}
           <div className={`${getCardStyle()} rounded-[2.5rem] overflow-hidden mb-8 relative transition-colors`}>
               <div ref={scrollContainerRef} className="overflow-x-auto max-h-[70vh] overflow-y-auto custom-scrollbar scroll-smooth">
-                  <table className="w-full border-separate border-spacing-0">
+                  {/* CRITICAL: table-fixed enables columns to share space equally without breaking layout */}
+                  <table className="w-full border-separate border-spacing-0 table-fixed min-w-full">
                       <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                           <tr>
-                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[130px] z-40 text-center`}>Date Log</th>
-                            {habits.map((h, i) => (<th key={i} className={`p-4 border-r ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-600'} text-[9px] uppercase text-center font-bold min-w-[90px]`}>{h}</th>))}
+                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[140px] z-40 text-center`}>Date Log</th>
+                            {habits.map((h, i) => (
+                                <th key={i} className={`p-4 border-r ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-600'} text-[9px] uppercase text-center font-bold`}>
+                                    <div className="truncate px-1" title={h}>{h}</div>
+                                </th>
+                            ))}
                             <th className={`p-4 font-black text-emerald-600 text-[9px] sticky top-0 right-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-l w-[100px] z-40 text-center`}>Efficiency</th>
                           </tr>
                       </thead>
@@ -429,27 +426,18 @@ export default function App() {
         </footer>
       </div>
 
+      {/* Note Archive Modal */}
       {showAllNotes && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4" onClick={() => setShowAllNotes(false)}>
             <div className={`${theme === 'dark' ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl animate-in zoom-in duration-200 flex flex-col`} onClick={e => e.stopPropagation()}>
                 <div className={`p-8 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} flex items-center justify-between`}>
-                    <div>
-                        <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Journal Archive</h3>
-                        <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest mt-1`}>
-                          {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })} • {analytics.noteCount} Reflections
-                        </p>
-                    </div>
+                    <div><h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Journal Archive</h3><p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest mt-1`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })} • {analytics.noteCount} Reflections</p></div>
                     <button onClick={() => setShowAllNotes(false)} className={`p-3 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
-                    {currentMonthNotes.length > 0 ? currentMonthNotes.map((entry, idx) => (
+                    {currentMonthNotes && currentMonthNotes.length > 0 ? currentMonthNotes.map((entry, idx) => (
                         <div key={idx} className={`group border-l-4 border-emerald-500 pl-6 py-2 transition-all ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-slate-50'} rounded-r-2xl`}>
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className={`text-[10px] font-black text-emerald-600 uppercase ${theme === 'dark' ? 'bg-emerald-900/20' : 'bg-emerald-50'} px-2 py-1 rounded-md`}>
-                                    {entry.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', weekday: 'short' })} • {trackerData[entry.key]?.noteTime || 'Logged'}
-                                </span>
-                                <button onClick={() => { setShowAllNotes(false); setEditingNoteDate(entry.key); }} className={`opacity-0 group-hover:opacity-100 ${getTextMuted()} hover:text-blue-500 transition-all`}><EditIcon /></button>
-                            </div>
+                            <div className="flex items-center gap-3 mb-2"><span className={`text-[10px] font-black text-emerald-600 uppercase ${theme === 'dark' ? 'bg-emerald-900/20' : 'bg-emerald-50'} px-2 py-1 rounded-md`}>{entry.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', weekday: 'short' })}</span><button onClick={() => { setShowAllNotes(false); setEditingNoteDate(entry.key); }} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-blue-500 transition-all"><EditIcon /></button></div>
                             <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'} font-medium leading-relaxed italic`}>"{entry.note}"</p>
                         </div>
                     )) : <div className={`h-40 flex flex-col items-center justify-center ${getTextMuted()} gap-3`}><NoteIcon /><p className="font-bold text-sm">No reflections recorded yet.</p></div>}
@@ -458,6 +446,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Habit Details Modal */}
       {viewingHabitMap && habitInsights && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewingHabitMap(null)}>
             <div className={`rounded-[2.5rem] w-full max-w-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col md:flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
@@ -494,9 +483,9 @@ export default function App() {
                   {modalCalendarGrid.map((day, idx) => {
                     if (!day) return <div key={idx} className="aspect-square" />;
                     const key = getSafeKey(day); const v = typeof trackerData[key]?.[viewingHabitMap] === 'number' ? trackerData[key]?.[viewingHabitMap] : (trackerData[key]?.[viewingHabitMap] ? 100 : 0);
-                    const isToday = new Date().toDateString() === day.toDateString();
-                    const isPassed = new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
-                    return (<div key={idx} onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none active:scale-90 ${getButtonStyles(v)} ${isToday ? 'ring-2 ring-emerald-400 ring-offset-2 shadow-inner' : ''}`}><span className={`text-[8px] font-black pointer-events-none ${v > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-400')}`}>{day.getDate()}</span><span className={`text-xs font-black pointer-events-none ${v > 0 ? 'text-white' : (isPassed ? 'text-red-500' : 'text-white [text-shadow:_-1.5px_-1.5px_0_#000,_1.5px_-1.5px_0_#000,_-1.5px_1.5px_0_#000,_1.5px_1.5px_0_#000]')}`}>{v === 100 ? '✔' : v > 0 ? `${v}%` : '✘'}</span></div>);
+                    const isTodayCell = new Date().toDateString() === day.toDateString();
+                    const isPassedCell = new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+                    return (<div key={idx} onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none active:scale-90 ${getButtonStyles(v)} ${isTodayCell ? 'ring-2 ring-emerald-400 ring-offset-2 shadow-inner' : ''}`}><span className={`text-[8px] font-black pointer-events-none ${v > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-400')}`}>{day.getDate()}</span><span className={`text-xs font-black pointer-events-none ${v > 0 ? 'text-white' : (isPassedCell ? 'text-red-500' : 'text-white [text-shadow:_-1.5px_-1.5px_0_#000,_1.5px_-1.5px_0_#000,_-1.5px_1.5px_0_#000,_1.5px_1.5px_0_#000]')}`}>{v === 100 ? '✔' : v > 0 ? `${v}%` : '✘'}</span></div>);
                   })}
                 </div>
               </div>
@@ -504,6 +493,7 @@ export default function App() {
           </div>
       )}
 
+      {/* Persistence Slider Overlay */}
       {activeSlider && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md animate-in fade-in duration-200 touch-none select-none" onPointerDown={() => setActiveSlider(null)}>
           <div className="absolute flex flex-col items-center animate-in zoom-in duration-300 p-8 rounded-[3rem]" style={{ left: activeSlider.x, top: activeSlider.y, transform: 'translate(-50%, -50%)' }} onPointerDown={(e) => e.stopPropagation()} onPointerMove={(e) => {
@@ -523,6 +513,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Reflection Journal Modal */}
       {editingNoteDate && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setEditingNoteDate(null)}>
             <div className={`${theme === 'dark' ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-200 transition-colors`} onClick={e => e.stopPropagation()}>
