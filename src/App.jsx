@@ -1,8 +1,17 @@
 /* Credit: Adib | APM | RU | Bangladesh| email: hasanshahriaradib@gmail.com */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-
 import { Analytics } from "@vercel/analytics/react";
+
+const AnalyticsComponent = () => {
+  try {
+  
+    if (typeof Analytics !== 'undefined') {
+      return <Analytics />;
+    }
+  } catch (e) {}
+  return null;
+};
 
 const ZapIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -214,15 +223,32 @@ export default function App() {
     return { score, currentStreak, weeklyData, level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : score >= 25 ? "Apprentice" : "Seed" };
   }, [viewingHabitMap, trackerData, daysInMonth]);
 
-  const heatmapData = useMemo(() => {
-    const cells = []; const year = currentDate.getFullYear();
-    for (let i = 0; i < (((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) ? 366 : 365); i++) {
+  const heatmapConfig = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const firstDayOfYear = new Date(year, 0, 1).getDay(); 
+    const cells = Array(firstDayOfYear).fill(null); 
+    const daysInYear = (((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) ? 366 : 365);
+    
+    for (let i = 0; i < daysInYear; i++) {
       const d = new Date(year, 0, 1, 12); d.setDate(d.getDate() + i); const key = getSafeKey(d);
       let totalPct = 0; habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += typeof r === 'number' ? r : (r ? 100 : 0); });
       const avg = habits.length > 0 ? totalPct / (habits.length * 100) : 0;
-      cells.push({ key, intensity: avg === 0 ? 0 : avg <= 0.25 ? 1 : avg <= 0.5 ? 2 : avg <= 0.75 ? 3 : 4 });
+      cells.push({ date: d, key, intensity: avg === 0 ? 0 : avg <= 0.25 ? 1 : avg <= 0.5 ? 2 : avg <= 0.75 ? 3 : 4 });
     }
-    return cells;
+
+    const monthLabels = [];
+    const addedMonths = new Set();
+    cells.forEach((cell, index) => {
+      if (cell && cell.date) {
+        const m = cell.date.getMonth();
+        if (!addedMonths.has(m)) {
+          monthLabels.push({ label: cell.date.toLocaleString('default', { month: 'short' }), weekIndex: Math.floor(index / 7) });
+          addedMonths.add(m);
+        }
+      }
+    });
+
+    return { cells, monthLabels };
   }, [currentDate, trackerData, habits]);
 
   const trendPoints = useMemo(() => {
@@ -303,8 +329,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen ${getContainerBg()} font-sans pb-20 select-none overflow-x-hidden transition-colors duration-300`}>
-      
-       <Analytics />
+      <AnalyticsComponent />
       
       <div className="max-w-7xl mx-auto px-2 md:px-4 pt-8 flex flex-col min-h-screen">
         <div className="flex-grow">
@@ -336,7 +361,7 @@ export default function App() {
             <div className={`flex items-center ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} rounded-xl p-1 border transition-colors z-10`}>
               <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all active:scale-90`}><ChevronLeftIcon /></button>
               <span className={`px-4 font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'} min-w-[140px] text-center text-sm`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-              <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all active:scale-90`}><ChevronRightIcon /></button>
+              <button onClick={() => currentDate.getMonth() + 1 <= new Date().getMonth() || currentDate.getFullYear() < new Date().getFullYear() ? setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)) : null} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all active:scale-90`}><ChevronRightIcon /></button>
             </div>
           </div>
 
@@ -356,16 +381,37 @@ export default function App() {
                   <div className="flex gap-1 items-center">
                     {[0,1,2,3,4].map(i => <div key={i} className={`w-2.5 h-2.5 rounded-sm ${theme === 'dark' ? ['bg-slate-800', 'bg-emerald-900/30', 'bg-emerald-700', 'bg-emerald-500', 'bg-emerald-300'][i] : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'][i]}`}></div>)}
                   </div>
-                  <p className={`text-[7px] font-black ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'} uppercase tracking-widest leading-none`}>Deeper color = More consistent</p>
+                  <p className={`text-[7px] font-black ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'} uppercase tracking-widest leading-none`}>Consistency Index</p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-[3px] justify-center lg:justify-start">
-                {heatmapData.map((cell) => {
-                  const intensityStyles = theme === 'dark' 
-                    ? ['bg-slate-800', 'bg-emerald-900/40', 'bg-emerald-800', 'bg-emerald-600', 'bg-emerald-400']
-                    : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'];
-                  return <div key={cell.key} className={`w-[11px] h-[11px] rounded-[2px] border-[0.5px] border-black/5 shadow-sm ${intensityStyles[cell.intensity]}`}></div>;
-                })}
+              
+              <div className="overflow-x-auto custom-scrollbar pb-2">
+                <div className="inline-block min-w-full">
+                  <div className="relative h-4 mb-1 ml-10">
+                    {heatmapConfig.monthLabels.map((m, idx) => (
+                      <span key={idx} className={`absolute text-[8px] font-bold ${getTextMuted()} uppercase tracking-tighter`} style={{ left: `${m.weekIndex * 14}px` }}>
+                        {m.label}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex flex-col justify-between py-[1px] text-[7px] font-black opacity-60 uppercase tracking-tighter text-slate-500 w-8 shrink-0">
+                      <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <div className="grid grid-rows-7 grid-flow-col gap-[3px] min-h-[95px]">
+                      {heatmapConfig.cells.map((cell, idx) => {
+                        const intensityStyles = theme === 'dark' 
+                          ? ['bg-slate-800', 'bg-emerald-900/40', 'bg-emerald-800', 'bg-emerald-600', 'bg-emerald-400']
+                          : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'];
+                        return cell ? (
+                          <div key={cell.key} className={`w-[11px] h-[11px] rounded-[2px] border-[0.5px] border-black/5 shadow-sm transition-colors ${intensityStyles[cell.intensity]}`} title={`${cell.key}`}></div>
+                        ) : (
+                          <div key={`empty-${idx}`} className="w-[11px] h-[11px] opacity-0 pointer-events-none"></div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div className={`${getCardStyle()} p-6 rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors`}>
@@ -381,7 +427,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Habit Insight Rings */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 mb-8">
             {habits.map((habit, idx) => (
               <div key={idx} className={`${getCardStyle()} p-3 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-colors min-h-[100px] justify-center`} onClick={() => setViewingHabitMap(habit)}>
@@ -549,8 +594,8 @@ export default function App() {
                     {habitInsights.weeklyData.map((day, idx) => (
                       <div key={idx} className="flex flex-col items-center flex-1 gap-2 group">
                         <div className={`w-full relative h-12 ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'} rounded-lg overflow-hidden border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                          {/* Slower transition speed (duration-[1000ms] - 20% faster than 1200ms) applied here */}
-                          <div className="absolute bottom-0 w-full bg-emerald-500 transition-all duration-[1000ms] ease-out" style={{ height: `${day.val}%` }} />
+                          
+                          <div className="absolute bottom-0 w-full bg-emerald-500 transition-all duration-[800ms] ease-out" style={{ height: `${day.val}%` }} />
                         </div>
                         <span className={`text-[9px] font-black ${theme === 'dark' ? 'text-slate-600' : 'text-slate-400'} group-hover:text-emerald-500`}>{day.label}</span>
                       </div>
@@ -574,7 +619,7 @@ export default function App() {
           </div>
       )}
 
-      {/* Dynamic Master Slider - Fixed close trigger precision */}
+      
       {activeSlider && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md animate-in fade-in duration-200 touch-none select-none" onPointerDown={() => setActiveSlider(null)}>
           <div 
@@ -641,3 +686,4 @@ export default function App() {
     </div>
   );
 }
+
