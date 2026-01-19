@@ -1,4 +1,4 @@
-/* Credit: Adib | APM | RU | Bangladesh */
+/* Credit: Adib | APM | RU | Bangladesh| email: hasanshahriaradib@gmail.com */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Analytics } from "@vercel/analytics/react";
