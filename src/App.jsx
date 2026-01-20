@@ -251,7 +251,8 @@ export default function App() {
       if (cell && cell.date) {
         const m = cell.date.getMonth();
         if (!addedMonths.has(m)) {
-          monthLabels.push({ label: cell.date.toLocaleString('default', { month: 'short' }), weekIndex: Math.floor(index / 7) });
+          const weekIndex = Math.floor(index / 7);
+          monthLabels.push({ label: cell.date.toLocaleString('default', { month: 'short' }), weekIndex: weekIndex });
           addedMonths.add(m);
         }
       }
@@ -393,7 +394,7 @@ export default function App() {
               
               <div className={`overflow-x-auto custom-scrollbar pb-2 ${isMobile ? 'whitespace-nowrap' : ''}`}>
                 <div className="inline-block min-w-full">
-                  <div className="relative h-3 mb-1 ml-6 md:ml-10">
+                  <div className="relative h-3 mb-1 ml-4 md:ml-5">
                     {heatmapConfig.monthLabels.map((m, idx) => (
                       <span key={idx} className={`absolute text-[7px] md:text-[8px] font-bold ${getTextMuted()} uppercase tracking-tighter`} style={{ left: `${m.weekIndex * (CELL_SIZE + CELL_GAP)}px` }}>
                         {m.label}
@@ -401,33 +402,20 @@ export default function App() {
                     ))}
                   </div>
                   <div className="flex gap-1 md:gap-2">
-                    <div className="flex flex-col justify-between py-[1px] text-[6px] md:text-[7px] font-black opacity-60 uppercase tracking-tighter text-slate-500 w-5 md:w-8 shrink-0">
+                    <div className="flex flex-col justify-between py-[2px] text-[6px] md:text-[7px] font-black opacity-60 uppercase tracking-tighter text-slate-500 w-3 md:w-4 shrink-0 text-right pr-1">
                       <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
                     </div>
                     <div className="grid grid-rows-7 grid-flow-col gap-[2px] md:gap-[3px] min-h-[70px] md:min-h-[95px]">
                       {heatmapConfig.cells.map((cell, idx) => {
-  // We'll fix the light theme colors here too for a better look
-  const intensityStyles = theme === 'dark' 
-    ? ['bg-slate-800', 'bg-emerald-900/40', 'bg-emerald-800', 'bg-emerald-600', 'bg-emerald-400']
-    : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'];
-
-  return cell ? (
-    <div 
-      key={cell.key} 
-      // FIX: Move width and height to the style attribute
-      style={{ width: `${CELL_SIZE}px`, height: `${CELL_SIZE}px` }}
-      className={`rounded-[1px] md:rounded-[2px] border-[0.5px] border-black/5 shadow-sm transition-colors ${intensityStyles[cell.intensity]}`} 
-      title={`${cell.key}`}
-    ></div>
-  ) : (
-    <div 
-      key={`empty-${idx}`} 
-      // FIX: Move width and height to the style attribute here too
-      style={{ width: `${CELL_SIZE}px`, height: `${CELL_SIZE}px` }}
-      className="opacity-0 pointer-events-none"
-    ></div>
-  );
-})}
+                        const intensityStyles = theme === 'dark' 
+                          ? ['bg-slate-800', 'bg-emerald-900/40', 'bg-emerald-800', 'bg-emerald-600', 'bg-emerald-400']
+                          : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'];
+                        return cell ? (
+                          <div key={cell.key} style={{ width: `${CELL_SIZE}px`, height: `${CELL_SIZE}px` }} className={`rounded-[1px] md:rounded-[2px] border-[0.5px] border-black/5 shadow-sm transition-colors ${intensityStyles[cell.intensity]}`} title={`${cell.key}`}></div>
+                        ) : (
+                          <div key={`empty-${idx}`} style={{ width: `${CELL_SIZE}px`, height: `${CELL_SIZE}px` }} className={`opacity-0 pointer-events-none`}></div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -454,34 +442,17 @@ export default function App() {
 
           <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-3 mb-8">
             {habits.map((habit, idx) => (
-              <div key={idx} className={`${getCardStyle()} p-2 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-all min-h-[100px] hover:shadow-lg`} onClick={() => setViewingHabitMap(habit)}>
-                {/* Change the div immediately inside your habits.map function */}
-<div className="flex items-center gap-1 mb-0.5 w-full justify-center px-1 min-h-[40px] flex-grow">
-  {editingHabitIdx === idx ? (
-    <input 
-      autoFocus 
-      className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} 
-      value={tempHabitName} 
-      onChange={(e) => setTempHabitName(e.target.value)} 
-      onBlur={() => handleRename(idx)} 
-      onKeyDown={(e) => e.key === 'Enter' && handleRename(idx)} 
-      onClick={(e) => e.stopPropagation()} 
-    />
-  ) : (
-    <>
-      <p className={`text-[10px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words flex-1 text-center leading-[1.2]`}>
-        {habit}
-      </p>
-      {/* Keeping the EditIcon reachable but not disrupting the centering */}
-      <button 
-        className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all shrink-0 absolute right-2 top-2" 
-        onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}
-      >
-        <EditIcon />
-      </button>
-    </>
-  )}
-</div>
+              <div key={idx} className={`${getCardStyle()} p-2 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-all min-h-[100px] hover:shadow-lg relative`} onClick={() => setViewingHabitMap(habit)}>
+                <div className="flex items-center gap-1 mb-0.5 w-full justify-center px-1 min-h-[40px] flex-grow">
+                    {editingHabitIdx === idx ? (
+                      <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleRename(idx)} onClick={(e) => e.stopPropagation()} />
+                    ) : (
+                      <>
+                        <p className={`text-[10px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words flex-1 text-center leading-[1.2]`}>{habit}</p>
+                        <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all shrink-0 absolute right-2 top-2" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
+                      </>
+                    )}
+                </div>
                 <div className="relative w-16 h-16 flex items-center justify-center mt-auto">
                   <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 60 60">
                     <circle cx="30" cy="30" r="23" fill="none" stroke={theme==='dark'?'#1e293b':'#f1f5f9'} strokeWidth="4.5" />
@@ -610,7 +581,7 @@ export default function App() {
                     <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight break-words pr-2`}>{viewingHabitMap}</h3>
                     <div className={`flex items-center gap-1 mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                       <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
-                      <span className="text-[10px] font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
+                      <span className="text-10px font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
                       <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
                     </div>
                   </div>
@@ -674,7 +645,6 @@ export default function App() {
           </div>
       )}
 
-      
       {activeSlider && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md animate-in fade-in duration-200 touch-none select-none" onPointerDown={() => setActiveSlider(null)}>
           <div 
