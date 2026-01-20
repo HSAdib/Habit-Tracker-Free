@@ -615,7 +615,7 @@ return () => {
                     <circle cx="30" cy="30" r="23" fill="none" stroke={theme==='dark'?'#1e293b':'#f1f5f9'} strokeWidth="4.5" />
                     <motion.circle cx="30" cy="30" r="23" fill="none" stroke="#10b981" strokeWidth="4.5" strokeDasharray={145} initial={{ strokeDashoffset: 145 }} animate={{ strokeDashoffset: 145 - (145 * (analytics.habitPcts[habit] ?? 0) / 100) }} transition={{ duration: 1, ease: "easeInOut" }} strokeLinecap="round" />
                   </svg>
-                  <span className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{analytics.habitPcts[habit] ?? 0}%</span>
+                  <span className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}><AnimatedNumber value={analytics.habitPcts[habit] ?? 0} /></span>
                 </div>
               </motion.div>
             ))}
@@ -735,7 +735,7 @@ return () => {
                       <circle cx="72" cy="72" r="64" fill="none" stroke={theme==='dark'?'#334155':'#e2e8f0'} strokeWidth="10" />
                       <motion.circle initial={{ strokeDashoffset: 402 }} animate={{ strokeDashoffset: 402 - (402 * habitInsights.score / 100) }} transition={{ duration: 1.5, ease: "easeOut" }} cx="72" cy="72" r="64" fill="none" stroke="#10b981" strokeWidth="10" strokeDasharray={402} strokeLinecap="round" />
                     </svg>
-                    <div className="flex flex-col items-center"><span className={`text-4xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{habitInsights.score}%</span><span className={`text-[9px] font-black ${getTextMuted()} uppercase tracking-widest`}>Score</span></div>
+                    <div className="flex flex-col items-center"><span className={`text-4xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}><AnimatedNumber value={habitInsights.score} /></span><span className={`text-[9px] font-black ${getTextMuted()} uppercase tracking-widest`}>Score</span></div>
                   </div>
 
                   {/* Corrected Single Goal Input */}
