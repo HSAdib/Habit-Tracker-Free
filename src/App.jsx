@@ -31,7 +31,7 @@ const ChevronLeftIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
 );
 const ChevronRightIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6 6-6"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
 );
 const XIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -364,48 +364,41 @@ export default function App() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className={`lg:col-span-2 ${getCardStyle()} p-6 rounded-[2.5rem] border overflow-hidden flex flex-col transition-colors`}>
-              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                <div className="flex items-center gap-4">
-                  <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest leading-none`}>Activity Heatmap</p>
-                  <div className={`flex items-center gap-3 border-l ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} pl-4`}>
-                    <div className="flex items-center gap-1.5" title="Mastery Score"><TargetIcon /><span className={`text-xs font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{analytics.monthlyPct}%</span></div>
-                    <button onClick={() => setShowAllNotes(true)} className={`flex items-center gap-1.5 transition-all p-1 rounded-lg ${theme === 'dark' ? 'text-blue-400 hover:bg-blue-900/20' : 'text-blue-600 hover:bg-blue-50/50'} active:scale-95 group`}><NoteIcon /><span className={`text-xs font-black`}>{analytics.noteCount}</span></button>
-                    <div className="flex items-center gap-1.5" title="Full Wins"><TrophyIcon /><span className={`text-xs font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{analytics.totalDone}</span></div>
-                    <span className={`text-[8px] font-black ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'} uppercase tracking-widest border-l ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} pl-3 ml-1`}>Jan 1 - Dec 31</span>
+          <div className="grid grid-cols-3 gap-3 md:gap-6 mb-8 items-stretch">
+            <div className={`col-span-2 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border overflow-hidden flex flex-col transition-colors h-full min-w-0`}>
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2 md:gap-4">
+                <div className="flex items-center gap-2 md:gap-4">
+                  <p className={`text-[8px] md:text-[10px] font-black ${getTextMuted()} uppercase tracking-widest leading-none shrink-0`}>Activity Heatmap</p>
+                  <div className={`flex items-center gap-1.5 md:gap-3 border-l ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} pl-2 md:pl-4 overflow-hidden`}>
+                    <div className="flex items-center gap-1" title="Mastery Score"><TargetIcon /><span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{analytics.monthlyPct}%</span></div>
+                    <button onClick={() => setShowAllNotes(true)} className={`flex items-center gap-1 transition-all p-0.5 rounded-lg ${theme === 'dark' ? 'text-blue-400 hover:bg-blue-900/20' : 'text-blue-600 hover:bg-blue-50/50'} active:scale-95`}><NoteIcon /><span className={`text-[10px] md:text-xs font-black`}>{analytics.noteCount}</span></button>
+                    <div className="flex items-center gap-1" title="Full Wins"><TrophyIcon /><span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{analytics.totalDone}</span></div>
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <div className="flex gap-1 items-center">
-                    {[0,1,2,3,4].map(i => <div key={i} className={`w-2.5 h-2.5 rounded-sm ${theme === 'dark' ? ['bg-slate-800', 'bg-emerald-900/30', 'bg-emerald-700', 'bg-emerald-500', 'bg-emerald-300'][i] : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'][i]}`}></div>)}
-                  </div>
-                  <p className={`text-[7px] font-black ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'} uppercase tracking-widest leading-none`}>Consistency Index</p>
                 </div>
               </div>
               
               <div className="overflow-x-auto custom-scrollbar pb-2">
                 <div className="inline-block min-w-full">
-                  <div className="relative h-4 mb-1 ml-10">
+                  <div className="relative h-3 mb-1 ml-6 md:ml-10">
                     {heatmapConfig.monthLabels.map((m, idx) => (
-                      <span key={idx} className={`absolute text-[8px] font-bold ${getTextMuted()} uppercase tracking-tighter`} style={{ left: `${m.weekIndex * 14}px` }}>
+                      <span key={idx} className={`absolute text-[7px] md:text-[8px] font-bold ${getTextMuted()} uppercase tracking-tighter`} style={{ left: `${m.weekIndex * 12}px` }}>
                         {m.label}
                       </span>
                     ))}
                   </div>
-                  <div className="flex gap-2">
-                    <div className="flex flex-col justify-between py-[1px] text-[7px] font-black opacity-60 uppercase tracking-tighter text-slate-500 w-8 shrink-0">
-                      <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                  <div className="flex gap-1 md:gap-2">
+                    <div className="flex flex-col justify-between py-[1px] text-[6px] md:text-[7px] font-black opacity-60 uppercase tracking-tighter text-slate-500 w-5 md:w-8 shrink-0">
+                      <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
                     </div>
-                    <div className="grid grid-rows-7 grid-flow-col gap-[3px] min-h-[95px]">
+                    <div className="grid grid-rows-7 grid-flow-col gap-[2px] md:gap-[3px] min-h-[70px] md:min-h-[95px]">
                       {heatmapConfig.cells.map((cell, idx) => {
                         const intensityStyles = theme === 'dark' 
                           ? ['bg-slate-800', 'bg-emerald-900/40', 'bg-emerald-800', 'bg-emerald-600', 'bg-emerald-400']
                           : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'];
                         return cell ? (
-                          <div key={cell.key} className={`w-[11px] h-[11px] rounded-[2px] border-[0.5px] border-black/5 shadow-sm transition-colors ${intensityStyles[cell.intensity]}`} title={`${cell.key}`}></div>
+                          <div key={cell.key} className={`w-[9px] h-[9px] md:w-[11px] md:h-[11px] rounded-[1px] md:rounded-[2px] border-[0.5px] border-black/5 shadow-sm transition-colors ${intensityStyles[cell.intensity]}`} title={`${cell.key}`}></div>
                         ) : (
-                          <div key={`empty-${idx}`} className="w-[11px] h-[11px] opacity-0 pointer-events-none"></div>
+                          <div key={`empty-${idx}`} className="w-[9px] h-[9px] md:w-[11px] md:h-[11px] opacity-0 pointer-events-none"></div>
                         );
                       })}
                     </div>
@@ -413,38 +406,44 @@ export default function App() {
                 </div>
               </div>
             </div>
-            <div className={`${getCardStyle()} p-6 rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors`}>
-              <div className="flex items-center justify-between mb-4"><p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Momentum</p><ActivityIcon /></div>
-              <div className="h-28 w-full relative">
+            
+            <div className={`col-span-1 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors h-full min-w-0`}>
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <p className={`text-[8px] md:text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Trend</p>
+                <div className="scale-75 md:scale-100"><ActivityIcon /></div>
+              </div>
+              <div className="flex-grow flex items-center h-16 md:h-28 w-full relative">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <path d={`${solveFluidPath(trendPoints)} L 100,100 L 0,100 Z`} fill="url(#emerald-grad-main)" className="opacity-10" />
                   <path d={solveFluidPath(trendPoints)} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
                   <defs><linearGradient id="emerald-grad-main" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#10b981" /><stop offset="100%" stopColor="transparent" /></linearGradient></defs>
                 </svg>
               </div>
-              <div className={`flex justify-between mt-2 px-1 text-[8px] font-black ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'} uppercase tracking-widest`}><span>START</span><span>END</span></div>
+              <div className={`flex justify-between mt-1 md:mt-2 px-1 text-[6px] md:text-[8px] font-black ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'} uppercase tracking-widest`}>
+                <span>S</span><span>E</span>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 mb-8">
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-3 mb-8">
             {habits.map((habit, idx) => (
-              <div key={idx} className={`${getCardStyle()} p-3 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-all min-h-[140px] hover:shadow-lg`} onClick={() => setViewingHabitMap(habit)}>
-                <div className="flex items-start gap-1 mb-2 w-full justify-center px-1 min-h-[32px] flex-grow">
+              <div key={idx} className={`${getCardStyle()} p-2 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-all min-h-[100px] hover:shadow-lg`} onClick={() => setViewingHabitMap(habit)}>
+                <div className="flex items-start gap-1 mb-0.5 w-full justify-center px-1 min-h-[28px] flex-grow">
                     {editingHabitIdx === idx ? (
-                      <input autoFocus className={`text-[11px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleRename(idx)} onClick={(e) => e.stopPropagation()} />
+                      <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleRename(idx)} onClick={(e) => e.stopPropagation()} />
                     ) : (
                       <>
-                        <p className={`text-[11px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words flex-1 text-center leading-[1.2]`}>{habit}</p>
-                        <button className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-emerald-500 transition-all shrink-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
+                        <p className={`text-[10px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words flex-1 text-center leading-[1.2]`}>{habit}</p>
+                        <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all shrink-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
                       </>
                     )}
                 </div>
-                <div className="relative w-14 h-14 flex items-center justify-center mt-auto mb-1">
-                  <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 56 56">
-                    <circle cx="28" cy="28" r="21" fill="none" stroke={theme==='dark'?'#1e293b':'#f1f5f9'} strokeWidth="4.5" />
-                    <circle cx="28" cy="28" r="21" fill="none" stroke="#10b981" strokeWidth="4.5" strokeDasharray={132} strokeDashoffset={132 - (132 * (analytics.habitPcts[habit] ?? 0) / 100)} strokeLinecap="round" className="transition-all duration-1000" />
+                <div className="relative w-16 h-16 flex items-center justify-center mt-auto">
+                  <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 60 60">
+                    <circle cx="30" cy="30" r="23" fill="none" stroke={theme==='dark'?'#1e293b':'#f1f5f9'} strokeWidth="4.5" />
+                    <circle cx="30" cy="30" r="23" fill="none" stroke="#10b981" strokeWidth="4.5" strokeDasharray={145} strokeDashoffset={145 - (145 * (analytics.habitPcts[habit] ?? 0) / 100)} strokeLinecap="round" className="transition-all duration-1000" />
                   </svg>
-                  <span className={`text-[12px] font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{analytics.habitPcts[habit] ?? 0}%</span>
+                  <span className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{analytics.habitPcts[habit] ?? 0}%</span>
                 </div>
               </div>
             ))}
@@ -452,7 +451,7 @@ export default function App() {
                 const name = `Habit ${habits.length + 1}`; const newHabits = [...habits, name]; 
                 const newConfigs = {...habitConfigs, [name]: { priority: 1, steps: 1 }};
                 setHabits(newHabits); setHabitConfigs(newConfigs); save(trackerData, newHabits, newConfigs); setEditingHabitIdx(newHabits.length - 1); setTempHabitName(name);
-            }} className={`${getCardStyle()} p-3 rounded-2xl border-2 border-dashed flex items-center justify-center ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'} min-h-[140px] transition-all`}><PlusIcon /></button>
+            }} className={`${getCardStyle()} p-2 rounded-2xl border-2 border-dashed flex items-center justify-center ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'} min-h-[100px] transition-all`}><PlusIcon /></button>
           </div>
 
           <div className={`${getCardStyle()} rounded-[2.5rem] overflow-hidden mb-8 relative transition-colors`}>
