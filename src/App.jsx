@@ -455,7 +455,7 @@ export default function App() {
                </div>
             </div>
 
-            {/* Updated Month Ribbon with far-right alignment logic */}
+            {/* Month Ribbon with Far-Right Alignment & Improved Tooltips */}
             <div className={`flex items-center justify-between ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} rounded-xl p-1 border transition-colors z-10 w-full lg:w-auto`}>
               
               {/* Left Side: Date Navigation Group */}
@@ -465,23 +465,26 @@ export default function App() {
                 <motion.button whileTap={{ scale: 0.9 }} onClick={() => currentDate.getMonth() + 1 <= new Date().getMonth() || currentDate.getFullYear() < new Date().getFullYear() ? setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)) : null} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
               </div>
 
-              {/* Right Side: Data Safety Group */}
+              {/* Right Side: Data Safety Group with CSS Tooltips */}
               <div className="flex items-center gap-1 ml-auto">
                 <div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
-                <button 
-                  onClick={handleExport}
-                  title="Export Backup (JSON)"
-                  className={`p-2 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-emerald-400' : 'text-slate-500 hover:bg-white hover:text-emerald-600'}`}
-                >
-                  <ExportIcon />
-                </button>
-                <label 
-                  title="Import Backup (JSON)"
-                  className={`p-2 rounded-lg transition-all cursor-pointer ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-blue-400' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`}
-                >
-                  <ImportIcon />
-                  <input type="file" accept=".json" onChange={handleImport} className="hidden" />
-                </label>
+                
+                {/* Export Button with Tooltip */}
+                <div className="tooltip-trigger">
+                  <button onClick={handleExport} className={`p-2 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-emerald-400' : 'text-slate-500 hover:bg-white hover:text-emerald-600'}`}>
+                    <ExportIcon />
+                  </button>
+                  <span className="tooltip-content">Export JSON</span>
+                </div>
+
+                {/* Import Button with Tooltip */}
+                <div className="tooltip-trigger">
+                  <label className={`p-2 rounded-lg transition-all cursor-pointer ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-blue-400' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`}>
+                    <ImportIcon />
+                    <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+                  </label>
+                  <span className="tooltip-content">Import JSON</span>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -820,6 +823,17 @@ export default function App() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: ${theme === 'dark' ? '#475569' : '#94a3b8'}; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         tr[id^="row-"] { scroll-margin-top: 150px; scroll-margin-bottom: 150px; }
+        .tooltip-trigger { position: relative; display: flex; align-items: center; }
+        .tooltip-content {
+          position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+          padding: 6px 10px; background: #000; color: #fff; font-size: 10px; font-weight: 900;
+          border-radius: 8px; white-space: nowrap; pointer-events: none; opacity: 0;
+          transition: all 0.2s ease; z-index: 100; text-transform: uppercase; letter-spacing: 0.05em;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .tooltip-trigger:hover .tooltip-content, .tooltip-trigger:active .tooltip-content {
+          opacity: 1; bottom: 140%;
+        }
       `}} />
     </div>
   );
