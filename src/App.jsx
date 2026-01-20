@@ -434,7 +434,7 @@ return () => {
       let i = todayIdx;
       while (i >= 0 && (typeof (trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap]) === 'number' ? trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap] : (trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap] ? 100 : 0)) >= 70) { currentStreak++; i--; }
     }
-    return { score, currentStreak, level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : score >= 25 ? "Apprentice" : "Seed" };
+    return { score, currentStreak, level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : score >= 25 ? "Apprentice" : "Newbie" };
   }, [viewingHabitMap, trackerData, daysInMonth]);
 
   const heatmapConfig = useMemo(() => {
@@ -499,7 +499,7 @@ return () => {
     if (level >= 5) return 'bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]';
     return theme === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600';
   };
-  const getContainerBg = () => theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900';
+  const getContainerBg = () => theme === 'dark' ? 'bg-black text-white' : 'bg-white text-slate-900';
   const getCardStyle = () => theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-sm' : 'bg-white border-slate-200 shadow-sm';
   const getTextMuted = () => theme === 'dark' ? 'text-slate-500' : 'text-slate-400';
   const getTableHeadStyle = () => theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200';
@@ -832,6 +832,18 @@ return () => {
                   <div className="w-full space-y-4">
                     <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors`}><div className="text-emerald-600"><ActivityIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Rank</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.level}</span></div></div>
                     <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors`}><div className="text-orange-600"><FlameIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Streak</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.currentStreak} Days</span></div></div>
+
+<div className="mt-6 w-full px-2">
+  <p className={`text-[8px] font-black uppercase ${getTextMuted()} mb-3 tracking-widest text-center`}>Milestone Progress</p>
+  <div className="grid grid-cols-5 gap-1.5">
+    {['Newbie', 'Apprentice', 'Adept', 'Elite', 'Grandmaster'].map((rank) => (
+      <div key={rank} className={`aspect-square rounded-xl border flex flex-col items-center justify-center transition-all duration-700 ${habitInsights.level === rank ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)] scale-110 z-10' : 'border-transparent opacity-20 grayscale'}`}>
+        <TrophyIcon />
+        <span className="text-[5px] font-black uppercase mt-1 text-[5px] leading-tight text-center">{rank}</span>
+      </div>
+    ))}
+  </div>
+</div>
                   </div>
 
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} className="mt-8 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete Habit</motion.button>
