@@ -208,20 +208,16 @@ export default function App() {
     setTrackerData(newTrackerData); save(newTrackerData, habits, habitConfigs);
   };
 
-  // Slider Interaction Fix
+  // Slider Interaction
   const handleHabitPressStart = (e, dateKey, habit, currentVal) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    
     const rect = e.currentTarget.getBoundingClientRect();
     const val = typeof currentVal === 'number' ? currentVal : (currentVal ? 100 : 0);
-    
     if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId);
 
     longPressTimer.current = setTimeout(() => {
       setActiveSlider({ 
-        dateKey, 
-        habit, 
-        value: val, 
+        dateKey, habit, value: val, 
         x: rect.left + rect.width / 2, 
         y: rect.top + rect.height / 2 
       });
@@ -247,6 +243,20 @@ export default function App() {
     while (date.getMonth() === month) { days.push(new Date(date)); date.setDate(date.getDate() + 1); }
     return days;
   }, [currentDate]);
+
+  const modalCalendarGrid = useMemo(() => {
+    if (!viewingHabitMap) return [];
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const cells = [];
+    const prevMonthLastDate = new Date(year, month, 0).getDate();
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      cells.push(new Date(year, month - 1, prevMonthLastDate - i));
+    }
+    daysInMonth.forEach(day => cells.push(day));
+    return cells;
+  }, [viewingHabitMap, currentDate, daysInMonth]);
 
   const xpStats = useMemo(() => {
     let totalXP = 0;
@@ -347,14 +357,6 @@ export default function App() {
     }
     return d;
   };
-
-  const modalCalendarGrid = useMemo(() => {
-    if (!viewingHabitMap) return [];
-    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
-    const cells = Array(firstDay).fill(null); 
-    daysInMonth.forEach(day => cells.push(day));
-    return cells;
-  }, [viewingHabitMap, currentDate, daysInMonth]);
 
   const currentMonthNotes = useMemo(() => {
     return daysInMonth.map(d => ({ date: d, key: getSafeKey(d), note: trackerData[getSafeKey(d)]?.note })).filter(e => e.note && e.note.trim() !== "");
@@ -576,7 +578,7 @@ export default function App() {
 
       {/* --- Modals --- */}
       <AnimatePresence>
-        {/* All Notes Modal */}
+        {/* Note Viewer Modal */}
         {showAllNotes && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4" onClick={() => setShowAllNotes(false)}>
               <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl flex flex-col`} onClick={e => e.stopPropagation()}>
@@ -601,13 +603,23 @@ export default function App() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }}>
               <motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className={`rounded-[2.5rem] w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
                 
+                {/* LEFT SIDEBAR */}
                 <div className={`p-8 md:w-64 flex flex-col items-center border-b md:border-b-0 md:border-r ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
-                  <div className="relative w-36 h-36 flex items-center justify-center mb-8">
+                  <div className="relative w-36 h-36 flex items-center justify-center mb-6">
                     <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 144 144">
                       <circle cx="72" cy="72" r="64" fill="none" stroke={theme==='dark'?'#334155':'#e2e8f0'} strokeWidth="10" />
                       <motion.circle initial={{ strokeDashoffset: 402 }} animate={{ strokeDashoffset: 402 - (402 * habitInsights.score / 100) }} transition={{ duration: 1.5, ease: "easeOut" }} cx="72" cy="72" r="64" fill="none" stroke="#10b981" strokeWidth="10" strokeDasharray={402} strokeLinecap="round" />
                     </svg>
                     <div className="flex flex-col items-center"><span className={`text-4xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{habitInsights.score}%</span><span className={`text-[9px] font-black ${getTextMuted()} uppercase tracking-widest`}>Score</span></div>
+                  </div>
+
+                  {/* Goal Steps moved here under circle */}
+                  <div className={`w-full mb-8 p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'} shadow-sm`}>
+                    <label className={`text-[8px] font-black uppercase ${getTextMuted()} block mb-2 text-center`}>Daily Goal Steps</label>
+                    <input type="number" min="1" max="100" value={habitConfigs[viewingHabitMap]?.steps ?? 1} onChange={(e) => {
+                      const nc = {...habitConfigs, [viewingHabitMap]: {...(habitConfigs[viewingHabitMap]||{priority:1, steps:1}), steps: Math.max(1, parseInt(e.target.value) || 1)}};
+                      setHabitConfigs(nc); save(trackerData, habits, nc);
+                    }} className={`w-full text-center text-lg font-black p-1 rounded bg-transparent focus:outline-none focus:text-emerald-500 transition-colors`} />
                   </div>
                   
                   <div className="w-full space-y-4">
@@ -615,9 +627,10 @@ export default function App() {
                     <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors`}><div className="text-orange-600"><FlameIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Streak</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.currentStreak} Days</span></div></div>
                   </div>
 
-                  <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} className="mt-auto w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete Habit</motion.button>
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} className="mt-8 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete Habit</motion.button>
                 </div>
 
+                {/* MAIN CALENDAR SECTION */}
                 <div className="flex-1 p-8 flex flex-col">
                   <div className="flex items-start justify-between mb-8 gap-4">
                     <div className="flex-1">
@@ -628,44 +641,29 @@ export default function App() {
                       )}
                       <div className={`flex items-center gap-1 mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                         <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
-                        <span className="text-10px font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
                         <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
                       </div>
                     </div>
                     <button onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }} className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`}><XIcon /></button>
                   </div>
 
-                  <div className="mb-4">
-                    <p className={`text-[10px] font-black ${getTextMuted()} uppercase mb-3`}>Habit Configuration</p>
-                    <div className="flex gap-4">
-                       <div className="flex-1">
-                         <label className={`text-[8px] font-black uppercase ${getTextMuted()} block mb-1`}>Priority (1-10)</label>
-                         <input type="range" min="1" max="10" value={habitConfigs[viewingHabitMap]?.priority ?? 1} onChange={(e) => {
-                           const nc = {...habitConfigs, [viewingHabitMap]: {...(habitConfigs[viewingHabitMap]||{priority:1, steps:1}), priority: parseInt(e.target.value)}};
-                           setHabitConfigs(nc); save(trackerData, habits, nc);
-                         }} className="w-full accent-emerald-500" />
-                       </div>
-                       <div className="w-24">
-                         <label className={`text-[8px] font-black uppercase ${getTextMuted()} block mb-1`}>Goal Steps</label>
-                         <input type="number" min="1" max="100" value={habitConfigs[viewingHabitMap]?.steps ?? 1} onChange={(e) => {
-                           const nc = {...habitConfigs, [viewingHabitMap]: {...(habitConfigs[viewingHabitMap]||{priority:1, steps:1}), steps: Math.max(1, parseInt(e.target.value) || 1)}};
-                           setHabitConfigs(nc); save(trackerData, habits, nc);
-                         }} className={`w-full text-xs font-black p-1 rounded bg-transparent border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`} />
-                       </div>
-                    </div>
-                  </div>
-
                   <div className="grid grid-cols-7 gap-3 text-center">
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => <span key={i} className={`text-[10px] font-black ${theme === 'dark' ? 'text-slate-700' : 'text-slate-300'} uppercase`}>{day}</span>)}
                     {modalCalendarGrid.map((day, idx) => {
-                      if (!day) return <div key={idx} className="aspect-square" />;
-                      const key = getSafeKey(day); const v = typeof trackerData[key]?.[viewingHabitMap] === 'number' ? trackerData[key]?.[viewingHabitMap] : (trackerData[key]?.[viewingHabitMap] ? 100 : 0);
+                      const key = getSafeKey(day); 
+                      const isOtherMonth = day.getMonth() !== currentDate.getMonth();
+                      const v = typeof trackerData[key]?.[viewingHabitMap] === 'number' ? trackerData[key]?.[viewingHabitMap] : (trackerData[key]?.[viewingHabitMap] ? 100 : 0);
                       const isTodayCell = new Date().toDateString() === day.toDateString();
                       const isPassedCell = new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
                       const config = habitConfigs[viewingHabitMap];
                       const stepVal = config?.steps > 1 ? Math.round((v / 100) * config.steps) : null;
+                      
                       return (
-                          <motion.div key={idx} whileTap={{ scale: 0.9 }} onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none ${getButtonStyles(v)} ${isTodayCell ? 'ring-2 ring-emerald-400 ring-offset-2' : ''}`}>
+                          <motion.div key={idx} whileTap={{ scale: 0.9 }} 
+                              onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} 
+                              onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} 
+                              className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none ${getButtonStyles(v)} ${isTodayCell ? 'ring-2 ring-emerald-400 ring-offset-2' : ''} ${isOtherMonth ? 'opacity-30' : ''}`}>
                               <span className={`text-[8px] font-black pointer-events-none ${v > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-400')}`}>{day.getDate()}</span>
                               <span className={`text-xs font-black pointer-events-none ${v > 0 ? 'text-white' : (isPassedCell ? 'text-red-500' : 'text-white [text-shadow:_-1px_-1px_0_#000,1px_-1px_0_#000,-1px_1px_0_#000,1px_1px_0_#000]')} ${v > 0 && v < 100 ? 'text-[9px]' : ''}`}>
                                   {stepVal !== null ? stepVal : (v === 100 ? '✔' : (v > 0 ? `${Math.round(v)}%` : '✘'))}
@@ -679,7 +677,7 @@ export default function App() {
             </motion.div>
         )}
 
-        {/* --- FIXED MASTERY SLIDER --- */}
+        {/* MASTERY SLIDER OVERLAY */}
         {activeSlider && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md touch-none select-none" onPointerDown={() => setActiveSlider(null)}>
             <motion.div 
@@ -687,12 +685,7 @@ export default function App() {
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.7, opacity: 0 }} 
               className="fixed flex flex-col items-center" 
-              style={{ 
-                left: activeSlider.x, 
-                top: activeSlider.y, 
-                transform: 'translate(-50%, -50%)',
-                willChange: 'transform'
-              }} 
+              style={{ left: activeSlider.x, top: activeSlider.y, transform: 'translate(-50%, -50%)', willChange: 'transform' }} 
               onPointerDown={(e) => e.stopPropagation()} 
               onPointerMove={(e) => {
                 if (e.buttons === 1 || e.pointerType === 'touch') {
@@ -720,7 +713,7 @@ export default function App() {
           </motion.div>
         )}
 
-        {/* Delete Confirmation */}
+        {/* Confirmation and Editor Modals */}
         {showDeleteConfirm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} border p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center`}>
@@ -735,7 +728,6 @@ export default function App() {
           </motion.div>
         )}
 
-        {/* Note Editor */}
         {editingNoteDate && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setEditingNoteDate(null)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`${theme === 'dark' ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl`} onClick={e => e.stopPropagation()}>
