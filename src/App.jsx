@@ -73,15 +73,15 @@ const getSafeKey = (date) => {
   return `${y}-${m}-${d}`;
 };
 
-const DEFAULT_HABITS = ["sleep 7h", "calisthenics", "shower", "dept study", "coding", "vocab", "audiobook"];
+const DEFAULT_HABITS = ["sleep 7h", "calisthenics", "meditation", "dept study", "coding", "vocab", "audiobook"];
 const DEFAULT_CONFIGS = {
-  "sleep 7h": { priority: 3, steps: 1 },
-  "calisthenics": { priority: 4, steps: 1 },
-  "shower": { priority: 1, steps: 1 },
-  "dept study": { priority: 10, steps: 1 },
-  "coding": { priority: 10, steps: 1 },
-  "vocab": { priority: 2, steps: 15 },
-  "audiobook": { priority: 3, steps: 1 }
+  "sleep 7h": { steps: 1 },
+  "calisthenics": { steps: 1 },
+  "meditation": { steps: 1 },
+  "dept study": { steps: 1 },
+  "coding": { steps: 1 },
+  "vocab": { steps: 15 },
+  "audiobook": { steps: 1 }
 };
 
 // Animation Variants
@@ -205,7 +205,7 @@ return () => {
     if (idx === -1) return;
     newHabits[idx] = newName;
     const newConfigs = { ...habitConfigs };
-    newConfigs[newName] = newConfigs[oldName] || { priority: 1, steps: 1 };
+    newConfigs[newName] = newConfigs[oldName] || { steps: 1 };
     delete newConfigs[oldName];
     const newData = { ...trackerData };
     Object.keys(newData).forEach(k => {
@@ -346,7 +346,6 @@ return () => {
       habits.forEach(habit => {
         const val = trackerData[dateKey]?.[habit] ?? 0;
         // Standardized: (Percentage / 100) * 10 XP
-        // Priority is no longer used for XP calculation
         totalXP += (val / 100) * 10;
       });
     });
@@ -375,10 +374,9 @@ return () => {
       if (dayData.note && dayData.note.trim() !== "") noteCount++;
       habits.forEach(h => {
         const raw = dayData[h] ?? 0; const val = typeof raw === 'number' ? raw : (raw ? 100 : 0);
-        const priority = habitConfigs[h]?.priority ?? 1;
         stats[h] = (stats[h] || 0) + val; 
-        totalEarnedWeight += (val / 100) * priority;
-        totalPossibleWeight += priority;
+        totalEarnedWeight += (val / 100);
+        totalPossibleWeight += 1;
       });
     });
     const monthlyPct = totalPossibleWeight > 0 ? Math.round((totalEarnedWeight / totalPossibleWeight) * 100) : 0;
@@ -622,7 +620,7 @@ return () => {
             </AnimatePresence>
             <motion.button layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => {
                 const name = `Habit ${habits.length + 1}`; const newHabits = [...habits, name]; 
-                const newConfigs = {...habitConfigs, [name]: { priority: 1, steps: 1 }};
+                const newConfigs = {...habitConfigs, [name]: { steps: 1 }};
                 setHabits(newHabits); setHabitConfigs(newConfigs); save(trackerData, newHabits, newConfigs); setEditingHabitIdx(newHabits.length - 1); setTempHabitName(name);
               }} className={`${getCardStyle()} p-2 rounded-2xl border-2 border-dashed flex items-center justify-center ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'} min-h-[100px] transition-all`}>
               <PlusIcon />
@@ -655,9 +653,8 @@ return () => {
                   let totalEarnedWeight = 0; let totalPossibleWeight = 0;
                   habits.forEach(h => { 
                     const val = typeof dayData[h] === 'number' ? dayData[h] : (dayData[h] ? 100 : 0);
-                    const priority = habitConfigs[h]?.priority ?? 1;
-                    totalEarnedWeight += (val / 100) * priority;
-                    totalPossibleWeight += priority;
+                    totalEarnedWeight += (val / 100);
+                    totalPossibleWeight += 1;
                   });
                   const progress = totalPossibleWeight > 0 ? Math.round((totalEarnedWeight / totalPossibleWeight) * 100) : 0;
                   const isToday = new Date().toDateString() === day.toDateString();
