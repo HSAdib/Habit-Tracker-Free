@@ -158,8 +158,12 @@ export default function App() {
     const scrollToToday = () => {
       const todayKey = getSafeKey(new Date());
       const element = document.getElementById(`row-${todayKey}`);
-      if (element && scrollContainerRef.current) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const container = scrollContainerRef.current;
+      if (element && container) {
+        container.scrollTo({
+          top: element.offsetTop - 144,
+          behavior: 'smooth'
+        });
       }
     };
     const timer = setTimeout(scrollToToday, 600);
@@ -327,6 +331,7 @@ return () => {
 
   // Slider Interaction
   const handleHabitPressStart = (e, dateKey, habit, currentVal) => {
+    if (new Date(dateKey).setHours(0,0,0,0) > new Date().setHours(0,0,0,0)) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     const rect = e.currentTarget.getBoundingClientRect();
     const val = typeof currentVal === 'number' ? currentVal : (currentVal ? 100 : 0);
@@ -343,6 +348,7 @@ return () => {
   };
 
   const handleHabitPressEnd = (e, dateKey, habit, currentVal) => {
+    if (new Date(dateKey).setHours(0,0,0,0) > new Date().setHours(0,0,0,0)) return;
     if (longPressTimer.current) {
         clearTimeout(longPressTimer.current); 
         longPressTimer.current = null;
@@ -725,7 +731,7 @@ return () => {
                           const currentStep = config?.steps > 1 ? Math.round((val / 100) * config.steps) : null;
                           return (
                           <td key={i} className={`p-2 border-r border-b transition-colors text-center ${rowBgStyle}`}>
-                              <motion.button whileTap={{ scale: 0.9 }} className={`w-11 h-11 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} touch-none select-none`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)} onContextMenu={(e) => e.preventDefault()}>
+                              <motion.button whileTap={{ scale: 0.9 }} className={`w-11 h-11 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} touch-none select-none ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 cursor-not-allowed grayscale' : ''}`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)} onContextMenu={(e) => e.preventDefault()}>
                                 <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
                                 <span className={`pointer-events-none font-bold ${val > 0 ? 'text-white' : (new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) ? 'text-red-500' : 'text-white [text-shadow:_-1.5px_-1.5px_0_#000,_1.5px_-1.5px_0_#000,_-1.5px_1.5px_0_#000,_1.5px_1.5px_0_#000]')} ${val > 0 && val < 100 ? 'text-[10px]' : ''}`}>
                                   {currentStep !== null ? `${currentStep}` : (val === 100 ? '✔' : (val > 0 ? `${Math.round(val)}%` : '✘'))}
