@@ -170,7 +170,7 @@ export default function App() {
     const handleTableScroll = () => {
   if (scrollContainerRef.current) {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    // যদি ইউজার একদম নিচে চলে আসে (১০ পিক্সেল বাকি থাকতে), তবে ৩টি রো দেখাবে
+    
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
     setTableVisibleRows(isNearBottom ? 3 : 6);
   }
@@ -334,7 +334,7 @@ return () => {
     if (new Date(dateKey).setHours(0,0,0,0) > new Date().setHours(0,0,0,0)) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     
-    // সরাসরি মাউস বা টাচ পয়েন্ট ক্যাপচার (Applied Math logic for perfect centering)
+    
     const startX = e.clientX;
     const startY = e.clientY;
 
@@ -517,7 +517,7 @@ return () => {
   const CELL_GAP = isMobile ? 2 : 3;
 
  return (
-    <div className={`min-h-screen ${getContainerBg()} font-sans pb-20 select-none overflow-x-hidden`}>
+    <div className={`min-h-screen ${getContainerBg()} font-sans pb-6 md:pb-20 select-none overflow-x-hidden`}>
       <Analytics />
       
       <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-7xl mx-auto px-2 md:px-4 pt-8 flex flex-col min-h-screen">
@@ -557,7 +557,7 @@ return () => {
                </div>
             </div>
 
-            {/* Month Ribbon with Far-Right Alignment & Improved Tooltips */}
+            {/* Month Ribbon with Far-Right Alignment */}
             <div className={`flex items-center justify-between ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} rounded-xl p-1 border transition-colors z-10 w-full lg:w-auto`}>
               
               {/* Left Side: Date Navigation Group */}
@@ -607,17 +607,17 @@ return () => {
               
               <div className={`overflow-x-auto custom-scrollbar pb-2 ${isMobile ? 'whitespace-nowrap' : ''}`}>
                 <div className="inline-block min-w-full">
-                  <div className="relative h-3 mb-1 ml-4 md:ml-5">
-                    {heatmapConfig.monthLabels.map((m, idx) => (
-                      <span key={idx} className={`absolute text-[7px] md:text-[8px] font-bold ${getTextMuted()} uppercase tracking-tighter`} style={{ left: `${m.weekIndex * (CELL_SIZE + CELL_GAP)}px` }}>
-                        {m.label}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-1 md:gap-2">
-                    <div className="flex flex-col justify-between py-[2px] text-[6px] md:text-[7px] font-black opacity-60 uppercase tracking-tighter text-slate-500 w-3 md:w-4 shrink-0 text-right pr-1">
-                      <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
-                    </div>
+                  <div className="relative h-3 mb-1" style={{ marginLeft: `${isMobile ? 16 : 24}px` }}>
+  {heatmapConfig.monthLabels.map((m, idx) => (
+    <span key={idx} className={`absolute text-[7px] md:text-[8px] font-black ${getTextMuted()} uppercase tracking-tighter text-left`} style={{ left: `${m.weekIndex * (CELL_SIZE + CELL_GAP)}px` }}>
+      {m.label}
+    </span>
+  ))}
+</div>
+<div className="flex gap-1 md:gap-2">
+  <div className="grid grid-rows-7 gap-[2px] md:gap-[3px] text-[6px] md:text-[7px] font-black opacity-60 uppercase tracking-tighter text-slate-500 w-3 md:w-4 shrink-0 text-right pr-1" style={{ height: `${7 * CELL_SIZE + 6 * CELL_GAP}px`, lineHeight: `${CELL_SIZE}px` }}>
+    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+  </div>
                     <div className="grid grid-rows-7 grid-flow-col gap-[2px] md:gap-[3px] min-h-[70px] md:min-h-[95px]">
                       {heatmapConfig.cells.map((cell, idx) => {
                         const intensityStyles = theme === 'dark' 
@@ -689,7 +689,7 @@ return () => {
 
           {/* Table Log */}
 <motion.div variants={itemVariants} className={`${getCardStyle()} rounded-[2.5rem] overflow-hidden mb-8 relative transition-colors`}>
-    {/* কন্টেইনারের উচ্চতা নির্ধারণ করা হয়েছে যাতে ৬টি রো দেখা যায় */}
+    
     <div 
   ref={scrollContainerRef} 
   className={`overflow-x-auto overflow-y-auto custom-scrollbar scroll-smooth transition-all duration-500 ${isMobile ? 'whitespace-nowrap' : ''}`}
@@ -758,8 +758,8 @@ return () => {
         </div>
         
         {/* Footer Credit Section */}
-        <footer className={`mt-auto py-10 text-center border-t ${theme === 'dark' ? 'border-slate-900' : 'border-slate-100'}`}>
-          <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${getTextMuted()}`}>
+        <footer className={`mt-auto py-6 md:py-10 text-center border-t ${theme === 'dark' ? 'border-slate-900' : 'border-slate-100'}`}>
+          <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] ${getTextMuted()}`}>
             Developed by <a 
               href="https://www.facebook.com/hsnshahriaradib" 
               target="_blank" 
@@ -913,7 +913,7 @@ return () => {
             exit={{ opacity: 0 }} 
             className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md touch-none select-none" 
             onPointerUp={() => {
-              // শুধু আঙুল ছেড়ে দিলে মেইন স্টেট আপডেট হবে, যা ল্যাগ কমাবে
+              
               updateHabitValue(activeSlider.dateKey, activeSlider.habit, activeSlider.value);
               setActiveSlider(null);
             }}
@@ -936,13 +936,13 @@ return () => {
                   const config = habitConfigs[activeSlider.habit];
                   let finalVal = config?.steps > 1 ? (Math.round((percentage / 100) * config.steps) / config.steps) * 100 : percentage;
 
-                  // ডিরেক্ট ডোম ম্যানিপুলেশন (রিয়েক্ট রেন্ডারকে বাইপাস করে স্মুথ ড্র্যাগিং নিশ্চিত করে)
+                  
                   fill.style.height = `${finalVal}%`;
                   const displayVal = config?.steps > 1 ? Math.round((finalVal / 100) * config.steps) : Math.round(finalVal) + '%';
                   label.innerText = displayVal;
                   label.style.color = finalVal >= 47 ? '#0f172a' : '#ffffff';
                   
-                  // ভ্যালু রেফারেন্সে আপডেট রাখা
+                  
                   activeSlider.value = finalVal;
                 }
               }}
