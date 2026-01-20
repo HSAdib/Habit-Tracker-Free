@@ -662,7 +662,7 @@ export default function App() {
             <div id="mastery-slider-track" className="relative w-24 h-64 bg-white/20 rounded-[2.5rem] border-4 border-white/30 overflow-hidden shadow-2xl backdrop-blur-3xl ring-8 ring-white/5 cursor-ns-resize">
                 <div className="absolute bottom-0 w-full bg-white transition-all duration-75 shadow-[0_0_20px_rgba(255,255,255,0.4)]" style={{ height: `${activeSlider.value}%` }} />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className={`text-4xl font-black transition-colors ${activeSlider.value > 50 ? 'text-slate-800' : 'text-white'}`}>
+                  <span className={`text-4xl font-black transition-colors ${activeSlider.value >= 47 ? 'text-slate-800' : 'text-white'}`}>
                     {habitConfigs[activeSlider.habit]?.steps > 1 
                       ? Math.round((activeSlider.value / 100) * habitConfigs[activeSlider.habit].steps)
                       : Math.round(activeSlider.value) + '%'
