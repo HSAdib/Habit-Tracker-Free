@@ -428,20 +428,23 @@ export default function App() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 mb-8">
             {habits.map((habit, idx) => (
-              <div key={idx} className={`${getCardStyle()} p-3 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-colors min-h-[100px] justify-center`} onClick={() => setViewingHabitMap(habit)}>
-                <div className="flex items-center gap-1 mb-1 w-full justify-center px-2 min-h-[24px]">
+              <div key={idx} className={`${getCardStyle()} p-3 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-all min-h-[140px] hover:shadow-lg`} onClick={() => setViewingHabitMap(habit)}>
+                <div className="flex items-start gap-1 mb-2 w-full justify-center px-1 min-h-[32px] flex-grow">
                     {editingHabitIdx === idx ? (
-                      <input autoFocus className={`text-[8px] font-black w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleRename(idx)} onClick={(e) => e.stopPropagation()} />
+                      <input autoFocus className={`text-[11px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleRename(idx)} onClick={(e) => e.stopPropagation()} />
                     ) : (
                       <>
-                        <p className={`text-[8px] font-black ${getTextMuted()} uppercase truncate flex-1 text-center`}>{habit}</p>
-                        <button className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-emerald-500 transition-all" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
+                        <p className={`text-[11px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words flex-1 text-center leading-[1.2]`}>{habit}</p>
+                        <button className="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-emerald-500 transition-all shrink-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
                       </>
                     )}
                 </div>
-                <div className="relative w-12 h-12 flex items-center justify-center mt-1">
-                  <svg className="absolute w-full h-full -rotate-90"><circle cx="24" cy="24" r="18" fill="none" stroke={theme==='dark'?'#1e293b':'#f1f5f9'} strokeWidth="4" /><circle cx="24" cy="24" r="18" fill="none" stroke="#10b981" strokeWidth="4" strokeDasharray={113} strokeDashoffset={113 - (113 * (analytics.habitPcts[habit] ?? 0) / 100)} strokeLinecap="round" className="transition-all duration-1000" /></svg>
-                  <span className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{analytics.habitPcts[habit] ?? 0}%</span>
+                <div className="relative w-14 h-14 flex items-center justify-center mt-auto mb-1">
+                  <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="21" fill="none" stroke={theme==='dark'?'#1e293b':'#f1f5f9'} strokeWidth="4.5" />
+                    <circle cx="28" cy="28" r="21" fill="none" stroke="#10b981" strokeWidth="4.5" strokeDasharray={132} strokeDashoffset={132 - (132 * (analytics.habitPcts[habit] ?? 0) / 100)} strokeLinecap="round" className="transition-all duration-1000" />
+                  </svg>
+                  <span className={`text-[12px] font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{analytics.habitPcts[habit] ?? 0}%</span>
                 </div>
               </div>
             ))}
@@ -449,7 +452,7 @@ export default function App() {
                 const name = `Habit ${habits.length + 1}`; const newHabits = [...habits, name]; 
                 const newConfigs = {...habitConfigs, [name]: { priority: 1, steps: 1 }};
                 setHabits(newHabits); setHabitConfigs(newConfigs); save(trackerData, newHabits, newConfigs); setEditingHabitIdx(newHabits.length - 1); setTempHabitName(name);
-            }} className={`${getCardStyle()} p-3 rounded-2xl border-2 border-dashed flex items-center justify-center ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'} min-h-[100px] transition-all`}><PlusIcon /></button>
+            }} className={`${getCardStyle()} p-3 rounded-2xl border-2 border-dashed flex items-center justify-center ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'} min-h-[140px] transition-all`}><PlusIcon /></button>
           </div>
 
           <div className={`${getCardStyle()} rounded-[2.5rem] overflow-hidden mb-8 relative transition-colors`}>
@@ -547,7 +550,10 @@ export default function App() {
             <div className={`rounded-[2.5rem] w-full max-w-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col md:flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
               <div className={`p-8 md:w-64 flex flex-col items-center border-b md:border-b-0 md:border-r ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
                 <div className="relative w-36 h-36 flex items-center justify-center mb-8">
-                  <svg className="absolute w-full h-full -rotate-90"><circle cx="72" cy="72" r="64" fill="none" stroke={theme==='dark'?'#334155':'#e2e8f0'} strokeWidth="10" /><circle cx="72" cy="72" r="64" fill="none" stroke="#10b981" strokeWidth="10" strokeDasharray={402} strokeDashoffset={402 - (402 * habitInsights.score / 100)} strokeLinecap="round" className="transition-all duration-1000" /></svg>
+                  <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 144 144">
+                    <circle cx="72" cy="72" r="64" fill="none" stroke={theme==='dark'?'#334155':'#e2e8f0'} strokeWidth="10" />
+                    <circle cx="72" cy="72" r="64" fill="none" stroke="#10b981" strokeWidth="10" strokeDasharray={402} strokeDashoffset={402 - (402 * habitInsights.score / 100)} strokeLinecap="round" className="transition-all duration-1000" />
+                  </svg>
                   <div className="flex flex-col items-center"><span className={`text-4xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{habitInsights.score}%</span><span className={`text-[9px] font-black ${getTextMuted()} uppercase tracking-widest`}>Score</span></div>
                 </div>
                 <div className="w-full space-y-4">
@@ -556,16 +562,16 @@ export default function App() {
                 </div>
               </div>
               <div className="flex-1 p-8 flex flex-col">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight`}>{viewingHabitMap}</h3>
-                    <div className={`flex items-center gap-1 mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                <div className="flex items-start justify-between mb-8 gap-4">
+                  <div className="flex-1">
+                    <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight break-words pr-2`}>{viewingHabitMap}</h3>
+                    <div className={`flex items-center gap-1 mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                       <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
                       <span className="text-[10px] font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
                       <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
                     </div>
                   </div>
-                  <button onClick={() => setViewingHabitMap(null)} className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500`}><XIcon /></button>
+                  <button onClick={() => setViewingHabitMap(null)} className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`}><XIcon /></button>
                 </div>
                 {/* Configuration Section */}
                 <div className="mb-4">
@@ -688,6 +694,7 @@ export default function App() {
         .custom-scrollbar::-webkit-scrollbar-track { background: ${theme === 'dark' ? '#0f172a' : '#f1f5f9'}; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: ${theme === 'dark' ? '#334155' : '#cbd5e1'}; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: ${theme === 'dark' ? '#475569' : '#94a3b8'}; }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
       `}} />
     </div>
   );
