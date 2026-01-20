@@ -406,15 +406,28 @@ export default function App() {
                     </div>
                     <div className="grid grid-rows-7 grid-flow-col gap-[2px] md:gap-[3px] min-h-[70px] md:min-h-[95px]">
                       {heatmapConfig.cells.map((cell, idx) => {
-                        const intensityStyles = theme === 'dark' 
-                          ? ['bg-slate-800', 'bg-emerald-900/40', 'bg-emerald-800', 'bg-emerald-600', 'bg-emerald-400']
-                          : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'];
-                        return cell ? (
-                          <div key={cell.key} className={`w-[${CELL_SIZE}px] h-[${CELL_SIZE}px] rounded-[1px] md:rounded-[2px] border-[0.5px] border-black/5 shadow-sm transition-colors ${intensityStyles[cell.intensity]}`} title={`${cell.key}`}></div>
-                        ) : (
-                          <div key={`empty-${idx}`} className={`w-[${CELL_SIZE}px] h-[${CELL_SIZE}px] opacity-0 pointer-events-none`}></div>
-                        );
-                      })}
+  // We'll fix the light theme colors here too for a better look
+  const intensityStyles = theme === 'dark' 
+    ? ['bg-slate-800', 'bg-emerald-900/40', 'bg-emerald-800', 'bg-emerald-600', 'bg-emerald-400']
+    : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'];
+
+  return cell ? (
+    <div 
+      key={cell.key} 
+      // FIX: Move width and height to the style attribute
+      style={{ width: `${CELL_SIZE}px`, height: `${CELL_SIZE}px` }}
+      className={`rounded-[1px] md:rounded-[2px] border-[0.5px] border-black/5 shadow-sm transition-colors ${intensityStyles[cell.intensity]}`} 
+      title={`${cell.key}`}
+    ></div>
+  ) : (
+    <div 
+      key={`empty-${idx}`} 
+      // FIX: Move width and height to the style attribute here too
+      style={{ width: `${CELL_SIZE}px`, height: `${CELL_SIZE}px` }}
+      className="opacity-0 pointer-events-none"
+    ></div>
+  );
+})}
                     </div>
                   </div>
                 </div>
