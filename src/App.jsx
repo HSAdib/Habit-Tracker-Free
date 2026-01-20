@@ -311,18 +311,28 @@ export default function App() {
     Object.keys(trackerData).forEach(dateKey => {
       habits.forEach(habit => {
         const val = trackerData[dateKey]?.[habit] ?? 0;
-        const priority = habitConfigs[habit]?.priority ?? 1;
-        totalXP += (val / 100) * priority * 10;
+        // Standardized: (Percentage / 100) * 10 XP
+        // Priority is no longer used for XP calculation
+        totalXP += (val / 100) * 10;
       });
     });
+    
+    // Growth logic: Level 2 at 100 XP, Level 3 at 400 XP, etc.
     const level = Math.floor(Math.sqrt(totalXP / 100)) + 1;
     const currentLevelXP = Math.pow(level - 1, 2) * 100;
     const nextLevelXP = Math.pow(level, 2) * 100;
     const progressXP = totalXP - currentLevelXP;
     const requiredXP = nextLevelXP - currentLevelXP;
     const progressPct = requiredXP > 0 ? Math.min(100, Math.round((progressXP / requiredXP) * 100)) : 0;
-    return { level, totalXP: Math.round(totalXP), progressPct, requiredXP: Math.round(requiredXP), progressXP: Math.round(progressXP) };
-  }, [trackerData, habits, habitConfigs]);
+    
+    return { 
+      level, 
+      totalXP: Math.round(totalXP), 
+      progressPct, 
+      requiredXP: Math.round(requiredXP), 
+      progressXP: Math.round(progressXP) 
+    };
+  }, [trackerData, habits, habitConfigs]);;
 
   const analytics = useMemo(() => {
     let totalEarnedWeight = 0; let totalPossibleWeight = 0; let noteCount = 0; const stats = {};
