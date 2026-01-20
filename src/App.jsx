@@ -96,6 +96,7 @@ export default function App() {
   const [theme, setTheme] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_habit_theme') || 'light' : 'light'));
   const [activeSlider, setActiveSlider] = useState(null); 
   const [isEditingTabName, setIsEditingTabName] = useState(false);
+  const [tableVisibleRows, setTableVisibleRows] = useState(6);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const longPressTimer = useRef(null);
@@ -129,6 +130,20 @@ export default function App() {
       }
     };
     const timer = setTimeout(scrollToToday, 600);
+    const handleTableScroll = () => {
+  if (scrollContainerRef.current) {
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    // যদি ইউজার একদম নিচে চলে আসে (১০ পিক্সেল বাকি থাকতে), তবে ৩টি রো দেখাবে
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+    setTableVisibleRows(isNearBottom ? 3 : 6);
+  }
+};
+const container = scrollContainerRef.current;
+if (container) container.addEventListener('scroll', handleTableScroll);
+return () => {
+  clearTimeout(timer);
+  if (container) container.removeEventListener('scroll', handleTableScroll);
+};
     return () => clearTimeout(timer);
   }, [currentDate, habits]);
 
@@ -596,68 +611,72 @@ export default function App() {
           </motion.div>
 
           {/* Table Log */}
-          <motion.div variants={itemVariants} className={`${getCardStyle()} rounded-[2.5rem] overflow-hidden mb-8 relative transition-colors`}>
-              <div ref={scrollContainerRef} className={`overflow-x-auto max-h-[70vh] overflow-y-auto custom-scrollbar scroll-smooth ${isMobile ? 'whitespace-nowrap' : ''}`}>
-                  <table className="w-full border-separate border-spacing-0 table-fixed min-w-full">
-                      <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
-                          <tr>
-                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[140px] z-40 text-center`}>Date Log</th>
-                            {habits.map((h, i) => (
-                                <th key={i} className={`p-4 border-r ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-600'} text-[9px] uppercase text-center font-bold`}>
-                                    <div className="truncate px-1" title={h}>{h}</div>
-                                </th>
-                            ))}
-                            <th className={`p-4 font-black text-emerald-600 text-[9px] sticky top-0 right-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-l w-[100px] z-40 text-center`}>Efficiency</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          {daysInMonth.map((day) => {
-                            const key = getSafeKey(day); const dayData = trackerData[key] || {};
-                            let totalEarnedWeight = 0; let totalPossibleWeight = 0;
-                            habits.forEach(h => { 
-                              const val = typeof dayData[h] === 'number' ? dayData[h] : (dayData[h] ? 100 : 0);
-                              const priority = habitConfigs[h]?.priority ?? 1;
-                              totalEarnedWeight += (val / 100) * priority;
-                              totalPossibleWeight += priority;
-                            });
-                            const progress = totalPossibleWeight > 0 ? Math.round((totalEarnedWeight / totalPossibleWeight) * 100) : 0;
-                            const isToday = new Date().toDateString() === day.toDateString();
-                            const isPassed = new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
-                            const rowBgStyle = isToday ? (theme === 'dark' ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100') : (theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100');
+<motion.div variants={itemVariants} className={`${getCardStyle()} rounded-[2.5rem] overflow-hidden mb-8 relative transition-colors`}>
+    {/* কন্টেইনারের উচ্চতা নির্ধারণ করা হয়েছে যাতে ৬টি রো দেখা যায় */}
+    <div 
+  ref={scrollContainerRef} 
+  className={`overflow-x-auto overflow-y-auto custom-scrollbar scroll-smooth transition-all duration-500 ${isMobile ? 'whitespace-nowrap' : ''}`}
+  style={{ maxHeight: `${72 * tableVisibleRows + 52}px` }}
+>
+        <table className="w-full border-separate border-spacing-0 table-fixed min-w-full">
+            <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
+                <tr className="h-[52px]">
+                  <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[140px] z-40 text-center`}>Date Log</th>
+                  {habits.map((h, i) => (
+                      <th key={i} className={`p-4 border-r ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-600'} text-[9px] uppercase text-center font-bold`}>
+                          <div className="truncate px-1" title={h}>{h}</div>
+                      </th>
+                  ))}
+                  <th className={`p-4 font-black text-emerald-600 text-[9px] sticky top-0 right-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-l w-[100px] z-40 text-center`}>Efficiency</th>
+                </tr>
+            </thead>
+            <tbody>
+                {daysInMonth.map((day) => {
+                  const key = getSafeKey(day); const dayData = trackerData[key] || {};
+                  let totalEarnedWeight = 0; let totalPossibleWeight = 0;
+                  habits.forEach(h => { 
+                    const val = typeof dayData[h] === 'number' ? dayData[h] : (dayData[h] ? 100 : 0);
+                    const priority = habitConfigs[h]?.priority ?? 1;
+                    totalEarnedWeight += (val / 100) * priority;
+                    totalPossibleWeight += priority;
+                  });
+                  const progress = totalPossibleWeight > 0 ? Math.round((totalEarnedWeight / totalPossibleWeight) * 100) : 0;
+                  const isToday = new Date().toDateString() === day.toDateString();
+                  const rowBgStyle = isToday ? (theme === 'dark' ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100') : (theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100');
 
-                            return (
-                                <tr key={key} id={`row-${key}`}>
-                                <td className={`p-4 sticky left-0 z-10 border-r border-b transition-colors ${rowBgStyle}`}>
-                                    <div className="flex items-center justify-center gap-3">
-                                      <motion.button whileTap={{ scale: 0.9 }} onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} title="Add reflection note"><NoteIcon /></motion.button>
-                                      <div className="flex flex-col text-center"><span className={`text-[8px] uppercase opacity-80 leading-none ${theme === 'dark' ? 'text-slate-500' : ''}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span><span className={`text-sm font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span></div>
-                                    </div>
-                                </td>
-                                {habits.map((h, i) => {
-                                    const rawVal = dayData[h] ?? 0; const val = typeof rawVal === 'number' ? rawVal : (rawVal ? 100 : 0);
-                                    const config = habitConfigs[h];
-                                    const currentStep = config?.steps > 1 ? Math.round((val / 100) * config.steps) : null;
-                                    return (
-                                    <td key={i} className={`p-4 border-r border-b transition-colors text-center ${rowBgStyle}`}>
-                                        <motion.button whileTap={{ scale: 0.9 }} className={`w-12 h-12 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} touch-none select-none`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)} onContextMenu={(e) => e.preventDefault()}>
-                                          <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
-                                          <span className={`pointer-events-none font-bold ${val > 0 ? 'text-white' : (isPassed ? 'text-red-500' : 'text-white [text-shadow:_-1.5px_-1.5px_0_#000,_1.5px_-1.5px_0_#000,_-1.5px_1.5px_0_#000,_1.5px_1.5px_0_#000]')} ${val > 0 && val < 100 ? 'text-[10px]' : ''}`}>
-                                            {currentStep !== null ? `${currentStep}` : (val === 100 ? '✔' : (val > 0 ? `${Math.round(val)}%` : '✘'))}
-                                          </span>
-                                        </motion.button>
-                                    </td>
-                                    );
-                                })}
-                                <td className={`p-4 sticky right-0 z-10 border-l border-b transition-colors text-center font-black text-sm ${rowBgStyle}`}>
-                                    <span className={progress === 100 ? 'text-emerald-600 font-bold' : progress > 0 ? 'text-blue-600' : theme === 'dark' ? 'text-slate-700' : 'text-slate-300'}>{progress}%</span>
-                                </td>
-                                </tr>
-                            );
-                          })}
-                      </tbody>
-                  </table>
-              </div>
-          </motion.div>
+                  return (
+                      <tr key={key} id={`row-${key}`} className="h-[72px]">
+                      <td className={`p-2 sticky left-0 z-10 border-r border-b transition-colors ${rowBgStyle}`}>
+                          <div className="flex items-center justify-center gap-3">
+                            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} title="Add reflection note"><NoteIcon /></motion.button>
+                            <div className="flex flex-col text-center"><span className={`text-[8px] uppercase opacity-80 leading-none ${theme === 'dark' ? 'text-slate-500' : ''}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span><span className={`text-sm font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span></div>
+                          </div>
+                      </td>
+                      {habits.map((h, i) => {
+                          const rawVal = dayData[h] ?? 0; const val = typeof rawVal === 'number' ? rawVal : (rawVal ? 100 : 0);
+                          const config = habitConfigs[h];
+                          const currentStep = config?.steps > 1 ? Math.round((val / 100) * config.steps) : null;
+                          return (
+                          <td key={i} className={`p-2 border-r border-b transition-colors text-center ${rowBgStyle}`}>
+                              <motion.button whileTap={{ scale: 0.9 }} className={`w-11 h-11 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} touch-none select-none`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)} onContextMenu={(e) => e.preventDefault()}>
+                                <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
+                                <span className={`pointer-events-none font-bold ${val > 0 ? 'text-white' : (new Date(day).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) ? 'text-red-500' : 'text-white [text-shadow:_-1.5px_-1.5px_0_#000,_1.5px_-1.5px_0_#000,_-1.5px_1.5px_0_#000,_1.5px_1.5px_0_#000]')} ${val > 0 && val < 100 ? 'text-[10px]' : ''}`}>
+                                  {currentStep !== null ? `${currentStep}` : (val === 100 ? '✔' : (val > 0 ? `${Math.round(val)}%` : '✘'))}
+                                </span>
+                              </motion.button>
+                          </td>
+                          );
+                      })}
+                      <td className={`p-2 sticky right-0 z-10 border-l border-b transition-colors text-center font-black text-sm ${rowBgStyle}`}>
+                          <span className={progress === 100 ? 'text-emerald-600 font-bold' : progress > 0 ? 'text-blue-600' : theme === 'dark' ? 'text-slate-700' : 'text-slate-300'}>{progress}%</span>
+                      </td>
+                      </tr>
+                  );
+                })}
+            </tbody>
+        </table>
+    </div>
+</motion.div>
         </div>
       </motion.div>
 
