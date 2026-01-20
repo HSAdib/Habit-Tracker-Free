@@ -333,15 +333,18 @@ return () => {
   const handleHabitPressStart = (e, dateKey, habit, currentVal) => {
     if (new Date(dateKey).setHours(0,0,0,0) > new Date().setHours(0,0,0,0)) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    const rect = e.currentTarget.getBoundingClientRect();
+    
+    // সরাসরি মাউস বা টাচ পয়েন্ট ক্যাপচার (Applied Math logic for perfect centering)
+    const startX = e.clientX;
+    const startY = e.clientY;
+
     const val = typeof currentVal === 'number' ? currentVal : (currentVal ? 100 : 0);
     if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId);
 
     longPressTimer.current = setTimeout(() => {
       setActiveSlider({ 
         dateKey, habit, value: val, 
-        x: rect.left + rect.width / 2, 
-        y: rect.top + rect.height / 2 
+        x: startX, y: startY 
       });
       longPressTimer.current = null;
     }, 450); 
@@ -902,41 +905,70 @@ return () => {
             </motion.div>
         )}
 
-        {/* MASTERY SLIDER OVERLAY */}
+        {/* MASTERY SLIDER OVERLAY - Optimized for Zero Lag */}
         {activeSlider && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md touch-none select-none" onPointerDown={() => setActiveSlider(null)}>
-            <motion.div 
-              initial={{ scale: 0.7, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.7, opacity: 0 }} 
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md touch-none select-none" 
+            onPointerUp={() => {
+              // শুধু আঙুল ছেড়ে দিলে মেইন স্টেট আপডেট হবে, যা ল্যাগ কমাবে
+              updateHabitValue(activeSlider.dateKey, activeSlider.habit, activeSlider.value);
+              setActiveSlider(null);
+            }}
+          >
+            <div 
               className="fixed flex flex-col items-center" 
-              style={{ left: activeSlider.x, top: activeSlider.y, transform: 'translate(-50%, -50%)', willChange: 'transform' }} 
-              onPointerDown={(e) => e.stopPropagation()} 
+              style={{ 
+                left: activeSlider.x, top: activeSlider.y, 
+                transform: 'translate(-50%, -50%)', position: 'fixed', willChange: 'transform' 
+              }} 
               onPointerMove={(e) => {
                 if (e.buttons === 1 || e.pointerType === 'touch') {
                   const track = document.getElementById('mastery-slider-track'); 
-                  if (!track) return;
+                  const fill = document.getElementById('mastery-slider-fill');
+                  const label = document.getElementById('mastery-slider-label');
+                  if (!track || !fill || !label) return;
+
                   const rect = track.getBoundingClientRect(); 
                   const percentage = Math.max(0, Math.min(100, Math.round(((rect.bottom - e.clientY) / rect.height) * 100)));
                   const config = habitConfigs[activeSlider.habit];
                   let finalVal = config?.steps > 1 ? (Math.round((percentage / 100) * config.steps) / config.steps) * 100 : percentage;
-                  updateHabitValue(activeSlider.dateKey, activeSlider.habit, finalVal); 
-                  setActiveSlider(prev => ({ ...prev, value: finalVal }));
+
+                  // ডিরেক্ট ডোম ম্যানিপুলেশন (রিয়েক্ট রেন্ডারকে বাইপাস করে স্মুথ ড্র্যাগিং নিশ্চিত করে)
+                  fill.style.height = `${finalVal}%`;
+                  const displayVal = config?.steps > 1 ? Math.round((finalVal / 100) * config.steps) : Math.round(finalVal) + '%';
+                  label.innerText = displayVal;
+                  label.style.color = finalVal >= 47 ? '#0f172a' : '#ffffff';
+                  
+                  // ভ্যালু রেফারেন্সে আপডেট রাখা
+                  activeSlider.value = finalVal;
                 }
               }}
             >
               <p className="absolute -top-12 text-white font-black uppercase text-xs tracking-widest whitespace-nowrap drop-shadow-xl z-10">{activeSlider.habit}</p>
               <div id="mastery-slider-track" className="relative w-24 h-64 bg-white/10 rounded-[2.5rem] border-4 border-white/30 overflow-hidden shadow-2xl backdrop-blur-3xl ring-8 ring-white/5 cursor-ns-resize">
-                  <div className="absolute bottom-0 w-full bg-white transition-all duration-75 shadow-[0_0_25px_rgba(255,255,255,0.5)]" style={{ height: `${activeSlider.value}%` }} />
+                  <div 
+                    id="mastery-slider-fill"
+                    className="absolute bottom-0 w-full bg-white transition-all duration-75 shadow-[0_0_25px_rgba(255,255,255,0.5)]" 
+                    style={{ height: `${activeSlider.value}%` }} 
+                  />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className={`text-4xl font-black transition-colors ${activeSlider.value >= 47 ? 'text-slate-900' : 'text-white'}`}>
-                      {habitConfigs[activeSlider.habit]?.steps > 1 ? Math.round((activeSlider.value / 100) * habitConfigs[activeSlider.habit].steps) : Math.round(activeSlider.value) + '%'}
+                    <span 
+                      id="mastery-slider-label"
+                      className={`text-4xl font-black transition-colors ${activeSlider.value >= 47 ? 'text-slate-900' : 'text-white'}`}
+                    >
+                      {habitConfigs[activeSlider.habit]?.steps > 1 
+                        ? Math.round((activeSlider.value / 100) * habitConfigs[activeSlider.habit].steps) 
+                        : Math.round(activeSlider.value) + '%'}
                     </span>
                   </div>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         )}
+          
 
         {/* Confirmation and Editor Modals */}
         {showDeleteConfirm && (
