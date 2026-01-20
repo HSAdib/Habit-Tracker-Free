@@ -45,6 +45,13 @@ const TargetIcon = () => (
 const FlameIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
 );
+const ExportIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+);
+
+const ImportIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+);
 
 const getSafeKey = (date) => {
   if (!date) return "";
@@ -210,6 +217,43 @@ export default function App() {
   const updateHabitValue = (dateKey, habit, val) => {
     const newTrackerData = { ...trackerData, [dateKey]: { ...(trackerData[dateKey] || {}), [habit]: val } };
     setTrackerData(newTrackerData); save(newTrackerData, habits, habitConfigs);
+  };
+  const handleExport = () => {
+    const data = {
+      trackerData,
+      habits,
+      habitConfigs,
+      version: 'v9',
+      exportDate: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `habit-mastery-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target.result);
+        if (imported.trackerData && imported.habits) {
+          setTrackerData(imported.trackerData);
+          setHabits(imported.habits);
+          setHabitConfigs(imported.habitConfigs || {});
+          save(imported.trackerData, imported.habits, imported.habitConfigs || {});
+          alert("Data imported successfully!");
+        }
+      } catch (err) {
+        alert("Invalid backup file.");
+      }
+    };
+    reader.readAsText(file);
   };
 
   // Slider Interaction
@@ -411,10 +455,34 @@ export default function App() {
                </div>
             </div>
 
-            <div className={`flex items-center ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} rounded-xl p-1 border transition-colors z-10`}>
-              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronLeftIcon /></motion.button>
-              <span className={`px-4 font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'} min-w-[140px] text-center text-sm`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-              <motion.button whileTap={{ scale: 0.9 }} onClick={() => currentDate.getMonth() + 1 <= new Date().getMonth() || currentDate.getFullYear() < new Date().getFullYear() ? setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)) : null} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
+            {/* Updated Month Ribbon with far-right alignment logic */}
+            <div className={`flex items-center justify-between ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} rounded-xl p-1 border transition-colors z-10 w-full lg:w-auto`}>
+              
+              {/* Left Side: Date Navigation Group */}
+              <div className="flex items-center">
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronLeftIcon /></motion.button>
+                <span className={`px-2 md:px-4 font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'} min-w-[110px] md:min-w-[140px] text-center text-xs md:text-sm`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => currentDate.getMonth() + 1 <= new Date().getMonth() || currentDate.getFullYear() < new Date().getFullYear() ? setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)) : null} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
+              </div>
+
+              {/* Right Side: Data Safety Group */}
+              <div className="flex items-center gap-1 ml-auto">
+                <div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                <button 
+                  onClick={handleExport}
+                  title="Export Backup (JSON)"
+                  className={`p-2 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-emerald-400' : 'text-slate-500 hover:bg-white hover:text-emerald-600'}`}
+                >
+                  <ExportIcon />
+                </button>
+                <label 
+                  title="Import Backup (JSON)"
+                  className={`p-2 rounded-lg transition-all cursor-pointer ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-blue-400' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`}
+                >
+                  <ImportIcon />
+                  <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+                </label>
+              </div>
             </div>
           </motion.div>
 
