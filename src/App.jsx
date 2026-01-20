@@ -85,6 +85,16 @@ export default function App() {
   const [activeSlider, setActiveSlider] = useState(null); 
   const longPressTimer = useRef(null);
   const scrollContainerRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || window.screen.orientation?.type?.includes('portrait'));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -326,6 +336,10 @@ export default function App() {
     return daysInMonth.map(d => ({ date: d, key: getSafeKey(d), note: trackerData[getSafeKey(d)]?.note })).filter(e => e.note && e.note.trim() !== "");
   }, [daysInMonth, trackerData]);
 
+  // GitHub-style Heatmap Constants
+  const CELL_SIZE = isMobile ? 9 : 11;
+  const CELL_GAP = isMobile ? 2 : 3;
+
   return (
     <div className={`min-h-screen ${getContainerBg()} font-sans pb-20 select-none overflow-x-hidden transition-colors duration-300`}>
       <AnalyticsComponent />
@@ -377,11 +391,11 @@ export default function App() {
                 </div>
               </div>
               
-              <div className="overflow-x-auto custom-scrollbar pb-2">
+              <div className={`overflow-x-auto custom-scrollbar pb-2 ${isMobile ? 'whitespace-nowrap' : ''}`}>
                 <div className="inline-block min-w-full">
                   <div className="relative h-3 mb-1 ml-6 md:ml-10">
                     {heatmapConfig.monthLabels.map((m, idx) => (
-                      <span key={idx} className={`absolute text-[7px] md:text-[8px] font-bold ${getTextMuted()} uppercase tracking-tighter`} style={{ left: `${m.weekIndex * 12}px` }}>
+                      <span key={idx} className={`absolute text-[7px] md:text-[8px] font-bold ${getTextMuted()} uppercase tracking-tighter`} style={{ left: `${m.weekIndex * (CELL_SIZE + CELL_GAP)}px` }}>
                         {m.label}
                       </span>
                     ))}
@@ -396,9 +410,9 @@ export default function App() {
                           ? ['bg-slate-800', 'bg-emerald-900/40', 'bg-emerald-800', 'bg-emerald-600', 'bg-emerald-400']
                           : ['bg-slate-100', 'bg-emerald-100', 'bg-emerald-300', 'bg-emerald-500', 'bg-emerald-700'];
                         return cell ? (
-                          <div key={cell.key} className={`w-[9px] h-[9px] md:w-[11px] md:h-[11px] rounded-[1px] md:rounded-[2px] border-[0.5px] border-black/5 shadow-sm transition-colors ${intensityStyles[cell.intensity]}`} title={`${cell.key}`}></div>
+                          <div key={cell.key} className={`w-[${CELL_SIZE}px] h-[${CELL_SIZE}px] rounded-[1px] md:rounded-[2px] border-[0.5px] border-black/5 shadow-sm transition-colors ${intensityStyles[cell.intensity]}`} title={`${cell.key}`}></div>
                         ) : (
-                          <div key={`empty-${idx}`} className="w-[9px] h-[9px] md:w-[11px] md:h-[11px] opacity-0 pointer-events-none"></div>
+                          <div key={`empty-${idx}`} className={`w-[${CELL_SIZE}px] h-[${CELL_SIZE}px] opacity-0 pointer-events-none`}></div>
                         );
                       })}
                     </div>
@@ -455,7 +469,7 @@ export default function App() {
           </div>
 
           <div className={`${getCardStyle()} rounded-[2.5rem] overflow-hidden mb-8 relative transition-colors`}>
-              <div ref={scrollContainerRef} className="overflow-x-auto max-h-[70vh] overflow-y-auto custom-scrollbar scroll-smooth">
+              <div ref={scrollContainerRef} className={`overflow-x-auto max-h-[70vh] overflow-y-auto custom-scrollbar scroll-smooth ${isMobile ? 'whitespace-nowrap' : ''}`}>
                   <table className="w-full border-separate border-spacing-0 table-fixed min-w-full">
                       <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                           <tr>
