@@ -4,15 +4,6 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Analytics } from "@vercel/analytics/react";
 import { motion, AnimatePresence } from 'framer-motion';
 
-const AnalyticsComponent = () => {
-  try {
-    if (typeof Analytics !== 'undefined') {
-      return <Analytics />;
-    }
-  } catch (e) {}
-  return null;
-};
-
 // --- Icons ---
 const ZapIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -383,9 +374,9 @@ export default function App() {
   const CELL_SIZE = isMobile ? 9 : 11;
   const CELL_GAP = isMobile ? 2 : 3;
 
-  return (
+ return (
     <div className={`min-h-screen ${getContainerBg()} font-sans pb-20 select-none overflow-x-hidden transition-colors duration-300`}>
-      <AnalyticsComponent />
+      <Analytics />
       
       <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-7xl mx-auto px-2 md:px-4 pt-8 flex flex-col min-h-screen">
         <div className="flex-grow">
