@@ -97,6 +97,7 @@ export default function App() {
   const [activeSlider, setActiveSlider] = useState(null); 
   const [isEditingTabName, setIsEditingTabName] = useState(false);
   const [tableVisibleRows, setTableVisibleRows] = useState(6);
+  const [tempGoalVal, setTempGoalVal] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const longPressTimer = useRef(null);
@@ -119,6 +120,12 @@ export default function App() {
     const root = window.document.documentElement;
     root.style.colorScheme = theme;
   }, [theme]);
+
+  useEffect(() => {
+  if (viewingHabitMap) {
+    setTempGoalVal(habitConfigs[viewingHabitMap]?.steps || 1);
+  }
+}, [viewingHabitMap, habitConfigs]);
 
   // Auto-scroll to today
   useEffect(() => {
@@ -717,13 +724,33 @@ return () => {
                     <div className="flex flex-col items-center"><span className={`text-4xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{habitInsights.score}%</span><span className={`text-[9px] font-black ${getTextMuted()} uppercase tracking-widest`}>Score</span></div>
                   </div>
 
-                  {/* Goal Steps moved here under circle */}
+                  {/* Corrected Single Goal Input */}
                   <div className={`w-full mb-8 p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'} shadow-sm`}>
                     <label className={`text-[8px] font-black uppercase ${getTextMuted()} block mb-2 text-center`}>Daily Goal Steps</label>
-                    <input type="number" min="1" max="100" value={habitConfigs[viewingHabitMap]?.steps ?? 1} onChange={(e) => {
-                      const nc = {...habitConfigs, [viewingHabitMap]: {...(habitConfigs[viewingHabitMap]||{priority:1, steps:1}), steps: Math.max(1, parseInt(e.target.value) || 1)}};
-                      setHabitConfigs(nc); save(trackerData, habits, nc);
-                    }} className={`w-full text-center text-lg font-black p-1 rounded bg-transparent focus:outline-none focus:text-emerald-500 transition-colors`} />
+                    <input 
+                      type="number" 
+                      value={tempGoalVal} 
+                      onChange={(e) => setTempGoalVal(e.target.value)} 
+                      onBlur={() => {
+                        let val = parseInt(tempGoalVal);
+                        // Validation: If empty or <= 0, default to 1
+                        if (isNaN(val) || val < 1) val = 1;
+                        setTempGoalVal(val);
+                        const nc = {
+                          ...habitConfigs, 
+                          [viewingHabitMap]: {
+                            ...(habitConfigs[viewingHabitMap] || {priority: 1, steps: 1}), 
+                            steps: val
+                          }
+                        };
+                        setHabitConfigs(nc); 
+                        save(trackerData, habits, nc);
+                      }} 
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                      }}
+                      className={`w-full text-center text-xl font-black p-1 rounded bg-transparent focus:outline-none focus:text-emerald-500 transition-colors`} 
+                    />
                   </div>
                   
                   <div className="w-full space-y-4">
