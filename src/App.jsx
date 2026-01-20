@@ -718,6 +718,20 @@ return () => {
     </div>
 </motion.div>
         </div>
+        
+        {/* Footer Credit Section */}
+        <footer className={`mt-auto py-10 text-center border-t ${theme === 'dark' ? 'border-slate-900' : 'border-slate-100'}`}>
+          <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${getTextMuted()}`}>
+            Developed by <a 
+              href="https://www.facebook.com/hsnshahriaradib" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-emerald-500 hover:text-emerald-400 hover:underline decoration-2 underline-offset-4 transition-all cursor-pointer"
+            >
+              Adib
+            </a> | APM | RU
+          </p>
+        </footer>
       </motion.div>
 
       {/* --- Modals --- */}
