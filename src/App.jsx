@@ -263,8 +263,29 @@ return () => {
   };
 
   const updateHabitValue = (dateKey, habit, val) => {
-    const newTrackerData = { ...trackerData, [dateKey]: { ...(trackerData[dateKey] || {}), [habit]: val } };
-    setTrackerData(newTrackerData); save(newTrackerData, habits, habitConfigs);
+    const updatedDay = { ...(trackerData[dateKey] || {}), [habit]: val };
+    const newTrackerData = { ...trackerData, [dateKey]: updatedDay };
+    
+    let earned = 0;
+    habits.forEach(h => {
+      const v = typeof updatedDay[h] === 'number' ? updatedDay[h] : (updatedDay[h] ? 100 : 0);
+      earned += (v / 100);
+    });
+    
+    if (Math.round((earned / habits.length) * 100) === 100) {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+      s.onload = () => window.confetti({ 
+        particleCount: 150, 
+        spread: 80, 
+        origin: { y: 0.6 }, 
+        colors: ['#10b981', '#3b82f6', '#10b981', '#ffffff'] 
+      });
+      document.head.appendChild(s);
+    }
+
+    setTrackerData(newTrackerData);
+    save(newTrackerData, habits, habitConfigs);
   };
   const handleExport = () => {
     const data = {
