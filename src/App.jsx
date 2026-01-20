@@ -455,16 +455,33 @@ export default function App() {
           <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-3 mb-8">
             {habits.map((habit, idx) => (
               <div key={idx} className={`${getCardStyle()} p-2 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-all min-h-[100px] hover:shadow-lg`} onClick={() => setViewingHabitMap(habit)}>
-                <div className="flex items-start gap-1 mb-0.5 w-full justify-center px-1 min-h-[28px] flex-grow">
-                    {editingHabitIdx === idx ? (
-                      <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleRename(idx)} onClick={(e) => e.stopPropagation()} />
-                    ) : (
-                      <>
-                        <p className={`text-[10px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words flex-1 text-center leading-[1.2]`}>{habit}</p>
-                        <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all shrink-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
-                      </>
-                    )}
-                </div>
+                {/* Change the div immediately inside your habits.map function */}
+<div className="flex items-center gap-1 mb-0.5 w-full justify-center px-1 min-h-[40px] flex-grow">
+  {editingHabitIdx === idx ? (
+    <input 
+      autoFocus 
+      className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} 
+      value={tempHabitName} 
+      onChange={(e) => setTempHabitName(e.target.value)} 
+      onBlur={() => handleRename(idx)} 
+      onKeyDown={(e) => e.key === 'Enter' && handleRename(idx)} 
+      onClick={(e) => e.stopPropagation()} 
+    />
+  ) : (
+    <>
+      <p className={`text-[10px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words flex-1 text-center leading-[1.2]`}>
+        {habit}
+      </p>
+      {/* Keeping the EditIcon reachable but not disrupting the centering */}
+      <button 
+        className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all shrink-0 absolute right-2 top-2" 
+        onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}
+      >
+        <EditIcon />
+      </button>
+    </>
+  )}
+</div>
                 <div className="relative w-16 h-16 flex items-center justify-center mt-auto">
                   <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 60 60">
                     <circle cx="30" cy="30" r="23" fill="none" stroke={theme==='dark'?'#1e293b':'#f1f5f9'} strokeWidth="4.5" />
