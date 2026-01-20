@@ -48,7 +48,13 @@ const FlameIcon = () => (
 const ExportIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
 );
+const SunIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+);
 
+const MoonIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-blue-300"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+);
 const ImportIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
 );
@@ -458,6 +464,12 @@ return () => {
     if (val < 100) return 'bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-900/20';
     return 'bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-900/20';
   };
+  const getLevelBadgeStyle = (level) => {
+    if (level >= 15) return 'bg-purple-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]';
+    if (level >= 10) return 'bg-rose-500 text-white shadow-[0_0_10px_rgba(244,63,94,0.5)]';
+    if (level >= 5) return 'bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]';
+    return theme === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600';
+  };
   const getContainerBg = () => theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900';
   const getCardStyle = () => theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-sm' : 'bg-white border-slate-200 shadow-sm';
   const getTextMuted = () => theme === 'dark' ? 'text-slate-500' : 'text-slate-400';
@@ -479,10 +491,20 @@ return () => {
               <div>
                 <h1 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} tracking-tight leading-none`}>Habit Mastery</h1>
                 <div className="flex items-center gap-2 mt-2">
-                  <div onClick={toggleTheme} className={`group relative w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-all duration-500 shadow-inner ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                    <motion.div layout className={`bg-white w-4 h-4 rounded-full shadow-md`} style={{ marginLeft: theme === 'dark' ? '24px' : '0' }} />
-                  </div>
-                  <span className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Level {xpStats.level}</span>
+                  <div onClick={toggleTheme} className={`group relative w-12 h-6 flex items-center rounded-full cursor-pointer transition-all duration-500 shadow-inner ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'}`}>
+  
+  <motion.div 
+    layout 
+    className="absolute w-4 h-4 rounded-full shadow-md z-10 flex items-center justify-center bg-white" 
+    style={{ left: theme === 'dark' ? '28px' : '4px' }} 
+    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+  >
+    {theme === 'dark' ? <MoonIcon /> : <SunIcon />}
+  </motion.div>
+</div>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all duration-500 ${getLevelBadgeStyle(xpStats.level)}`}>
+  Level {xpStats.level}
+</span>
                 </div>
               </div>
             </div>
