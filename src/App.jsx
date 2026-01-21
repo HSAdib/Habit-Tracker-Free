@@ -910,7 +910,7 @@ return () => {
                                 <button onClick={toggleTableOrientation} className={`p-1 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`} title="Switch to Horizontal View">
                                   <TableRotateIcon />
                                 </button>
-                                <span>Date Log</span>
+                                <span>DATE Log</span>
                               </div>
                             </th>
 
