@@ -514,10 +514,26 @@ return () => {
       }
     }
 
+    // --- New Last 7 Days Logic for specific habit ---
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = getSafeKey(d);
+      const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
+      const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
+      last7Days.push({ 
+        label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), 
+        pct: val,
+        isToday: d.toDateString() === new Date().toDateString()
+      });
+    }
+
     return { 
       score, 
       currentStreak, 
       bestStreak,
+      last7Days,
       level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : score >= 25 ? "Apprentice" : "Seed" 
     };
   }, [viewingHabitMap, trackerData, daysInMonth]);
@@ -1032,6 +1048,29 @@ return () => {
                         </div>
                     </div>
                     <button onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }} className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`}><XIcon /></button>
+                  </div>
+
+                  {/* Last 7 Days Activity Bar */}
+                  <div className="mb-10">
+                    <div className="flex items-center gap-2 mb-4">
+                      <ActivityIcon className="w-4 h-4 text-slate-400" />
+                      <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Last 7 Days Activity</p>
+                    </div>
+                    <div className="grid grid-cols-7 gap-3">
+                      {habitInsights.last7Days.map((day, i) => (
+                        <div key={i} className="flex flex-col items-center gap-2">
+                          <div className={`w-full aspect-square rounded-2xl border-2 overflow-hidden relative ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                            <motion.div 
+                              initial={{ height: 0 }}
+                              animate={{ height: `${day.pct}%` }}
+                              className={`absolute bottom-0 w-full ${day.pct === 100 ? 'bg-emerald-500' : 'bg-emerald-500/60'}`}
+                              transition={{ type: "spring", stiffness: 100, damping: 20, delay: i * 0.1 }}
+                            />
+                          </div>
+                          <span className={`text-[10px] font-black ${day.isToday ? 'text-emerald-500' : (theme === 'dark' ? 'text-slate-500' : 'text-slate-400')}`}>{day.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-7 gap-3 text-center">
