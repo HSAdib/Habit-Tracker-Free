@@ -928,10 +928,13 @@ return () => {
                             });
                             const progress = totalPossibleWeight > 0 ? Math.round((totalEarnedWeight / totalPossibleWeight) * 100) : 0;
                             const isToday = new Date().toDateString() === day.toDateString();
-                            const rowBgStyle = isToday ? (theme === 'dark' ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100') : (theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100');
+                            const rowBgStyle = isToday 
+  ? (theme === 'dark' ? 'bg-emerald-900/40 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-emerald-50 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]') 
+  : (theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100');
                             return (
                                 <tr key={key} id={`row-${key}`} className="h-[72px]">
-                                    <td className={`p-2 sticky left-0 z-10 border-r border-b transition-colors ${rowBgStyle}`}>
+                                    <td className={`p-2 sticky left-0 z-10 border-r border-b transition-all duration-500 ${rowBgStyle} ${isToday ? 'border-l-4 border-l-emerald-500' : ''}`}>
+
                                         <div className="flex items-center justify-center gap-3">
                                             <motion.button whileTap={{ scale: 0.9 }} onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} title="Add reflection note"><NoteIcon /></motion.button>
                                             <div className="flex flex-col text-center"><span className={`text-[8px] uppercase opacity-80 leading-none ${theme === 'dark' ? 'text-slate-500' : ''}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span><span className={`text-sm font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span></div>
@@ -940,7 +943,8 @@ return () => {
                                     {habits.map((h, i) => {
                                         const rawVal = dayData[h] ?? 0; const val = typeof rawVal === 'number' ? rawVal : (rawVal ? 100 : 0);
                                         return (
-                                            <td key={i} className={`p-2 border-r border-b transition-colors text-center ${rowBgStyle}`}>
+                                            <td key={i} className={`p-2 border-r border-b transition-all duration-500 text-center ${rowBgStyle} ${isToday ? 'border-y-2 border-emerald-500/20' : ''}`}>
+
                                                 <motion.button whileTap={{ scale: 0.9 }} className={`w-11 h-11 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} touch-none select-none ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 cursor-not-allowed grayscale' : ''}`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)}>
                                                     <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
                                                     <span className="pointer-events-none font-bold">
@@ -950,7 +954,7 @@ return () => {
                                             </td>
                                         );
                                     })}
-                                    <td className={`p-2 sticky right-0 z-10 border-l border-b transition-colors text-center font-black text-sm ${rowBgStyle}`}>
+                                    <td className={`p-2 sticky right-0 z-10 border-l border-b transition-all duration-500 text-center font-black text-sm ${rowBgStyle} ${isToday ? 'border-r-4 border-r-emerald-500' : ''}`}>
                                         <span className={progress === 100 ? 'text-emerald-600 font-bold' : progress > 0 ? 'text-blue-600' : theme === 'dark' ? 'text-slate-700' : 'text-slate-300'}>
                                             <AnimatedNumber value={progress} />
                                         </span>
@@ -977,7 +981,8 @@ return () => {
                             {daysInMonth.map((day) => {
                                 const key = getSafeKey(day); const isToday = new Date().toDateString() === day.toDateString();
                                 return (
-                                    <th key={key} id={`col-${key}`} className={`p-2 border-r w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${isToday ? (theme === 'dark' ? 'bg-emerald-900/40' : 'bg-emerald-50') : ''}`}>
+                                    <th key={key} id={`col-${key}`} className={`p-2 border-x-2 border-t-4 transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${isToday ? (theme === 'dark' ? 'bg-emerald-900/40 border-emerald-500/50' : 'bg-emerald-50 border-emerald-400') : 'border-transparent border-r-slate-200 dark:border-r-slate-700'}`}>
+
                                     <div className="flex flex-col items-center gap-1">
                                             <button onClick={() => setEditingNoteDate(key)} className={`p-1.5 rounded-lg ${trackerData[key]?.note ? 'bg-blue-600 text-white' : (theme === 'dark' ? 'text-slate-600 hover:text-slate-400' : 'text-slate-300 hover:text-slate-500')}`}><NoteIcon /></button>
                                             <span className={`text-[7px] uppercase font-black ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
@@ -998,7 +1003,7 @@ return () => {
                                 let earned = 0; habits.forEach(h => { const v = typeof dayData[h] === 'number' ? dayData[h] : (dayData[h] ? 100 : 0); earned += (v / 100); });
                                 const progress = habits.length > 0 ? Math.round((earned / habits.length) * 100) : 0;
                                 return (
-                                    <td key={key} className={`p-2 border-r border-b text-center text-[10px] font-black transition-colors w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20' : 'bg-emerald-50/50') : ''}`}>
+                                    <td key={key} className={`p-2 border-x-2 border-b text-center text-[10px] font-black transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]') : 'border-transparent border-r-slate-100 dark:border-r-slate-800'}`}>
                                     <span className={progress === 100 ? 'text-emerald-500' : progress > 0 ? 'text-blue-500' : 'text-slate-300'}><AnimatedNumber value={progress} /></span>
                                     </td>
                                 );
@@ -1012,7 +1017,8 @@ return () => {
                                 {daysInMonth.map(day => {
                                     const key = getSafeKey(day); const val = typeof trackerData[key]?.[habit] === 'number' ? trackerData[key][habit] : (trackerData[key]?.[habit] ? 100 : 0);
                                     return (
-                                        <td key={key} className={`p-1.5 border-r border-b text-center transition-colors w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20' : 'bg-emerald-50/50') : ''}`}>
+                                        <td key={key} className={`p-1.5 border-x-2 border-b text-center transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]') : 'border-transparent border-r-slate-100 dark:border-r-slate-800'}`}>
+
                                         <motion.button whileTap={{ scale: 0.9 }} onPointerDown={(e) => handleHabitPressStart(e, key, habit, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, habit, val)} className={`w-11 h-11 rounded-2xl mx-auto border-2 flex items-center justify-center font-black transition-all text-xl ${getButtonStyles(val)} ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 grayscale' : ''}`}>
       <span>{val === 100 ? '✔' : (val > 0 ? `${Math.round(val)}%` : '✘')}</span>
 </motion.button>
