@@ -172,13 +172,25 @@ export default function App() {
     };
     const timer = setTimeout(scrollToToday, 600);
     const handleTableScroll = () => {
-  if (scrollContainerRef.current) {
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
-    setTableVisibleRows(isNearBottom ? 3 : 6);
-  }
-};
+      if (scrollContainerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+        const remainingPx = scrollHeight - scrollTop - clientHeight;
+        
+        // Calculate how many rows worth of space are left (row height is 72px)
+        // We add a small buffer so the transition starts exactly at the right time
+        const remainingRows = Math.ceil(remainingPx / 72);
+        
+        // Dynamic visibility logic:
+        // If more than 6 rows remain, stay at 6. 
+        // If fewer than 6 remain, match the row count (down to a minimum of 3).
+        let targetRows = 6;
+        if (remainingRows <= 5) targetRows = 5;
+        if (remainingRows <= 4) targetRows = 4;
+        if (remainingRows <= 3) targetRows = 3;
+
+        setTableVisibleRows(prev => prev !== targetRows ? targetRows : prev);
+      }
+    };
 const container = scrollContainerRef.current;
 if (container) container.addEventListener('scroll', handleTableScroll);
 return () => {
@@ -771,8 +783,11 @@ return () => {
     
     <div 
   ref={scrollContainerRef} 
-  className={`overflow-x-auto overflow-y-auto custom-scrollbar scroll-smooth transition-all duration-500 ${isMobile ? 'whitespace-nowrap' : ''}`}
-  style={{ maxHeight: `${72 * tableVisibleRows + 52}px` }}
+  className={`overflow-x-auto overflow-y-auto custom-scrollbar scroll-smooth transition-all duration-700 ease-in-out ${isMobile ? 'whitespace-nowrap' : ''}`}
+  style={{ 
+    maxHeight: `${72 * tableVisibleRows + 52}px`,
+    willChange: 'max-height'
+  }}
 >
         <table className="w-full border-separate border-spacing-0 table-fixed min-w-full">
             <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
