@@ -660,7 +660,8 @@ return () => {
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="greenTrendShadow" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
+                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+                      <stop offset="50%" stopColor="#10b981" stopOpacity="0.3" />
                       <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
                     </linearGradient>
                   </defs>
@@ -680,7 +681,7 @@ return () => {
                     d={solveFluidPath(trendPoints)} 
                     fill="none" 
                     stroke="#10b981" 
-                    strokeWidth="2.5" 
+                    strokeWidth="1.5" 
                     strokeLinecap="round" 
                   />
                 </svg>
