@@ -525,7 +525,8 @@ return () => {
       last7Days.push({ 
         label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), 
         pct: val,
-        isToday: d.toDateString() === new Date().toDateString()
+        isToday: d.toDateString() === new Date().toDateString(),
+        key: key // Added this to track the live slider
       });
     }
 
@@ -1057,19 +1058,34 @@ return () => {
                       <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Last 7 Days Activity</p>
                     </div>
                     <div className="grid grid-cols-7 gap-3">
-                      {habitInsights.last7Days.map((day, i) => (
-                        <div key={i} className="flex flex-col items-center gap-2">
-                          <div className={`w-full aspect-square rounded-2xl border-2 overflow-hidden relative ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                            <motion.div 
-                              initial={{ height: 0 }}
-                              animate={{ height: `${day.pct}%` }}
-                              className={`absolute bottom-0 w-full ${day.pct === 100 ? 'bg-emerald-500' : 'bg-emerald-500/60'}`}
-                              transition={{ type: "spring", stiffness: 100, damping: 20, delay: i * 0.1 }}
-                            />
+                      {habitInsights.last7Days.map((day, i) => {
+                        // Check if this specific day is currently being adjusted by the slider
+                        const isLiveDragging = activeSlider?.dateKey === day.key && activeSlider?.habit === viewingHabitMap;
+                        const displayPct = isLiveDragging ? activeSlider.value : day.pct;
+
+                        return (
+                          <div key={i} className="flex flex-col items-center gap-2">
+                            <div className={`w-full aspect-square rounded-2xl border-2 overflow-hidden relative ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                              <motion.div 
+                                id={`bar-fill-${day.key}`} // This allows direct DOM updates
+                                initial={{ height: 0 }}
+                                animate={{ height: `${displayPct}%` }}
+                                // Snappy spring physics from your video
+                                transition={{ 
+                                  type: "spring", 
+                                  stiffness: 350, 
+                                  damping: 25, 
+                                  mass: 0.5 
+                                }}
+                                className={`absolute bottom-0 w-full ${displayPct >= 100 ? 'bg-emerald-500' : 'bg-emerald-500/70'}`}
+                              />
+                            </div>
+                            <span className={`text-[10px] font-black ${day.isToday ? 'text-emerald-500' : (theme === 'dark' ? 'text-slate-500' : 'text-slate-400')}`}>
+                              {day.label}
+                            </span>
                           </div>
-                          <span className={`text-[10px] font-black ${day.isToday ? 'text-emerald-500' : (theme === 'dark' ? 'text-slate-500' : 'text-slate-400')}`}>{day.label}</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1131,15 +1147,22 @@ return () => {
                   const rect = track.getBoundingClientRect(); 
                   const percentage = Math.max(0, Math.min(100, Math.round(((rect.bottom - e.clientY) / rect.height) * 100)));
                   const config = habitConfigs[activeSlider.habit];
-                  let finalVal = config?.steps > 1 ? (Math.round((percentage / 100) * config.steps) / config.steps) * 100 : percentage;
+                  const finalVal = config?.steps > 1 ? (Math.round((percentage / 100) * config.steps) / config.steps) * 100 : percentage;
 
-                  
+                  // 1. Update Slider DOM
                   fill.style.height = `${finalVal}%`;
                   const displayVal = config?.steps > 1 ? Math.round((finalVal / 100) * config.steps) : Math.round(finalVal) + '%';
                   label.innerText = displayVal;
                   label.style.color = finalVal >= 47 ? '#0f172a' : '#ffffff';
                   
-                  
+                  // 2. Update Activity Bar DOM Instantly (Zero Lag)
+                  const barFill = document.getElementById(`bar-fill-${activeSlider.dateKey}`);
+                  if (barFill) {
+                    barFill.style.height = `${finalVal}%`;
+                    barFill.style.backgroundColor = finalVal >= 100 ? '#10b981' : '#10b981b3';
+                  }
+
+                  // 3. Store current value in ref so onPointerUp knows the final state
                   activeSlider.value = finalVal;
                 }
               }}
