@@ -204,7 +204,7 @@ export default function App() {
         const { scrollTop, scrollHeight } = scrollContainerRef.current;
         const container = scrollContainerRef.current;
         
-        const headerHeight = 52;
+        const headerHeight = 72;
         const rowHeight = 72;
         const spacerHeight = 216;
         const dataContentHeight = scrollHeight - spacerHeight;
@@ -903,8 +903,9 @@ return () => {
                 /* --- Table 1: Vertical Layout --- */
                 <>
                     <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
-                        <tr className="h-[52px]">
-                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[140px] z-40 text-center`}>
+                        <tr className="h-[72px]">
+                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[120px] min-w-[120px] z-40 text-center`}>
+                              
                               <div className="flex items-center justify-center gap-2">
                                 <button onClick={toggleTableOrientation} className={`p-1 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`} title="Switch to Horizontal View">
                                   <TableRotateIcon />
@@ -948,8 +949,12 @@ return () => {
                                                 <motion.button whileTap={{ scale: 0.9 }} className={`w-11 h-11 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} touch-none select-none ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 cursor-not-allowed grayscale' : ''}`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)}>
                                                     <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
                                                     <span className="pointer-events-none font-bold">
-                                                        {val === 100 ? '✔' : (val > 0 ? `${Math.round(val)}%` : '✘')}
-                                                    </span>
+    {(() => {
+        const config = habitConfigs[h];
+        const stepVal = config?.steps > 1 ? Math.round((val / 100) * config.steps) : null;
+        return stepVal !== null ? stepVal : (val === 100 ? '✔' : (val > 0 ? `${Math.round(val)}%` : '✘'));
+    })()}
+</span>
                                                 </motion.button>
                                             </td>
                                         );
@@ -1020,7 +1025,13 @@ return () => {
                                         <td key={key} className={`p-1.5 border-x-2 border-b text-center transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]') : 'border-transparent border-r-slate-100 dark:border-r-slate-800'}`}>
 
                                         <motion.button whileTap={{ scale: 0.9 }} onPointerDown={(e) => handleHabitPressStart(e, key, habit, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, habit, val)} className={`w-11 h-11 rounded-2xl mx-auto border-2 flex items-center justify-center font-black transition-all text-xl ${getButtonStyles(val)} ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 grayscale' : ''}`}>
-      <span>{val === 100 ? '✔' : (val > 0 ? `${Math.round(val)}%` : '✘')}</span>
+      <span>
+    {(() => {
+        const config = habitConfigs[habit];
+        const stepVal = config?.steps > 1 ? Math.round((val / 100) * config.steps) : null;
+        return stepVal !== null ? stepVal : (val === 100 ? '✔' : (val > 0 ? `${Math.round(val)}%` : '✘'));
+    })()}
+</span>
 </motion.button>
                                         </td>
                                     );
