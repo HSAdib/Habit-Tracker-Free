@@ -1225,6 +1225,12 @@ return () => {
             exit={{ opacity: 0 }} 
             className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md touch-none select-none" 
             onPointerUp={() => {
+              // ম্যানুয়াল DOM ওভাররাইডগুলো মুছে ফেলা যাতে রিয়্যাক্ট ক্লাসগুলো কাজ করতে পারে
+              const barFill = document.getElementById(`bar-fill-${activeSlider.dateKey}`);
+              if (barFill) {
+                barFill.style.backgroundColor = ''; 
+                barFill.style.height = ''; 
+              }
               
               updateHabitValue(activeSlider.dateKey, activeSlider.habit, activeSlider.value);
               setActiveSlider(null);
