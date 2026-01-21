@@ -127,6 +127,7 @@ export default function App() {
   const [activeSlider, setActiveSlider] = useState(null); 
   const [isEditingTabName, setIsEditingTabName] = useState(false);
   const [tableVisibleRows, setTableVisibleRows] = useState(6);
+  const [tableHeight, setTableHeight] = useState(484);
   const [tempGoalVal, setTempGoalVal] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
@@ -173,22 +174,41 @@ export default function App() {
     const timer = setTimeout(scrollToToday, 600);
     const handleTableScroll = () => {
       if (scrollContainerRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-        const remainingPx = scrollHeight - scrollTop - clientHeight;
+        const { scrollTop, scrollHeight } = scrollContainerRef.current;
+        const container = scrollContainerRef.current;
         
-        // Calculate how many rows worth of space are left (row height is 72px)
-        // We add a small buffer so the transition starts exactly at the right time
-        const remainingRows = Math.ceil(remainingPx / 72);
+        const headerHeight = 52;
+        const rowHeight = 72;
+        const spacerHeight = 216;
+        const dataContentHeight = scrollHeight - spacerHeight;
         
-        // Dynamic visibility logic:
-        // If more than 6 rows remain, stay at 6. 
-        // If fewer than 6 remain, match the row count (down to a minimum of 3).
-        let targetRows = 6;
-        if (remainingRows <= 5) targetRows = 5;
-        if (remainingRows <= 4) targetRows = 4;
-        if (remainingRows <= 3) targetRows = 3;
+        // --- NEW: THE STOP LOGIC ---
+        // We want to stop scrolling when the 31st row (the end of dataContentHeight)
+        // is at the bottom of a 3-row view (header + 3 rows).
+        const minHeightLimit = (3 * rowHeight) + headerHeight; // 268px
+        const stopScrollAt = dataContentHeight - minHeightLimit;
 
-        setTableVisibleRows(prev => prev !== targetRows ? targetRows : prev);
+        if (scrollTop > stopScrollAt) {
+          container.scrollTop = stopScrollAt;
+          setTableHeight(minHeightLimit);
+          setTableVisibleRows(3);
+          return;
+        }
+        // ---------------------------
+
+        const remainingDataHeight = dataContentHeight - scrollTop;
+        const maxHeightLimit = (6 * rowHeight) + headerHeight; // 484px
+
+        let targetHeight = remainingDataHeight;
+        if (targetHeight > maxHeightLimit) targetHeight = maxHeightLimit;
+        if (targetHeight < minHeightLimit) targetHeight = minHeightLimit;
+
+        setTableHeight(targetHeight);
+
+        const calculatedRows = Math.max(3, Math.min(6, Math.ceil((targetHeight - headerHeight) / rowHeight)));
+        if (calculatedRows !== tableVisibleRows) {
+          setTableVisibleRows(calculatedRows);
+        }
       }
     };
 const container = scrollContainerRef.current;
@@ -783,9 +803,9 @@ return () => {
     
     <div 
   ref={scrollContainerRef} 
-  className={`overflow-x-auto overflow-y-auto custom-scrollbar scroll-smooth transition-all duration-700 ease-in-out ${isMobile ? 'whitespace-nowrap' : ''}`}
+  className={`overflow-x-auto overflow-y-auto custom-scrollbar ${isMobile ? 'whitespace-nowrap' : ''}`}
   style={{ 
-    maxHeight: `${72 * tableVisibleRows + 52}px`,
+    maxHeight: `${tableHeight}px`,
     willChange: 'max-height'
   }}
 >
@@ -845,6 +865,8 @@ return () => {
                       </tr>
                   );
                 })}
+                {/* Spacer allows the last row to scroll up to the top of the 3-row view */}
+                <tr style={{ height: '216px' }}><td></td></tr> 
             </tbody>
         </table>
     </div>
