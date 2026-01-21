@@ -658,9 +658,31 @@ return () => {
               </div>
               <div className="flex-grow flex items-center h-16 md:h-28 w-full relative">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 2 }} d={`${solveFluidPath(trendPoints)} L 100,100 L 0,100 Z`} fill="url(#emerald-grad-main)" className="opacity-10" />
-                  <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 2 }} d={solveFluidPath(trendPoints)} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
-                  <defs><linearGradient id="emerald-grad-main" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#10b981" /><stop offset="100%" stopColor="transparent" /></linearGradient></defs>
+                  <defs>
+                    <linearGradient id="greenTrendShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  {/* The Shadow Fill */}
+                  <motion.path 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    transition={{ duration: 2 }} 
+                    d={`${solveFluidPath(trendPoints)} L 100,100 L 0,100 Z`} 
+                    fill="url(#greenTrendShadow)" 
+                  />
+                  {/* The Main Line */}
+                  <motion.path 
+                    initial={{ pathLength: 0 }} 
+                    animate={{ pathLength: 1 }} 
+                    transition={{ duration: 2 }} 
+                    d={solveFluidPath(trendPoints)} 
+                    fill="none" 
+                    stroke="#10b981" 
+                    strokeWidth="2.5" 
+                    strokeLinecap="round" 
+                  />
                 </svg>
               </div>
               <div className={`flex justify-between mt-1 md:mt-2 px-1 text-[6px] md:text-[8px] font-black ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'} uppercase tracking-widest`}>
