@@ -1077,7 +1077,7 @@ return () => {
                                   damping: 25, 
                                   mass: 0.5 
                                 }}
-                                className={`absolute bottom-0 w-full ${displayPct >= 100 ? 'bg-emerald-500' : 'bg-emerald-500/70'}`}
+                                className={`absolute bottom-0 w-full ${displayPct >= 100 ? 'bg-emerald-500' : 'bg-blue-600'}`}
                               />
                             </div>
                             <span className={`text-[10px] font-black ${day.isToday ? 'text-emerald-500' : (theme === 'dark' ? 'text-slate-500' : 'text-slate-400')}`}>
@@ -1159,7 +1159,8 @@ return () => {
                   const barFill = document.getElementById(`bar-fill-${activeSlider.dateKey}`);
                   if (barFill) {
                     barFill.style.height = `${finalVal}%`;
-                    barFill.style.backgroundColor = finalVal >= 100 ? '#10b981' : '#10b981b3';
+                    // #10b981 for full, #2563eb for partial
+                    barFill.style.backgroundColor = finalVal >= 100 ? '#10b981' : '#2563eb';
                   }
 
                   // 3. Store current value in ref so onPointerUp knows the final state
