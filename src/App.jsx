@@ -1044,7 +1044,7 @@ return () => {
                 <>
                     <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                         <tr className="h-[72px]">
-                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r-2 bg-[#0f172a] border-slate-700 shadow-[4px_0_8px_rgba(0,0,0,0.3)] w-[120px] min-w-[120px]`}>
+                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r-2 bg-[#1e293b] border-slate-700 shadow-[4px_0_8px_rgba(0,0,0,0.3)] w-[120px] min-w-[120px]`}>
                               <div className="flex items-center justify-center gap-2">
                                 <button onClick={toggleTableOrientation} className={`p-1 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`} title="Switch to Vertical View">
                                   <TableRotateIcon />
