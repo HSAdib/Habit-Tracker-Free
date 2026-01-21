@@ -1044,7 +1044,7 @@ return () => {
                 <>
                     <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                         <tr className="h-[72px]">
-                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r-2 ${theme === 'dark' ? 'bg-slate-800 border-slate-700 shadow-[4px_0_8px_rgba(0,0,0,0.3)]' : 'bg-slate-50 border-slate-200 shadow-[4px_0_8px_rgba(0,0,0,0.05)]'} w-[120px] min-w-[120px]`}>
+                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r-2 bg-[#0f172a] border-slate-700 shadow-[4px_0_8px_rgba(0,0,0,0.3)] w-[120px] min-w-[120px]`}>
                               <div className="flex items-center justify-center gap-2">
                                 <button onClick={toggleTableOrientation} className={`p-1 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`} title="Switch to Vertical View">
                                   <TableRotateIcon />
@@ -1055,10 +1055,16 @@ return () => {
                             {daysInMonth.map((day) => {
                                 const key = getSafeKey(day); const isToday = new Date().toDateString() === day.toDateString();
                                 return (
-                                    <th key={key} id={`col-${key}`} className={`p-2 border-x-2 border-t-4 transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${isToday ? (theme === 'dark' ? 'bg-emerald-900/40 border-emerald-500/50' : 'bg-emerald-50 border-emerald-400') : 'border-transparent border-r-slate-200 dark:border-r-slate-700'}`}>
-
+                                    <th key={key} id={`col-${key}`} className={`p-2 border-x-2 border-t-4 transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] bg-[#0f172a] ${isToday ? 'border-emerald-500/50 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]' : 'border-transparent border-r-slate-700'}`}>
                                     <div className="flex flex-col items-center gap-1">
-                                            <button onClick={() => setEditingNoteDate(key)} className={`p-1.5 rounded-lg ${trackerData[key]?.note ? 'bg-blue-600 text-white' : (theme === 'dark' ? 'text-slate-600 hover:text-slate-400' : 'text-slate-300 hover:text-slate-500')}`}><NoteIcon /></button>
+                                            <motion.button 
+  whileTap={{ scale: 0.9 }} 
+  onClick={() => setEditingNoteDate(key)} 
+  className={`p-2 rounded-xl transition-all ${trackerData[key]?.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} 
+  title="Add reflection note"
+>
+  <NoteIcon />
+</motion.button>
                                             <span className={`text-[7px] uppercase font-black ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
                                             <span className={`text-xs font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span>
                                         </div>
@@ -1069,7 +1075,7 @@ return () => {
                     </thead>
                     <tbody>
                         <tr className="h-[52px]">
-                            <td className={`p-2 font-black text-[12px] uppercase sticky left-0 z-20 border-r-2 border-b text-center transition-colors ${theme === 'dark' ? 'bg-slate-900 border-slate-800 text-emerald-500 shadow-[4px_0_8px_rgba(0,0,0,0.3)]' : 'bg-white border-slate-100 text-emerald-600 shadow-[4px_0_8px_rgba(0,0,0,0.05)]'}`}>
+                            <td className={`p-2 font-black text-[12px] uppercase sticky left-0 z-20 border-r-2 border-b text-center transition-colors bg-[#1e293b] border-slate-800 text-emerald-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
                                 <div className="w-full px-1 font-black leading-tight break-words">Efficiency</div>
                             </td>
                             {daysInMonth.map(day => {
@@ -1085,7 +1091,7 @@ return () => {
                         </tr>
                         {habits.map((habit, hIdx) => (
                             <tr key={hIdx} className="h-[68px]">
-                                <td className={`p-2 font-black text-[11px] uppercase sticky left-0 z-20 border-r-2 border-b text-center transition-colors ${theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]' : 'bg-white border-slate-100 text-slate-600 shadow-[4px_0_8px_rgba(0,0,0,0.05)]'}`}>
+                                <td className={`p-2 font-black text-[11px] uppercase sticky left-0 z-20 border-r-2 border-b text-center transition-colors bg-[#1e293b] border-slate-800 text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
     <div className="truncate w-full px-1 font-black leading-tight">{habit}</div>
 </td>
                                 {daysInMonth.map(day => {
