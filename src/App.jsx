@@ -42,6 +42,9 @@ const NoteIcon = () => (
 const TargetIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 );
+const SquareTargetIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="2"/><rect width="12" height="12" x="6" y="6" rx="1.5"/><rect width="4" height="4" x="10" y="10" rx="1"/></svg>
+);
 const FlameIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
 );
@@ -112,6 +115,7 @@ const itemVariants = {
 export default function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [trackerData, setTrackerData] = useState({});
+  const [tabLayout, setTabLayout] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_habit_layout') || 'square' : 'square'));
   const [habits, setHabits] = useState(DEFAULT_HABITS);
   const [habitConfigs, setHabitConfigs] = useState(DEFAULT_CONFIGS);
   const [editingHabitIdx, setEditingHabitIdx] = useState(null);
@@ -528,21 +532,33 @@ return () => {
               <motion.div whileHover={{ scale: 1.1, rotate: 5 }} className="bg-emerald-600 p-3 rounded-2xl text-white shadow-lg animate-glow"><ZapIcon /></motion.div>
               <div>
                 <h1 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} tracking-tight leading-none`}>Habit Mastery</h1>
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-3 mt-2">
                   <div onClick={toggleTheme} className={`group relative w-12 h-6 flex items-center rounded-full cursor-pointer transition-all duration-500 shadow-inner ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'}`}>
-  
-  <motion.div 
-    layout 
-    className="absolute w-4 h-4 rounded-full shadow-md z-10 flex items-center justify-center bg-white" 
-    style={{ left: theme === 'dark' ? '28px' : '4px' }} 
-    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-  >
-    {theme === 'dark' ? <MoonIcon /> : <SunIcon />}
-  </motion.div>
-</div>
+                    <motion.div 
+                      layout 
+                      className="absolute w-4 h-4 rounded-full shadow-md z-10 flex items-center justify-center bg-white" 
+                      style={{ left: theme === 'dark' ? '28px' : '4px' }} 
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    >
+                      {theme === 'dark' ? <MoonIcon /> : <SunIcon />}
+                    </motion.div>
+                  </div>
+                  
+                  <button 
+  onClick={() => {
+    const next = tabLayout === 'square' ? 'circle' : 'square';
+    setTabLayout(next);
+    localStorage.setItem('adib_habit_layout', next);
+  }}
+  className={`p-1.5 rounded-lg transition-all border ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-emerald-400' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-emerald-600'}`}
+  title="Switch Tab Layout"
+>
+  {tabLayout === 'square' ? <TargetIcon /> : <SquareTargetIcon />}
+</button>
+
                   <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all duration-500 ${getLevelBadgeStyle(xpStats.level)}`}>
-  Level {xpStats.level}
-</span>
+                    Level {xpStats.level}
+                  </span>
                 </div>
               </div>
             </div>
@@ -653,36 +669,76 @@ return () => {
             </motion.div>
           </div>
 
-          {/* Habit Cards Grid */}
+          {/* Updated Habit Cards Grid */}
           <motion.div variants={containerVariants} className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-3 mb-8">
             <AnimatePresence mode='popLayout'>
-            {habits.map((habit, idx) => (
-              <motion.div layout variants={itemVariants} whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.2)" }} key={habit} className={`${getCardStyle()} p-2 rounded-2xl border flex flex-col items-center cursor-pointer overflow-hidden group transition-all min-h-[100px] hover:shadow-lg relative`} onClick={() => setViewingHabitMap(habit)}>
-                <div className="flex items-center gap-1 mb-0.5 w-full justify-center px-1 min-h-[40px] flex-grow">
-                    {editingHabitIdx === idx ? (
-                      <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(idx)} onClick={(e) => e.stopPropagation()} />
-                    ) : (
-                      <>
-                        <p className={`text-[10px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words flex-1 text-center leading-[1.2]`}>{habit}</p>
-                        <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all shrink-0 absolute right-2 top-2" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
-                      </>
-                    )}
+{habits.map((habit, idx) => {
+  const isCircle = tabLayout === 'circle';
+  const pct = analytics.habitPcts[habit] ?? 0;
+  const isEditing = editingHabitIdx === idx;
+  return (
+    <motion.div 
+      layout 
+      variants={itemVariants} 
+      whileHover={{ y: -5, scale: isCircle ? 1.05 : 1 }} 
+      key={habit} 
+      className={`${getCardStyle()} cursor-pointer overflow-hidden group transition-all relative flex flex-col items-center justify-center
+        ${isCircle ? 'rounded-full aspect-square border-0' : 'p-2 rounded-2xl border min-h-[100px] hover:shadow-lg'}`} 
+      onClick={() => setViewingHabitMap(habit)}
+    >
+      <svg 
+        className={`absolute transition-all duration-500 -rotate-90 ${isCircle ? 'inset-0 w-full h-full p-1' : 'bottom-2 w-16 h-16'}`} 
+        viewBox={isCircle ? "0 0 100 100" : "0 0 60 60"}
+      >
+        <circle cx={isCircle ? "50" : "30"} cy={isCircle ? "50" : "30"} r={isCircle ? "47" : "23"} fill="none" stroke={theme === 'dark' ? '#1e293b' : '#f1f5f9'} strokeWidth={isCircle ? "4" : "4.5"} />
+        <motion.circle 
+          cx={isCircle ? "50" : "30"} cy={isCircle ? "50" : "30"} r={isCircle ? "47" : "23"} fill="none" stroke="#10b981" strokeWidth={isCircle ? "4" : "4.5"} 
+          strokeDasharray={isCircle ? 295.3 : 145} initial={{ strokeDashoffset: isCircle ? 295.3 : 145 }} 
+          animate={{ strokeDashoffset: (isCircle ? 295.3 : 145) - ((isCircle ? 295.3 : 145) * pct / 100) }} 
+          transition={{ duration: 1, ease: "easeInOut" }} strokeLinecap="round" 
+        />
+      </svg>
+      
+      {isCircle ? (
+        <div className="z-10 text-center flex flex-col items-center px-2 w-full relative">
+          {isEditing ? (
+            <input autoFocus className={`text-[8px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(idx)} onClick={(e) => e.stopPropagation()} />
+          ) : (
+            <div className="relative flex items-center justify-center w-full group/name min-h-[14px]">
+              <p className="text-[7px] font-black uppercase opacity-60 leading-tight line-clamp-1 text-center w-full px-4">{habit}</p>
+              <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
+            </div>
+          )}
+          <span className={`text-xs font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+            <AnimatedNumber value={pct} />
+          </span>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-1 mb-0.5 w-full justify-center px-1 min-h-[40px] flex-grow">
+              {isEditing ? (
+                <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(idx)} onClick={(e) => e.stopPropagation()} />
+              ) : (
+                <div className="relative flex items-center justify-center w-full">
+                  <p className={`text-[10px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words text-center leading-[1.2] px-4`}>{habit}</p>
+                  <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
                 </div>
-                <div className="relative w-16 h-16 flex items-center justify-center mt-auto">
-                  <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 60 60">
-                    <circle cx="30" cy="30" r="23" fill="none" stroke={theme==='dark'?'#1e293b':'#f1f5f9'} strokeWidth="4.5" />
-                    <motion.circle cx="30" cy="30" r="23" fill="none" stroke="#10b981" strokeWidth="4.5" strokeDasharray={145} initial={{ strokeDashoffset: 145 }} animate={{ strokeDashoffset: 145 - (145 * (analytics.habitPcts[habit] ?? 0) / 100) }} transition={{ duration: 1, ease: "easeInOut" }} strokeLinecap="round" />
-                  </svg>
-                  <span className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}><AnimatedNumber value={analytics.habitPcts[habit] ?? 0} /></span>
-                </div>
-              </motion.div>
-            ))}
-            </AnimatePresence>
+              )}
+          </div>
+          <div className="w-16 h-16 flex items-center justify-center mt-auto relative z-10">
+             <span className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}><AnimatedNumber value={pct} /></span>
+          </div>
+        </>
+      )}
+    </motion.div>
+  );
+})}
+</AnimatePresence>
             <motion.button layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => {
                 const name = `Habit ${habits.length + 1}`; const newHabits = [...habits, name]; 
                 const newConfigs = {...habitConfigs, [name]: { steps: 1 }};
                 setHabits(newHabits); setHabitConfigs(newConfigs); save(trackerData, newHabits, newConfigs); setEditingHabitIdx(newHabits.length - 1); setTempHabitName(name);
-              }} className={`${getCardStyle()} p-2 rounded-2xl border-2 border-dashed flex items-center justify-center ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'} min-h-[100px] transition-all`}>
+              }} className={`${getCardStyle()} flex items-center justify-center border-2 border-dashed transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl min-h-[100px]'} ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'}`}>
               <PlusIcon />
             </motion.button>
           </motion.div>
