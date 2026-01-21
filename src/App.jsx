@@ -638,8 +638,14 @@ return () => {
   }, [daysInMonth, trackerData]);
 
   // Styling Helpers
-  const getButtonStyles = (val) => {
-    if (!val) return theme === 'dark' ? 'bg-slate-800 text-red-500 border-slate-700' : 'bg-white text-red-500 border-slate-200 hover:bg-slate-50';
+  const getButtonStyles = (val, dateKey) => {
+    const isToday = new Date().toDateString() === new Date(dateKey).toDateString();
+    const isPast = new Date(dateKey).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+    
+    if (!val) {
+      const textCol = isToday ? (theme === 'dark' ? 'text-white' : 'text-slate-400') : (isPast ? 'text-red-500' : (theme === 'dark' ? 'text-slate-700' : 'text-slate-300'));
+      return theme === 'dark' ? `bg-slate-800 ${textCol} border-slate-700` : `bg-white ${textCol} border-slate-200 hover:bg-slate-50`;
+    }
     if (val < 100) return 'bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-900/20';
     return 'bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-900/20';
   };
@@ -846,7 +852,7 @@ return () => {
           </div>
 
           {/* Updated Habit Cards Grid */}
-          <motion.div variants={containerVariants} className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-3 mb-8">
+          <motion.div variants={containerVariants} className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-3 mb-8">
             <AnimatePresence mode='popLayout'>
 {habits.map((habit, idx) => {
   const isCircle = tabLayout === 'circle';
@@ -881,7 +887,7 @@ return () => {
             <input autoFocus className={`text-[8px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(idx)} onClick={(e) => e.stopPropagation()} />
           ) : (
             <div className="relative flex items-center justify-center w-full group/name min-h-[14px]">
-              <p className="text-[16px] font-black uppercase opacity-80 leading-tight line-clamp-1 text-center w-full px-2">{habit}</p>
+              <p className="text-[clamp(7px,2.2vw,14px)] sm:text-[11px] md:text-sm font-black uppercase opacity-80 leading-[1.1] line-clamp-2 text-center w-full px-1 break-words">{habit}</p>
               <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
             </div>
           )}
@@ -896,8 +902,7 @@ return () => {
                 <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(idx)} onClick={(e) => e.stopPropagation()} />
               ) : (
                 <div className="relative flex items-center justify-center w-full">
-                  <p className={`text-[17px] font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} uppercase line-clamp-2 break-words text-center leading-tight px-2`}>{habit}</p>
-
+                  <p className={`text-[clamp(9px,2vw,16px)] sm:text-sm md:text-base font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} uppercase line-clamp-2 break-words text-center leading-[1.1] px-1`}>{habit}</p>
                   <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
                 </div>
               )}
@@ -1015,7 +1020,7 @@ return () => {
                                         return (
                                             <td key={i} className={`p-2 border-r border-b transition-all duration-500 text-center ${rowBgStyle} ${isToday ? 'border-y-2 border-emerald-500/20' : ''}`}>
 
-                                                <motion.button whileTap={{ scale: 0.9 }} className={`w-11 h-11 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val)} touch-none select-none ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 cursor-not-allowed grayscale' : ''}`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)}>
+                                                <motion.button whileTap={{ scale: 0.9 }} className={`w-11 h-11 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val, key)} touch-none select-none ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 cursor-not-allowed grayscale' : ''}`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)}>
                                                     <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
                                                     <span className="pointer-events-none font-bold">
     {(() => {
@@ -1091,7 +1096,7 @@ return () => {
                         </tr>
                         {habits.map((habit, hIdx) => (
                             <tr key={hIdx} className="h-[68px]">
-                                <td className={`p-2 font-black text-[11px] uppercase sticky left-0 z-20 border-r-2 border-b text-center transition-colors bg-[#1e293b] border-slate-800 text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
+                                <td className={`p-1 font-black text-[clamp(7.5px,1.5vw,11px)] sm:text-[11px] uppercase sticky left-0 z-20 border-r-2 border-b text-center transition-colors bg-[#1e293b] border-slate-800 text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}> 
     <div className="truncate w-full px-1 font-black leading-tight">{habit}</div>
 </td>
                                 {daysInMonth.map(day => {
@@ -1099,7 +1104,7 @@ return () => {
                                     return (
                                         <td key={key} className={`p-1.5 border-x-2 border-b text-center transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]') : 'border-transparent border-r-slate-100 dark:border-r-slate-800'}`}>
 
-                                        <motion.button whileTap={{ scale: 0.9 }} onPointerDown={(e) => handleHabitPressStart(e, key, habit, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, habit, val)} className={`w-11 h-11 rounded-2xl mx-auto border-2 flex items-center justify-center font-black transition-all text-xl ${getButtonStyles(val)} ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 grayscale' : ''}`}>
+                                        <motion.button whileTap={{ scale: 0.9 }} onPointerDown={(e) => handleHabitPressStart(e, key, habit, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, habit, val)} className={`w-11 h-11 rounded-2xl mx-auto border-2 flex items-center justify-center font-black transition-all text-xl ${getButtonStyles(val, key)} ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 grayscale' : ''}`}>
       <span>
     {(() => {
         const config = habitConfigs[habit];
@@ -1293,9 +1298,9 @@ return () => {
                       
                       return (
                           <motion.div key={idx} whileTap={{ scale: 0.9 }} 
-                              onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} 
-                              onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} 
-                              className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none ${getButtonStyles(v)} ${isTodayCell ? 'ring-2 ring-emerald-400 ring-offset-2' : ''} ${isOtherMonth ? 'opacity-30' : ''}`}>
+    onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} 
+    onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} 
+    className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none ${getButtonStyles(v, key)} ${isTodayCell ? 'ring-2 ring-emerald-400 ring-offset-2' : ''} ${isOtherMonth ? 'opacity-30' : ''}`}>
                               <span className={`text-[8px] font-black pointer-events-none ${v > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-400')}`}>{day.getDate()}</span>
                               <span className={`text-xs font-black pointer-events-none ${v > 0 ? 'text-white' : (isPassedCell ? 'text-red-500' : 'text-white [text-shadow:_-1px_-1px_0_#000,1px_-1px_0_#000,-1px_1px_0_#000,1px_1px_0_#000]')} ${v > 0 && v < 100 ? 'text-[9px]' : ''}`}>
                                   {stepVal !== null ? stepVal : (v === 100 ? '✔' : (v > 0 ? `${Math.round(v)}%` : '✘'))}
