@@ -134,7 +134,7 @@ export default function App() {
   const [tableOrientation, setTableOrientation] = useState(() => 
     (typeof window !== 'undefined' ? localStorage.getItem('adib_table_orientation') || 'vertical' : 'vertical')
   );
-
+const [showWeeklyModal, setShowWeeklyModal] = useState(false);
   const toggleTableOrientation = () => {
     const next = tableOrientation === 'vertical' ? 'horizontal' : 'vertical';
     setTableOrientation(next);
@@ -491,7 +491,28 @@ return () => {
     habits.forEach(h => { habitPcts[h] = Math.round(((stats[h] || 0) / (daysInMonth.length * 100)) * 100) || 0; });
     return { habitPcts, monthlyPct, totalDone: Math.round(totalEarnedWeight), noteCount };
   }, [daysInMonth, trackerData, habits, habitConfigs]);
+      const weeklySummary = useMemo(() => {
+    const last7Days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      last7Days.push(getSafeKey(d));
+    }
 
+    const weeklyStats = habits.map(habit => {
+      let earned = 0;
+      last7Days.forEach(date => {
+        const val = trackerData[date]?.[habit] ?? 0;
+        earned += (val / 100);
+      });
+      return { name: habit, score: Math.round((earned / 7) * 100) };
+    });
+
+    const topHabits = [...weeklyStats].sort((a, b) => b.score - a.score).slice(0, 3);
+    const avgScore = habits.length > 0 ? Math.round(weeklyStats.reduce((acc, h) => acc + h.score, 0) / habits.length) : 0;
+
+    return { topHabits, avgScore };
+  }, [trackerData, habits]);
   const habitInsights = useMemo(() => {
     if (!viewingHabitMap) return null;
 
@@ -693,7 +714,21 @@ return () => {
 
             {/* Month Ribbon with Far-Right Alignment */}
             <div className={`flex items-center justify-between ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} rounded-xl p-1 border transition-colors z-10 w-full lg:w-auto`}>
-              
+              {/* Quick Weekly Summary Trigger */}
+<motion.button 
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => setShowWeeklyModal(true)}
+  className={`mr-2 px-3 py-1.5 rounded-xl border flex items-center gap-2 transition-all ${theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm'}`}
+>
+  <div className="flex flex-col items-start leading-none">
+    <span className="text-[7px] font-black uppercase tracking-tighter opacity-70">Weekly Avg</span>
+    <span className="text-xs font-black">{weeklySummary.avgScore}%</span>
+  </div>
+  <TrophyIcon className={weeklySummary.avgScore >= 80 ? "animate-bounce" : ""} />
+</motion.button>
+
+<div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
               {/* Left Side: Date Navigation Group */}
               <div className="flex items-center">
                 <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronLeftIcon /></motion.button>
@@ -886,7 +921,40 @@ return () => {
               <PlusIcon />
             </motion.button>
           </motion.div>
+{/* Weekly Summary Popup Modal */}
+        {showWeeklyModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowWeeklyModal(false)}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative`} onClick={e => e.stopPropagation()}>
+              
+              <button onClick={() => setShowWeeklyModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              
+              <div className="mb-8">
+                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Performance Overview</p>
+                <h3 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Weekly Summary</h3>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className={`p-6 rounded-3xl border ${theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'} flex flex-col items-center justify-center`}>
+                  <span className="text-4xl font-black text-emerald-500">{weeklySummary.avgScore}%</span>
+                  <span className={`text-[9px] font-black uppercase mt-2 ${getTextMuted()}`}>7-Day Average</span>
+                </div>
+
+                <div className="col-span-2 space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrophyIcon className="text-yellow-500" />
+                    <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Top Achievements</p>
+                  </div>
+                  {weeklySummary.topHabits.map((h, i) => (
+                    <div key={i} className={`p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'} flex items-center justify-between`}>
+                      <span className={`text-[10px] font-black uppercase ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{h.name}</span>
+                      <span className="text-sm font-black text-emerald-500">{h.score}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
           {/* Table Log */}
 <motion.div variants={itemVariants} className={`${getCardStyle()} rounded-[2.5rem] overflow-hidden mb-8 relative transition-colors`}>
     
@@ -905,6 +973,7 @@ return () => {
                     <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                         <tr className="h-[72px]">
                             <th className={`p-5 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[120px] min-w-[120px] z-40 text-center`}>
+                              
                               
                               <div className="flex items-center justify-center gap-2">
                                 <button onClick={toggleTableOrientation} className={`p-1 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`} title="Switch to Horizontal View">
