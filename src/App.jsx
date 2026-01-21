@@ -828,7 +828,7 @@ return () => {
       onClick={() => setViewingHabitMap(habit)}
     >
       <svg 
-        className={`absolute transition-all duration-500 -rotate-90 ${isCircle ? 'inset-0 w-full h-full p-1' : 'bottom-2 w-16 h-16'}`} 
+        className={`absolute transition-all duration-500 -rotate-90 ${isCircle ? 'inset-0 w-full h-full p-1' : 'bottom-2 w-20 h-20'}`} 
         viewBox={isCircle ? "0 0 100 100" : "0 0 60 60"}
       >
         <circle cx={isCircle ? "50" : "30"} cy={isCircle ? "50" : "30"} r={isCircle ? "47" : "23"} fill="none" stroke={theme === 'dark' ? '#1e293b' : '#f1f5f9'} strokeWidth={isCircle ? "4" : "4.5"} />
@@ -846,11 +846,11 @@ return () => {
             <input autoFocus className={`text-[8px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(idx)} onClick={(e) => e.stopPropagation()} />
           ) : (
             <div className="relative flex items-center justify-center w-full group/name min-h-[14px]">
-              <p className="text-[7px] font-black uppercase opacity-60 leading-tight line-clamp-1 text-center w-full px-4">{habit}</p>
+              <p className="text-[16px] font-black uppercase opacity-80 leading-tight line-clamp-1 text-center w-full px-2">{habit}</p>
               <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
             </div>
           )}
-          <span className={`text-xs font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+          <span className={`text-[19px] font-black mt-1 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
             <AnimatedNumber value={pct} />
           </span>
         </div>
@@ -861,14 +861,17 @@ return () => {
                 <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(idx)} onClick={(e) => e.stopPropagation()} />
               ) : (
                 <div className="relative flex items-center justify-center w-full">
-                  <p className={`text-[10px] font-bold ${getTextMuted()} uppercase line-clamp-2 break-words text-center leading-[1.2] px-4`}>{habit}</p>
+                  <p className={`text-[17px] font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} uppercase line-clamp-2 break-words text-center leading-tight px-2`}>{habit}</p>
+
                   <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
                 </div>
               )}
           </div>
-          <div className="w-16 h-16 flex items-center justify-center mt-auto relative z-10">
-             <span className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}><AnimatedNumber value={pct} /></span>
-          </div>
+          <div className="w-20 h-20 flex items-center justify-center mt-auto relative z-10 pt-2">
+   <span className={`text-[19px] font-black leading-none ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+     <AnimatedNumber value={pct} />
+   </span>
+</div>
         </>
       )}
     </motion.div>
