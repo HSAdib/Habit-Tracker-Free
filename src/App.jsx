@@ -467,19 +467,59 @@ return () => {
 
   const habitInsights = useMemo(() => {
     if (!viewingHabitMap) return null;
+
     let monthlyEarned = 0;
     daysInMonth.forEach(day => {
-      const key = getSafeKey(day); const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
+      const key = getSafeKey(day); 
+      const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
       monthlyEarned += (typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0));
     });
     const score = Math.round((monthlyEarned / (daysInMonth.length * 100)) * 100);
+
+    const allDates = Object.keys(trackerData).sort();
     let currentStreak = 0;
-    const todayIdx = daysInMonth.findIndex(d => getSafeKey(d) === getSafeKey(new Date()));
-    if (todayIdx !== -1) {
-      let i = todayIdx;
-      while (i >= 0 && (typeof (trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap]) === 'number' ? trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap] : (trackerData[getSafeKey(daysInMonth[i])]?.[viewingHabitMap] ? 100 : 0)) >= 70) { currentStreak++; i--; }
+    let bestStreak = 0;
+    let tempStreak = 0;
+
+    if (allDates.length > 0) {
+      const firstDate = new Date(allDates[0]);
+      const today = new Date();
+      let d = new Date(firstDate);
+
+      while (d <= today) {
+        const key = getSafeKey(d);
+        const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
+        const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
+
+        if (val >= 70) {
+          tempStreak++;
+          if (tempStreak > bestStreak) bestStreak = tempStreak;
+        } else {
+          tempStreak = 0;
+        }
+        d.setDate(d.getDate() + 1);
+      }
+      
+      let checkDate = new Date();
+      while (true) {
+        const key = getSafeKey(checkDate);
+        const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
+        const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
+        if (val >= 70) {
+          currentStreak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
     }
-    return { score, currentStreak, level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : score >= 25 ? "Apprentice" : "Newbie" };
+
+    return { 
+      score, 
+      currentStreak, 
+      bestStreak,
+      level: score >= 90 ? "Grandmaster" : score >= 75 ? "Elite" : score >= 50 ? "Adept" : score >= 25 ? "Apprentice" : "Seed" 
+    };
   }, [viewingHabitMap, trackerData, daysInMonth]);
 
   const heatmapConfig = useMemo(() => {
@@ -612,8 +652,8 @@ return () => {
               <div className="flex items-center">
                 <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronLeftIcon /></motion.button>
                 <span className={`px-2 md:px-4 font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'} min-w-[110px] md:min-w-[140px] text-center text-xs md:text-sm`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => currentDate.getMonth() + 1 <= new Date().getMonth() || currentDate.getFullYear() < new Date().getFullYear() ? setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)) : null} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
-              </div>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
+                </div>
 
               {/* Right Side: Data Safety Group with CSS Tooltips */}
               <div className="flex items-center gap-1 ml-auto">
@@ -956,12 +996,14 @@ return () => {
                   
                   <div className="w-full space-y-4">
                     <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors`}><div className="text-emerald-600"><ActivityIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Rank</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.level}</span></div></div>
-                    <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors`}><div className="text-orange-600"><FlameIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Streak</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.currentStreak} Days</span></div></div>
+<div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors`}><div className="text-orange-600"><FlameIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Current Streak</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.currentStreak} Days</span></div></div>
+<div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors ring-2 ring-emerald-500/10`}><div className="text-yellow-500"><TrophyIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Personal Best</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.bestStreak} Days</span></div></div>
+                    
 
 <div className="mt-6 w-full px-2">
   <p className={`text-[8px] font-black uppercase ${getTextMuted()} mb-3 tracking-widest text-center`}>Milestone Progress</p>
   <div className="grid grid-cols-5 gap-1.5">
-    {['Newbie', 'Apprentice', 'Adept', 'Elite', 'Grandmaster'].map((rank) => (
+    {['Seed', 'Apprentice', 'Adept', 'Elite', 'Grandmaster'].map((rank) => (
       <div key={rank} className={`aspect-square rounded-xl border flex flex-col items-center justify-center transition-all duration-700 ${habitInsights.level === rank ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)] scale-110 z-10' : 'border-transparent opacity-20 grayscale'}`}>
         <TrophyIcon />
         <span className="text-[5px] font-black uppercase mt-1 text-[5px] leading-tight text-center">{rank}</span>
@@ -987,7 +1029,7 @@ return () => {
                         <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
                         <span className="text-[10px] font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
                         <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
-                      </div>
+                        </div>
                     </div>
                     <button onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }} className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`}><XIcon /></button>
                   </div>
