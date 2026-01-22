@@ -964,36 +964,6 @@ return () => {
                </div>
             </div>
 
-            {/* Neon Pomodoro Button in Top Right Spot */}
-            <div className="absolute top-6 right-8 z-20 flex flex-col items-center">
-              <div className="tooltip-trigger tooltip-left">
-                <button 
-                  onClick={() => setShowPomo(true)} 
-                  className={`p-2.5 rounded-xl transition-all relative border 
-                    ${pomoActive 
-                      ? 'bg-emerald-500/30 text-emerald-400 border-emerald-500 shadow-[0_0_25px_rgba(16,185,129,0.6)] filter drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]' 
-                      : (theme === 'dark' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.4)] filter drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]' 
-                          : 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.2)] filter drop-shadow-[0_0_5px_rgba(16,185,129,0.2)]')
-                    }`}
-                >
-                  <TimerIcon />
-                  {pomoActive && (
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_#10b981]"></span>
-                    </span>
-                  )}
-                </button>
-                <span className="tooltip-content">Pomodoro Timer</span>
-              </div>
-              {pomoActive && !showPomo && (
-                <motion.span initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className={`text-[10px] font-black mt-1.5 tabular-nums tracking-tighter drop-shadow-md ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                  {formatPomoTime(pomoTime)}
-                </motion.span>
-              )}
-            </div>
-
             {/* Month Ribbon with Far-Right Alignment */}
             <div className={`flex items-center justify-between ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} rounded-xl p-1 border transition-colors z-10 w-full lg:w-auto`}>
               {/* Quick Weekly Summary Trigger */}
@@ -1112,16 +1082,45 @@ return () => {
             
             <motion.div variants={itemVariants} className={`col-span-1 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors h-full min-w-0`}>
               <div className="flex items-center mb-2 md:mb-4">
-                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700 shadow-sm' : 'bg-slate-100 border-slate-200'}`} title="Mastery Score">
-                  <TargetIcon className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} />
-                  <span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {analytics.monthlyPct}%
-                  </span>
-                </div>
-                <div className={`ml-auto scale-75 md:scale-100 flex items-center justify-center px-2 py-0.5 rounded-lg border transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700 shadow-sm' : 'bg-slate-100 border-slate-200'}`} title="Activity Trend">
-                  <ActivityIcon className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} />
-                </div>
-              </div>
+  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20" title="Mastery Score">
+    <TargetIcon className="text-emerald-500" />
+    <span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+      {analytics.monthlyPct}%
+    </span>
+  </div>
+  <div className="ml-auto flex items-center gap-2">
+  <div className="tooltip-trigger">
+    <motion.button 
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={() => { requestNotificationPermission(); setShowPomo(true); }} 
+      className={`px-3 py-1.5 rounded-xl border flex items-center gap-2 transition-all relative
+        ${pomoActive 
+          ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
+          : (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm')
+        }`}
+    >
+      <div className="flex flex-col items-start leading-none">
+        <span className="text-[7px] font-black uppercase tracking-tighter opacity-70">
+          {pomoMode === 'work' ? 'Focus Session' : 'Break Time'}
+        </span>
+        <span className="text-xs font-black">
+          {pomoActive ? formatPomoTime(pomoTime) : (pomoMode === 'work' ? pomoWorkTime : pomoBreakTime) + 'm'}
+        </span>
+      </div>
+
+      <TimerIcon />
+
+      {pomoActive && (
+        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+      )}
+    </motion.button>
+  </div>
+</div>
+</div>
               <div className="flex-grow flex items-center h-16 md:h-28 w-full relative">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <defs>
@@ -1218,6 +1217,7 @@ return () => {
           <span className="text-[8px] font-black">{habitStreaks[habit]}</span>
         </div>
       )}
+      
       <svg 
         className={`absolute transition-all duration-500 -rotate-90 ${isCircle ? 'inset-0 w-full h-full p-1' : 'bottom-2 w-20 h-20'}`} 
         viewBox={isCircle ? "0 0 100 100" : "0 0 60 60"}
