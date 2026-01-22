@@ -934,22 +934,27 @@ return () => {
                         setTabLayout(next);
                         localStorage.setItem('adib_habit_layout', next);
                       }}
-                      className={`p-1.5 rounded-lg transition-all border ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-emerald-400' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-emerald-600'}`}
+                      className={`p-1.5 rounded-lg transition-all border active:scale-90
+                        ${theme === 'dark' 
+                          ? 'bg-slate-800 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)] hover:border-emerald-500/50' 
+                          : 'bg-white border-emerald-200 text-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.15)] hover:border-emerald-400'
+                        }`}
                       title="Switch Habit Tabs Layout"
                     >
                       {tabLayout === 'square' ? <TargetIcon /> : <SquareTargetIcon />}
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2">
-  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-500 ${getLevelBadgeStyle(xpStats.level)}`}>
-  Level {xpStats.level}
-</span>
-  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)]" title="Total Full Wins">
-    <TrophyIcon className="w-2.5 h-2.5 text-yellow-500" />
-    <span className="text-[9px] font-black text-yellow-500">{analytics.totalDone}</span>
-  </div>
-</div>
+                  {/* Status Zone - Separated from Buttons */}
+                  <div className={`flex items-center gap-3 ml-4 md:ml-8 pl-4 md:pl-6 border-l ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-500 cursor-default ${getLevelBadgeStyle(xpStats.level)}`}>
+                      Level {xpStats.level}
+                    </span>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)] cursor-default" title="Total Full Wins">
+                      <TrophyIcon className="w-2.5 h-2.5 text-yellow-500" />
+                      <span className="text-[9px] font-black text-yellow-500">{analytics.totalDone}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -983,9 +988,9 @@ return () => {
 <div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
               {/* Left Side: Date Navigation Group */}
               <div className="flex items-center">
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronLeftIcon /></motion.button>
-                <span className={`px-2 md:px-4 font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'} min-w-[110px] md:min-w-[140px] text-center text-xs md:text-sm`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-1 md:p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronLeftIcon /></motion.button>
+                <span className={`px-1 md:px-4 font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'} min-w-[85px] md:min-w-[140px] text-center text-[10px] md:text-sm`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className={`p-1 md:p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
                 </div>
 
               {/* Right Side: Data Safety Group with CSS Tooltips */}
@@ -1027,24 +1032,44 @@ return () => {
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2 md:gap-4">
                 <div className="flex items-center gap-2 md:gap-4">
                   <div className="flex items-center gap-2">
-  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border transition-all duration-500 shrink-0 bg-emerald-500/10 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-  Activity Heatmap
-</span>
+  <div className="flex items-center gap-3">
+  <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest shrink-0 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+    Activity Heatmap
+  </span>
   <select 
     value={heatmapFilter} 
     onChange={(e) => setHeatmapFilter(e.target.value)}
-    className={`ml-1 text-[9px] font-black uppercase bg-transparent border-none focus:outline-none cursor-pointer transition-colors ${theme === 'dark' ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}
+    className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border transition-all duration-500 cursor-pointer focus:outline-none
+      ${theme === 'dark' 
+        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:bg-emerald-500/20' 
+        : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300 shadow-sm'}`}
   >
     <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
     {habits.map(h => (
       <option key={h} value={h} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{h}</option>
     ))}
   </select>
-</div>
+</div> </div>
                   <div className="flex items-center gap-1.5 md:gap-3 overflow-hidden pl-2 md:pl-4">
-  <motion.button whileHover={{ y: -2 }} onClick={() => setShowAllNotes(true)} className={`flex items-center gap-1 transition-all p-0.5 rounded-lg ${theme === 'dark' ? 'text-blue-400 hover:bg-blue-900/20' : 'text-blue-600 hover:bg-blue-50/50'}`}>
+  <motion.button 
+    whileHover={{ scale: 1.05 }} 
+    whileTap={{ scale: 0.95 }}
+    onClick={() => setShowAllNotes(true)} 
+    className={`flex items-center gap-1.5 transition-all px-2.5 py-1.5 rounded-xl border relative
+      ${analytics.noteCount > 0 ? 'animate-glow-blue' : ''} 
+      ${theme === 'dark' 
+        ? 'bg-blue-900/20 text-blue-400 border-blue-500/30' 
+        : 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm'}`}
+  >
     <NoteIcon />
     <span className={`text-[10px] md:text-xs font-black`}>{analytics.noteCount}</span>
+    
+    {analytics.noteCount > 0 && (
+      <span className="absolute -top-1 -right-1 flex h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+      </span>
+    )}
   </motion.button>
 </div>
                 </div>
@@ -1082,9 +1107,11 @@ return () => {
             
             <motion.div variants={itemVariants} className={`col-span-1 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors h-full min-w-0`}>
               <div className="flex items-center mb-2 md:mb-4">
-  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20" title="Mastery Score">
-    <TargetIcon className="text-emerald-500" />
-    <span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+  <div className="flex items-center gap-2" title="Mastery Score">
+    <div className="text-emerald-500">
+      <TargetIcon />
+    </div>
+    <span className={`text-[10px] md:text-sm font-black ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
       {analytics.monthlyPct}%
     </span>
   </div>
@@ -1505,7 +1532,7 @@ return () => {
 
         {/* Footer Credit Section */}
         <footer className={`mt-auto py-6 md:py-10 text-center border-t ${theme === 'dark' ? 'border-slate-900' : 'border-slate-100'}`}>
-          <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] ${getTextMuted()}`}>
+          <p className={`text-[15px] md:text-[16px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] ${getTextMuted()}`}>
             Developed by <a 
               href="https://www.facebook.com/hsnshahriaradib" 
               target="_blank" 
@@ -1902,6 +1929,8 @@ return () => {
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes glow { 0% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } 50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); } 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } }
         .animate-glow { animation: glow 2s infinite ease-in-out; filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.6)); }
+        @keyframes glow-blue { 0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); } 50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); } 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); } }
+        .animate-glow-blue { animation: glow-blue 2s infinite ease-in-out; filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.6)); }
         .rolling-digit-container { perspective: 1000px; transform-style: preserve-3d; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: ${theme === 'dark' ? '#0f172a' : '#f1f5f9'}; border-radius: 10px; }
