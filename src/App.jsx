@@ -1340,9 +1340,16 @@ return () => {
                               
                               
                               <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleTableOrientation} className={`p-1 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`} title="Switch to Horizontal View">
-                                  <TableRotateIcon />
-                                </button>
+                                <button 
+  onClick={toggleTableOrientation} 
+  className={`p-1.5 rounded-lg border transition-all active:scale-90 shadow-sm
+    ${theme === 'dark' 
+      ? 'bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600' 
+      : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`} 
+  title="Switch to Horizontal View"
+>
+  <TableRotateIcon />
+</button>
                                 <span>DATE Log</span>
                               </div>
                             </th>
@@ -1410,9 +1417,16 @@ return () => {
                         <tr className="h-[72px]">
                             <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r border-b ${getTableHeadStyle()} shadow-[4px_0_8px_rgba(0,0,0,0.3)] w-[120px] min-w-[120px]`}>
                               <div className="flex items-center justify-center gap-2">
-                                <button onClick={toggleTableOrientation} className={`p-1 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`} title="Switch to Vertical View">
-                                  <TableRotateIcon />
-                                </button>
+                                <button 
+  onClick={toggleTableOrientation} 
+  className={`p-1.5 rounded-lg border transition-all active:scale-90 shadow-sm
+    ${theme === 'dark' 
+      ? 'bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600' 
+      : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`} 
+  title="Switch to Vertical View"
+>
+  <TableRotateIcon />
+</button>
                                 <span>DATE Log</span>
                               </div>
                             </th>
