@@ -134,7 +134,7 @@ const itemVariants = {
 export default function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [trackerData, setTrackerData] = useState({});
-  const [tabLayout, setTabLayout] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_habit_layout') || 'square' : 'square'));
+  const [tabLayout, setTabLayout] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_habit_layout') || 'circle' : 'circle'));
   const [habits, setHabits] = useState(DEFAULT_HABITS);
   const [habitConfigs, setHabitConfigs] = useState(DEFAULT_CONFIGS);
   const [editingHabitName, setEditingHabitName] = useState(null);
@@ -142,10 +142,10 @@ export default function App() {
   const [viewingHabitMap, setViewingHabitMap] = useState(null);
   const [editingNoteDate, setEditingNoteDate] = useState(null);
   const [showAllNotes, setShowAllNotes] = useState(false);
-  const [theme, setTheme] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_habit_theme') || 'light' : 'light'));
+  const [theme, setTheme] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_habit_theme') || 'dark' : 'dark'));
   const [tableOrientation, setTableOrientation] = useState(() => 
-    (typeof window !== 'undefined' ? localStorage.getItem('adib_table_orientation') || 'vertical' : 'vertical')
-  );
+  (typeof window !== 'undefined' ? localStorage.getItem('adib_table_orientation') || 'horizontal' : 'horizontal')
+);
 const [showWeeklyModal, setShowWeeklyModal] = useState(false);
 const [heatmapFilter, setHeatmapFilter] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -1094,22 +1094,16 @@ return () => {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={() => { requestNotificationPermission(); setShowPomo(true); }} 
-      className={`px-3 py-1.5 rounded-xl border flex items-center gap-2 transition-all relative
+      className={`px-2 py-2 rounded-2xl border flex flex-col items-center gap-1 transition-all relative
         ${pomoActive 
           ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
           : (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm')
         }`}
     >
-      <div className="flex flex-col items-start leading-none">
-        <span className="text-[7px] font-black uppercase tracking-tighter opacity-70">
-          {pomoMode === 'work' ? 'Focus Session' : 'Break Time'}
-        </span>
-        <span className="text-xs font-black">
-          {pomoActive ? formatPomoTime(pomoTime) : (pomoMode === 'work' ? pomoWorkTime : pomoBreakTime) + 'm'}
-        </span>
-      </div>
-
       <TimerIcon />
+      <span className="text-[9px] font-black leading-none">
+        {pomoActive ? formatPomoTime(pomoTime) : (pomoMode === 'work' ? pomoWorkTime : pomoBreakTime) + 'm'}
+      </span>
 
       {pomoActive && (
         <span className="absolute -top-1 -right-1 flex h-2 w-2">
