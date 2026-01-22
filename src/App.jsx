@@ -1205,18 +1205,6 @@ return () => {
         ${isCircle ? 'rounded-full aspect-square border-0' : 'p-2 rounded-2xl border min-h-[100px] hover:shadow-lg'}`} 
       onClick={() => setViewingHabitMap(habit)}
     >
-      {/* Streak Badge (Position fix according to image) */}
-      {habitStreaks[habit] > 1 && (
-        <div className={`absolute z-20 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border transition-all
-          ${isCircle 
-            ? 'bottom-8 left-1/2 -translate-x-1/2 scale-90'  // সার্কেলে আপনার চিহ্নিত লাল বক্সের স্থানে (মাঝখানে এবং সামান্য উপরে)
-            : 'top-2 left-2'                                 // স্কয়ার ভিউতে বামদিকের উপরে
-          }
-          ${theme === 'dark' ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 'bg-orange-50 border-orange-200 text-orange-600 shadow-sm'}`}>
-          <FlameIcon />
-          <span className="text-[8px] font-black">{habitStreaks[habit]}</span>
-        </div>
-      )}
       
       <svg 
         className={`absolute transition-all duration-500 -rotate-90 ${isCircle ? 'inset-0 w-full h-full p-1' : 'bottom-2 w-20 h-20'}`} 
