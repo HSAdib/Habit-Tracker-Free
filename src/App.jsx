@@ -210,6 +210,33 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
     return savedLeft !== null ? parseInt(savedLeft) : (parseInt(localStorage.getItem('adib_pomo_work')) || 25) * 60;
   });
   const [isEditingPomo, setIsEditingPomo] = useState(false);
+
+  // --- Push Notification Logic ---
+  const requestNotificationPermission = () => {
+    if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  };
+
+  const triggerNotification = (title, body) => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([500, 200, 500]);
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+      oscillator.start(); oscillator.stop(audioCtx.currentTime + 1);
+    } catch (e) {}
+    if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "granted") {
+      new Notification(title, { body, icon: 'https://cdn-icons-png.flaticon.com/512/2550/2550324.png' });
+    }
+  };
+
   useEffect(() => {
     let interval = null;
     if (pomoActive && pomoTime > 0) {
@@ -233,8 +260,10 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
           
           // সামান্য বিলম্ব করে পপ-আপ দেখাচ্ছি যাতে UI আপডেট হওয়ার সুযোগ পায়
           setTimeout(() => {
-            triggerNotification();
-            alert(pomoMode === 'work' ? "Work session done! Take a break." : "Break over! Back to work.");
+            const title = pomoMode === 'work' ? "Session Complete!" : "Break Over!";
+            const msg = pomoMode === 'work' ? "Work session done! Take a break." : "Back to work now!";
+            triggerNotification(title, msg);
+            alert(msg);
           }, 100);
         }
       }, 1000);
@@ -242,8 +271,10 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
       if (pomoActive && pomoTime === 0) {
         setPomoActive(false);
         localStorage.setItem('adib_pomo_active', 'false');
-        triggerNotification();
-        alert(pomoMode === 'work' ? "Work session done! Take a break." : "Break over! Back to work.");
+        const title = pomoMode === 'work' ? "Session Complete!" : "Break Over!";
+        const msg = pomoMode === 'work' ? "Work session done! Take a break." : "Back to work now!";
+        triggerNotification(title, msg);
+        alert(msg);
       }
       localStorage.setItem('adib_pomo_active', 'false');
       localStorage.setItem('adib_pomo_time_left', pomoTime);
@@ -261,32 +292,7 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
   const scrollContainerRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
 
-  const triggerNotification = () => {
-    // Vibration: ৫শ' মিলি-সেকেন্ড ভাইব্রেশন (অ্যান্ড্রয়েড ডিভাইসের জন্য)
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate([500, 200, 500]);
-    }
-    
-    // Web Audio API Beep: কোনো অডিও ফাইল ছাড়াই সাউন্ড তৈরি
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 নোট
-      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-      
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 1);
-    } catch (e) {
-      console.log("Audio notification failed:", e);
-    }
-  };
+  
 
   useEffect(() => {
     const checkMobile = () => { setIsMobile(window.innerWidth <= 768); };
@@ -1766,7 +1772,7 @@ return () => {
               </div>
 
               <div className="flex items-center justify-center gap-4">
-                <button onClick={() => setPomoActive(!pomoActive)} className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${pomoActive ? 'bg-amber-500 shadow-amber-500/20' : 'bg-emerald-500 shadow-emerald-500/20'} text-white shadow-xl`}>
+                <button onClick={() => { requestNotificationPermission(); setPomoActive(!pomoActive); }} className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${pomoActive ? 'bg-amber-500 shadow-amber-500/20' : 'bg-emerald-500 shadow-emerald-500/20'} text-white shadow-xl`}>
                   {pomoActive ? <PauseIcon /> : <PlayIcon />}
                 </button>
                 <button onClick={() => { setPomoActive(false); setPomoTime(pomoMode === 'work' ? 25*60 : 5*60); }} className={`w-12 h-12 rounded-full flex items-center justify-center border ${theme === 'dark' ? 'border-slate-700 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-800'} transition-all`}>
