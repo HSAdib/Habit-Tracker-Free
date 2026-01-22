@@ -210,6 +210,14 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
     return savedLeft !== null ? parseInt(savedLeft) : (parseInt(localStorage.getItem('adib_pomo_work')) || 25) * 60;
   });
   const [isEditingPomo, setIsEditingPomo] = useState(false);
+  const [archivedHabits, setArchivedHabits] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('adib_habit_archived');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
 
   // --- Push Notification Logic ---
   const requestNotificationPermission = () => {
@@ -461,13 +469,28 @@ return () => {
     delete newConfigs[name];
     const newData = { ...trackerData };
     Object.keys(newData).forEach(k => { if (newData[k]) delete newData[k][name]; });
+    const newArchived = archivedHabits.filter(h => h !== name);
     setHabits(newHabits);
     setHabitConfigs(newConfigs);
     setTrackerData(newData);
+    setArchivedHabits(newArchived);
+    localStorage.setItem('adib_habit_archived', JSON.stringify(newArchived));
     save(newData, newHabits, newConfigs);
     setViewingHabitMap(null);
-    setEditingHabitName(null); // Cleanup
+    setEditingHabitName(null);
     setShowDeleteConfirm(false);
+  };
+
+  const toggleArchiveHabit = (name) => {
+    let newArchived;
+    if (archivedHabits.includes(name)) {
+      newArchived = archivedHabits.filter(h => h !== name);
+    } else {
+      newArchived = [...archivedHabits, name];
+      setViewingHabitMap(null);
+    }
+    setArchivedHabits(newArchived);
+    localStorage.setItem('adib_habit_archived', JSON.stringify(newArchived));
   };
 
   const saveNote = (dateKey, noteText) => {
@@ -963,6 +986,14 @@ return () => {
                 
                 <div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
                 
+                {/* Archive List Button */}
+                <div className="tooltip-trigger">
+                  <button onClick={() => setShowArchiveModal(true)} className={`p-2 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-amber-400' : 'text-slate-500 hover:bg-white hover:text-amber-600'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                  </button>
+                  <span className="tooltip-content">Archive List</span>
+                </div>
+
                 {/* Export Button with Tooltip */}
                 <div className="tooltip-trigger">
                   <button onClick={handleExport} className={`p-2 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-emerald-400' : 'text-slate-500 hover:bg-white hover:text-emerald-600'}`}>
@@ -1124,7 +1155,7 @@ return () => {
           {/* Updated Habit Cards Grid */}
           <motion.div variants={containerVariants} className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-3 mb-8">
             <AnimatePresence mode='popLayout'>
-{habits.filter(h => selectedCategory === 'all' || habitConfigs[h]?.category === selectedCategory).map((habit, idx) => {
+{habits.filter(h => !archivedHabits.includes(h) && (selectedCategory === 'all' || habitConfigs[h]?.category === selectedCategory)).map((habit, idx) => {
   const isCircle = tabLayout === 'circle';
   const pct = analytics.habitPcts[habit] ?? 0;
   const isEditing = editingHabitName === habit;
@@ -1233,6 +1264,26 @@ return () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showArchiveModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[160] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowArchiveModal(false)}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl relative`} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setShowArchiveModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              <div className="mb-8">
+                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Manage Habits</p>
+                <h3 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Archived Habits</h3>
+              </div>
+              <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                {archivedHabits.length > 0 ? archivedHabits.map((habit, i) => (
+                  <div key={i} className={`p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'} flex items-center justify-between`}>
+                    <span className={`text-[10px] font-black uppercase ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{habit}</span>
+                    <button onClick={() => toggleArchiveHabit(habit)} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all">Restore</button>
+                  </div>
+                )) : <div className="text-center py-10 opacity-30 font-black uppercase text-xs">No archived habits</div>}
               </div>
             </motion.div>
           </motion.div>
@@ -1504,7 +1555,13 @@ return () => {
 </div>
                   </div>
 
-                  <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} className="mt-8 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete Habit</motion.button>
+                  <div className="flex gap-2 w-full mt-8">
+                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => toggleArchiveHabit(viewingHabitMap)} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white border border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-500 hover:text-white'}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7"/><path d="M9 13v-3"/><path d="M15 13v-3"/></svg>
+                      Archive
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete</motion.button>
+                  </div>
                 </div>
 
                 {/* MAIN CALENDAR SECTION */}
