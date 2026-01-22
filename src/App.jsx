@@ -5,6 +5,18 @@ import { Analytics } from "@vercel/analytics/react";
 import { motion, AnimatePresence, animate } from 'framer-motion';
 
 // --- Icons ---
+const TimerIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+);
+const PlayIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="m7 4 12 8-12 8V4z"/></svg>
+);
+const PauseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect width="4" height="16" x="6" y="4" rx="1"/><rect width="4" height="16" x="14" y="4" rx="1"/></svg>
+);
+const RefreshIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+);
 const ZapIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
 );
@@ -179,10 +191,102 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
   const [tableHeight, setTableHeight] = useState(484);
   const [tempGoalVal, setTempGoalVal] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Pomodoro States
+  const [showPomo, setShowPomo] = useState(false);
+  const [pomoWorkTime, setPomoWorkTime] = useState(() => (typeof window !== 'undefined' ? parseInt(localStorage.getItem('adib_pomo_work')) || 25 : 25));
+  const [pomoBreakTime, setPomoBreakTime] = useState(() => (typeof window !== 'undefined' ? parseInt(localStorage.getItem('adib_pomo_break')) || 5 : 5));
+  const [pomoMode, setPomoMode] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_pomo_mode') || 'work' : 'work'));
+  const [pomoActive, setPomoActive] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_pomo_active') === 'true' : false));
+  const [pomoTime, setPomoTime] = useState(() => {
+    if (typeof window === 'undefined') return 25 * 60;
+    const active = localStorage.getItem('adib_pomo_active') === 'true';
+    if (active) {
+      const end = parseInt(localStorage.getItem('adib_pomo_end_timestamp'));
+      const diff = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      return diff;
+    }
+    const savedLeft = localStorage.getItem('adib_pomo_time_left');
+    return savedLeft !== null ? parseInt(savedLeft) : (parseInt(localStorage.getItem('adib_pomo_work')) || 25) * 60;
+  });
+  const [isEditingPomo, setIsEditingPomo] = useState(false);
+  useEffect(() => {
+    let interval = null;
+    if (pomoActive && pomoTime > 0) {
+      const storedEnd = parseInt(localStorage.getItem('adib_pomo_end_timestamp'));
+      const activeState = localStorage.getItem('adib_pomo_active') === 'true';
+      const endTimestamp = (activeState && storedEnd > Date.now()) ? storedEnd : Date.now() + pomoTime * 1000;
+      
+      localStorage.setItem('adib_pomo_end_timestamp', endTimestamp);
+      localStorage.setItem('adib_pomo_active', 'true');
+      localStorage.setItem('adib_pomo_mode', pomoMode);
+
+      interval = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((endTimestamp - Date.now()) / 1000));
+        setPomoTime(remaining);
+        if (remaining <= 0) {
+          // পপ-আপ দেখানোর আগেই টাইমারটি বন্ধ করে দিচ্ছি যাতে এটি আর দ্বিতীয়বার ট্রিগার না হয়
+          clearInterval(interval); 
+          setPomoActive(false);
+          localStorage.setItem('adib_pomo_active', 'false');
+          localStorage.setItem('adib_pomo_time_left', '0');
+          
+          // সামান্য বিলম্ব করে পপ-আপ দেখাচ্ছি যাতে UI আপডেট হওয়ার সুযোগ পায়
+          setTimeout(() => {
+            triggerNotification();
+            alert(pomoMode === 'work' ? "Work session done! Take a break." : "Break over! Back to work.");
+          }, 100);
+        }
+      }, 1000);
+    } else {
+      if (pomoActive && pomoTime === 0) {
+        setPomoActive(false);
+        localStorage.setItem('adib_pomo_active', 'false');
+        triggerNotification();
+        alert(pomoMode === 'work' ? "Work session done! Take a break." : "Break over! Back to work.");
+      }
+      localStorage.setItem('adib_pomo_active', 'false');
+      localStorage.setItem('adib_pomo_time_left', pomoTime);
+    }
+    return () => { if(interval) clearInterval(interval); };
+  }, [pomoActive, pomoMode]);
+
+  const formatPomoTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
   
   const longPressTimer = useRef(null);
   const scrollContainerRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
+
+  const triggerNotification = () => {
+    // Vibration: ৫শ' মিলি-সেকেন্ড ভাইব্রেশন (অ্যান্ড্রয়েড ডিভাইসের জন্য)
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([500, 200, 500]);
+    }
+    
+    // Web Audio API Beep: কোনো অডিও ফাইল ছাড়াই সাউন্ড তৈরি
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 নোট
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 1);
+    } catch (e) {
+      console.log("Audio notification failed:", e);
+    }
+  };
 
   useEffect(() => {
     const checkMobile = () => { setIsMobile(window.innerWidth <= 768); };
@@ -794,6 +898,36 @@ return () => {
                </div>
             </div>
 
+            {/* Neon Pomodoro Button in Top Right Spot */}
+            <div className="absolute top-6 right-8 z-20 flex flex-col items-center">
+              <div className="tooltip-trigger tooltip-left">
+                <button 
+                  onClick={() => setShowPomo(true)} 
+                  className={`p-2.5 rounded-xl transition-all relative border 
+                    ${pomoActive 
+                      ? 'bg-emerald-500/30 text-emerald-400 border-emerald-500 shadow-[0_0_25px_rgba(16,185,129,0.6)] filter drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]' 
+                      : (theme === 'dark' 
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.4)] filter drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]' 
+                          : 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.2)] filter drop-shadow-[0_0_5px_rgba(16,185,129,0.2)]')
+                    }`}
+                >
+                  <TimerIcon />
+                  {pomoActive && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_#10b981]"></span>
+                    </span>
+                  )}
+                </button>
+                <span className="tooltip-content">Pomodoro Timer</span>
+              </div>
+              {pomoActive && !showPomo && (
+                <motion.span initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className={`text-[10px] font-black mt-1.5 tabular-nums tracking-tighter drop-shadow-md ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                  {formatPomoTime(pomoTime)}
+                </motion.span>
+              )}
+            </div>
+
             {/* Month Ribbon with Far-Right Alignment */}
             <div className={`flex items-center justify-between ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} rounded-xl p-1 border transition-colors z-10 w-full lg:w-auto`}>
               {/* Quick Weekly Summary Trigger */}
@@ -820,6 +954,7 @@ return () => {
 
               {/* Right Side: Data Safety Group with CSS Tooltips */}
               <div className="flex items-center gap-1 ml-auto">
+                
                 <div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
                 
                 {/* Export Button with Tooltip */}
@@ -1262,6 +1397,7 @@ return () => {
 </motion.div>
         </div>
         
+
         {/* Footer Credit Section */}
         <footer className={`mt-auto py-6 md:py-10 text-center border-t ${theme === 'dark' ? 'border-slate-900' : 'border-slate-100'}`}>
           <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] ${getTextMuted()}`}>
@@ -1393,7 +1529,7 @@ return () => {
                           className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer focus:outline-none appearance-none
                             ${theme === 'dark' ? 'bg-slate-800 text-emerald-400 border-slate-700 hover:border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.1)]' : 'bg-slate-100 text-emerald-600 border-slate-200 hover:border-emerald-400'}`}
                         >
-                          <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Add to</option>
+                          <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Add to category</option>
                           {categories.filter(cat => cat !== 'all').map(cat => (
                             <option key={cat} value={cat} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{cat}</option>
                           ))}
@@ -1570,6 +1706,77 @@ return () => {
           </motion.div>
         )}
 
+        {showPomo && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4" onClick={() => setShowPomo(false)}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[3rem] p-10 w-full max-w-sm text-center shadow-2xl relative`} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setShowPomo(false)} className="absolute top-6 right-6 p-2 text-slate-500 hover:text-rose-500 transition-all"><XIcon /></button>
+              
+              <div className="flex flex-col items-center gap-4 mb-8">
+                <div className="flex gap-2 justify-center items-center">
+                  {['work', 'break'].map(m => (
+                    <button key={m} onClick={() => { setPomoMode(m); setPomoTime(m === 'work' ? pomoWorkTime*60 : pomoBreakTime*60); setPomoActive(false); setIsEditingPomo(false); }} className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${pomoMode === m ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>{m}</button>
+                  ))}
+                  <button onClick={() => setIsEditingPomo(!isEditingPomo)} className={`p-1.5 rounded-lg transition-all ${isEditingPomo ? 'text-emerald-500' : 'text-slate-500 hover:text-emerald-500'}`}><EditIcon /></button>
+                </div>
+
+                {isEditingPomo && (
+                  <div className={`flex flex-col gap-3 p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'} animate-in fade-in zoom-in duration-200`}>
+                    <div className="flex gap-4 justify-center">
+                      {pomoMode === 'work' ? (
+                        <div className="text-center">
+                          <label className="text-[8px] font-black uppercase block mb-1 opacity-60">Work Duration (Min)</label>
+                          <input type="number" value={pomoWorkTime} 
+                            onChange={(e) => setPomoWorkTime(e.target.value === '' ? '' : parseInt(e.target.value))} 
+                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                            onBlur={() => {
+                              let v = parseInt(pomoWorkTime);
+                              if (!v || v <= 0) v = 25;
+                              setPomoWorkTime(v);
+                              localStorage.setItem('adib_pomo_work', v);
+                              if (pomoMode === 'work') setPomoTime(v * 60);
+                            }}
+                            className="w-20 bg-transparent text-center font-black focus:outline-none border-b border-emerald-500 text-sm" 
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <label className="text-[8px] font-black uppercase block mb-1 opacity-60">Break Duration (Min)</label>
+                          <input type="number" value={pomoBreakTime} 
+                            onChange={(e) => setPomoBreakTime(e.target.value === '' ? '' : parseInt(e.target.value))} 
+                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                            onBlur={() => {
+                              let v = parseInt(pomoBreakTime);
+                              if (!v || v <= 0) v = 5;
+                              setPomoBreakTime(v);
+                              localStorage.setItem('adib_pomo_break', v);
+                              if (pomoMode === 'break') setPomoTime(v * 60);
+                            }}
+                            className="w-20 bg-transparent text-center font-black focus:outline-none border-b border-blue-500 text-sm" 
+                          />
+                        </div>
+                      )}
+                    </div>
+                    
+                  </div>
+                )}
+              </div>
+
+              <div className={`text-7xl font-black mb-8 tabular-nums tracking-tighter ${pomoActive ? 'text-emerald-500' : (theme === 'dark' ? 'text-white' : 'text-slate-800')}`}>
+                {formatPomoTime(pomoTime)}
+              </div>
+
+              <div className="flex items-center justify-center gap-4">
+                <button onClick={() => setPomoActive(!pomoActive)} className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${pomoActive ? 'bg-amber-500 shadow-amber-500/20' : 'bg-emerald-500 shadow-emerald-500/20'} text-white shadow-xl`}>
+                  {pomoActive ? <PauseIcon /> : <PlayIcon />}
+                </button>
+                <button onClick={() => { setPomoActive(false); setPomoTime(pomoMode === 'work' ? 25*60 : 5*60); }} className={`w-12 h-12 rounded-full flex items-center justify-center border ${theme === 'dark' ? 'border-slate-700 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-800'} transition-all`}>
+                  <RefreshIcon />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {editingNoteDate && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setEditingNoteDate(null)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`${theme === 'dark' ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl`} onClick={e => e.stopPropagation()}>
@@ -1601,6 +1808,13 @@ return () => {
         }
         .tooltip-trigger:hover .tooltip-content, .tooltip-trigger:active .tooltip-content {
           opacity: 1; bottom: 140%;
+        }
+        /* Left positioned tooltip for top-right icons */
+        .tooltip-left .tooltip-content {
+          bottom: auto; left: auto; right: 125%; top: 50%; transform: translateY(-50%);
+        }
+        .tooltip-left:hover .tooltip-content, .tooltip-left:active .tooltip-content {
+          opacity: 1; right: 145%; bottom: auto;
         }
       `}} />
     </div>
