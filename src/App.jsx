@@ -691,6 +691,42 @@ return () => {
 
     return { topHabits, avgScore };
   }, [trackerData, habits]);
+  const habitStreaks = useMemo(() => {
+    const streaks = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    habits.forEach(habit => {
+      let count = 0;
+      let checkDate = new Date(today);
+      
+      // আজকের ডাটা চেক করা
+      const todayKey = getSafeKey(checkDate);
+      const todayVal = trackerData[todayKey]?.[habit] ?? 0;
+      const isTodayDone = (typeof todayVal === 'number' ? todayVal : (todayVal ? 100 : 0)) >= 100;
+
+      // যদি আজ করা না হয়ে থাকে, তবে গতকাল থেকে হিসাব শুরু হবে
+      if (!isTodayDone) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+
+      while (true) {
+        const key = getSafeKey(checkDate);
+        const valRaw = trackerData[key]?.[habit] ?? 0;
+        const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
+
+        if (val >= 100) {
+          count++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+      streaks[habit] = count;
+    });
+    return streaks;
+  }, [trackerData, habits]);
+
   const habitInsights = useMemo(() => {
     if (!viewingHabitMap) return null;
 
@@ -1169,6 +1205,18 @@ return () => {
         ${isCircle ? 'rounded-full aspect-square border-0' : 'p-2 rounded-2xl border min-h-[100px] hover:shadow-lg'}`} 
       onClick={() => setViewingHabitMap(habit)}
     >
+      {/* Streak Badge (Position fix according to image) */}
+      {habitStreaks[habit] > 1 && (
+        <div className={`absolute z-20 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border transition-all
+          ${isCircle 
+            ? 'bottom-8 left-1/2 -translate-x-1/2 scale-90'  // সার্কেলে আপনার চিহ্নিত লাল বক্সের স্থানে (মাঝখানে এবং সামান্য উপরে)
+            : 'top-2 left-2'                                 // স্কয়ার ভিউতে বামদিকের উপরে
+          }
+          ${theme === 'dark' ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 'bg-orange-50 border-orange-200 text-orange-600 shadow-sm'}`}>
+          <FlameIcon />
+          <span className="text-[8px] font-black">{habitStreaks[habit]}</span>
+        </div>
+      )}
       <svg 
         className={`absolute transition-all duration-500 -rotate-90 ${isCircle ? 'inset-0 w-full h-full p-1' : 'bottom-2 w-20 h-20'}`} 
         viewBox={isCircle ? "0 0 100 100" : "0 0 60 60"}
