@@ -912,6 +912,7 @@ return () => {
           <motion.div variants={itemVariants} className={`flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-6 ${getCardStyle()} p-6 rounded-[2.5rem] border transition-colors relative overflow-hidden`}>
             <div className="flex items-center gap-4 z-10">
               <motion.div whileHover={{ scale: 1.1, rotate: 5 }} className="bg-emerald-600 p-3 rounded-2xl text-white shadow-lg animate-glow"><ZapIcon /></motion.div>
+              
               <div>
                 <h1 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} tracking-tight leading-none`}>Habit Mastery</h1>
                 <div className="flex items-center gap-3 mt-2">
@@ -1111,16 +1112,16 @@ return () => {
             
             <motion.div variants={itemVariants} className={`col-span-1 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors h-full min-w-0`}>
               <div className="flex items-center mb-2 md:mb-4">
-  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20" title="Mastery Score">
-    <TargetIcon className="text-emerald-500" />
-    <span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
-      {analytics.monthlyPct}%
-    </span>
-  </div>
-  <div className="ml-auto scale-75 md:scale-100 flex items-center justify-center px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20" title="Activity Trend">
-    <ActivityIcon className="text-emerald-500" />
-  </div>
-</div>
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700 shadow-sm' : 'bg-slate-100 border-slate-200'}`} title="Mastery Score">
+                  <TargetIcon className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} />
+                  <span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {analytics.monthlyPct}%
+                  </span>
+                </div>
+                <div className={`ml-auto scale-75 md:scale-100 flex items-center justify-center px-2 py-0.5 rounded-lg border transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700 shadow-sm' : 'bg-slate-100 border-slate-200'}`} title="Activity Trend">
+                  <ActivityIcon className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} />
+                </div>
+              </div>
               <div className="flex-grow flex items-center h-16 md:h-28 w-full relative">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <defs>
@@ -1425,7 +1426,7 @@ return () => {
                 <>
                     <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                         <tr className="h-[72px]">
-                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r-2 bg-[#1e293b] border-slate-700 shadow-[4px_0_8px_rgba(0,0,0,0.3)] w-[120px] min-w-[120px]`}>
+                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r border-b ${getTableHeadStyle()} shadow-[4px_0_8px_rgba(0,0,0,0.3)] w-[120px] min-w-[120px]`}>
                               <div className="flex items-center justify-center gap-2">
                                 <button onClick={toggleTableOrientation} className={`p-1 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`} title="Switch to Vertical View">
                                   <TableRotateIcon />
@@ -1434,9 +1435,13 @@ return () => {
                               </div>
                             </th>
                             {daysInMonth.map((day) => {
-                                const key = getSafeKey(day); const isToday = new Date().toDateString() === day.toDateString();
+                                const key = getSafeKey(day); 
+                                const isToday = new Date().toDateString() === day.toDateString();
+                                const cellBgStyle = isToday 
+                                  ? (theme === 'dark' ? 'bg-emerald-900/40 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-emerald-50 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]') 
+                                  : (theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100');
                                 return (
-                                    <th key={key} id={`col-${key}`} className={`p-2 border-x-2 border-t-4 transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] bg-[#0f172a] ${isToday ? 'border-emerald-500/50 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]' : 'border-transparent border-r-slate-700'}`}>
+                                    <th key={key} id={`col-${key}`} className={`p-2 border-r border-b transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${cellBgStyle} ${isToday ? 'border-emerald-500/50 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]' : 'border-slate-100 dark:border-slate-800'}`}>
                                     <div className="flex flex-col items-center gap-1">
                                             <motion.button 
   whileTap={{ scale: 0.9 }} 
@@ -1456,7 +1461,7 @@ return () => {
                     </thead>
                     <tbody>
                         <tr className="h-[52px]">
-                            <td className={`p-2 font-black text-[12px] uppercase sticky left-0 z-20 border-r-2 border-b text-center transition-colors bg-[#1e293b] border-slate-800 text-emerald-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
+                            <td className={`p-2 font-black text-[12px] uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${getTableHeadStyle()} text-emerald-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
                                 <div className="w-full px-1 font-black leading-tight break-words">Efficiency</div>
                             </td>
                             {daysInMonth.map(day => {
@@ -1464,7 +1469,7 @@ return () => {
                                 let earned = 0; habits.forEach(h => { const v = typeof dayData[h] === 'number' ? dayData[h] : (dayData[h] ? 100 : 0); earned += (v / 100); });
                                 const progress = habits.length > 0 ? Math.round((earned / habits.length) * 100) : 0;
                                 return (
-                                    <td key={key} className={`p-2 border-x-2 border-b text-center text-[10px] font-black transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]') : 'border-transparent border-r-slate-100 dark:border-r-slate-800'}`}>
+                                    <td key={key} className={`p-2 border-x border-b text-center text-[10px] font-black transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]') : 'border-slate-100 dark:border-slate-800'}`}>
                                     <span className={progress === 100 ? 'text-emerald-500' : progress > 0 ? 'text-blue-500' : 'text-slate-300'}><AnimatedNumber value={progress} /></span>
                                     </td>
                                 );
@@ -1472,14 +1477,13 @@ return () => {
                         </tr>
                         {habits.map((habit, hIdx) => (
                             <tr key={hIdx} className="h-[68px]">
-                                <td className={`p-1 font-black text-[clamp(7.5px,1.5vw,11px)] sm:text-[11px] uppercase sticky left-0 z-20 border-r-2 border-b text-center transition-colors bg-[#1e293b] border-slate-800 text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}> 
+                                <td className={`p-1 font-black text-[clamp(7.5px,1.5vw,11px)] sm:text-[11px] uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${getTableHeadStyle()} text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
     <div className="truncate w-full px-1 font-black leading-tight">{habit}</div>
 </td>
                                 {daysInMonth.map(day => {
                                     const key = getSafeKey(day); const val = typeof trackerData[key]?.[habit] === 'number' ? trackerData[key][habit] : (trackerData[key]?.[habit] ? 100 : 0);
                                     return (
-                                        <td key={key} className={`p-1.5 border-x-2 border-b text-center transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]') : 'border-transparent border-r-slate-100 dark:border-r-slate-800'}`}>
-
+                                        <td key={key} className={`p-1.5 border-x border-b text-center transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]') : 'border-slate-100 dark:border-slate-800'}`}>
                                         <motion.button whileTap={{ scale: 0.9 }} onPointerDown={(e) => handleHabitPressStart(e, key, habit, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, habit, val)} className={`w-11 h-11 rounded-2xl mx-auto border-2 flex items-center justify-center font-black transition-all text-xl ${getButtonStyles(val, key)} ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 grayscale' : ''}`}>
       <span>
     {(() => {
