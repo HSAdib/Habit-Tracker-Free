@@ -99,13 +99,13 @@ const getSafeKey = (date) => {
 
 const DEFAULT_HABITS = ["sleep 7h", "calisthenics", "meditation", "dept study", "coding", "vocab", "audiobook"];
 const DEFAULT_CONFIGS = {
-  "sleep 7h": { steps: 1 },
-  "calisthenics": { steps: 1 },
-  "meditation": { steps: 1 },
-  "dept study": { steps: 1 },
-  "coding": { steps: 1 },
-  "vocab": { steps: 15 },
-  "audiobook": { steps: 1 }
+  "sleep 7h": { steps: 1, category: "health" },
+  "calisthenics": { steps: 1, category: "health" },
+  "meditation": { steps: 1, category: "lifestyle" },
+  "dept study": { steps: 1, category: "academic" },
+  "coding": { steps: 1, category: "dev" },
+  "vocab": { steps: 15, category: "academic" },
+  "audiobook": { steps: 1, category: "lifestyle" }
 };
 
 // Animation Variants
@@ -125,7 +125,7 @@ export default function App() {
   const [tabLayout, setTabLayout] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_habit_layout') || 'square' : 'square'));
   const [habits, setHabits] = useState(DEFAULT_HABITS);
   const [habitConfigs, setHabitConfigs] = useState(DEFAULT_CONFIGS);
-  const [editingHabitIdx, setEditingHabitIdx] = useState(null);
+  const [editingHabitName, setEditingHabitName] = useState(null);
   const [tempHabitName, setTempHabitName] = useState("");
   const [viewingHabitMap, setViewingHabitMap] = useState(null);
   const [editingNoteDate, setEditingNoteDate] = useState(null);
@@ -136,10 +136,42 @@ export default function App() {
   );
 const [showWeeklyModal, setShowWeeklyModal] = useState(false);
 const [heatmapFilter, setHeatmapFilter] = useState('all');
-  const toggleTableOrientation = () => {
-    const next = tableOrientation === 'vertical' ? 'horizontal' : 'vertical';
-    setTableOrientation(next);
-    localStorage.setItem('adib_table_orientation', next);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('adib_habit_categories');
+      return saved ? JSON.parse(saved) : ["all", "health", "academic", "dev", "lifestyle"];
+    }
+    return ["all", "health", "academic", "dev", "lifestyle"];
+  });
+
+  const addCategory = () => {
+    const name = prompt("Enter new category name:").toLowerCase().trim();
+    if (name && !categories.includes(name)) {
+      const newCats = [...categories, name];
+      setCategories(newCats);
+      localStorage.setItem('adib_habit_categories', JSON.stringify(newCats));
+    }
+  };
+
+  const deleteCategory = (catToDelete) => {
+    if (catToDelete === 'all') return;
+    if (window.confirm(`Delete category "${catToDelete}"?`)) {
+      const newCats = categories.filter(c => c !== catToDelete);
+      setCategories(newCats);
+      localStorage.setItem('adib_habit_categories', JSON.stringify(newCats));
+      
+      // এই ক্যাটাগরির হ্যাবিটগুলোকে 'all' ক্যাটাগরিতে পাঠিয়ে দেওয়া
+      const newConfigs = { ...habitConfigs };
+      Object.keys(newConfigs).forEach(h => {
+        if (newConfigs[h].category === catToDelete) {
+          newConfigs[h].category = 'all';
+        }
+      });
+      setHabitConfigs(newConfigs);
+      if (selectedCategory === catToDelete) setSelectedCategory('all');
+      save(trackerData, habits, newConfigs);
+    }
   };
   const [activeSlider, setActiveSlider] = useState(null); 
   const [isEditingTabName, setIsEditingTabName] = useState(false);
@@ -162,6 +194,12 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     localStorage.setItem('adib_habit_theme', newTheme);
+  };
+
+  const toggleTableOrientation = () => {
+    const next = tableOrientation === 'vertical' ? 'horizontal' : 'vertical';
+    setTableOrientation(next);
+    localStorage.setItem('adib_table_orientation', next);
   };
 
   useEffect(() => {
@@ -265,12 +303,16 @@ return () => {
   };
 
   // Logic Handlers
-  const handleDashboardRename = (idx) => {
-    const oldName = habits[idx];
+  const handleDashboardRename = (oldName) => {
     const newName = tempHabitName.trim();
-    if (newName === oldName) { setEditingHabitIdx(null); return; }
-    if (!newName) { deleteHabit(oldName); } else { executeRename(oldName, newName); }
-    setEditingHabitIdx(null);
+    if (newName === oldName) { setEditingHabitName(null); return; }
+    if (!newName) { 
+      setShowDeleteConfirm(true); 
+      // Ekhane setEditingHabitName(null) kora hobena jate delete button habit name-ti pay
+    } else { 
+      executeRename(oldName, newName); 
+      setEditingHabitName(null);
+    }
   };
 
   const handleTabRename = () => {
@@ -303,6 +345,7 @@ return () => {
   };
 
   const deleteHabit = (name) => {
+    if (!name) return;
     const newHabits = habits.filter(h => h !== name);
     const newConfigs = { ...habitConfigs };
     delete newConfigs[name];
@@ -313,6 +356,7 @@ return () => {
     setTrackerData(newData);
     save(newData, newHabits, newConfigs);
     setViewingHabitMap(null);
+    setEditingHabitName(null); // Cleanup
     setShowDeleteConfirm(false);
   };
 
@@ -728,7 +772,7 @@ return () => {
                   </div>
 
                   <div className="flex items-center gap-2">
-  <span className={`text-[9px] font-black uppercase tactivityracking-widest px-3 py-1 rounded-full border transition-all duration-500 ${getLevelBadgeStyle(xpStats.level)}`}>
+  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-500 ${getLevelBadgeStyle(xpStats.level)}`}>
   Level {xpStats.level}
 </span>
   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)]" title="Total Full Wins">
@@ -904,14 +948,45 @@ return () => {
               </div>
             </motion.div>
           </div>
-
+<div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
+  {categories.map(cat => (
+    <div key={cat} className="relative group shrink-0">
+      <button
+        onClick={() => setSelectedCategory(cat)}
+        className={`pl-4 ${cat === 'all' ? 'pr-4' : 'pr-8'} py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
+          selectedCategory === cat 
+            ? 'bg-emerald-500 text-white border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
+            : (theme === 'dark' ? 'bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500' : 'bg-slate-100 text-slate-400 border-slate-200 hover:border-slate-300')
+        }`}
+      >
+        {cat}
+      </button>
+      {cat !== 'all' && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); deleteCategory(cat); }}
+          className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full transition-all hover:bg-rose-500 hover:text-white ${selectedCategory === cat ? 'text-white/70' : 'text-slate-500'}`}
+          title="Delete Category"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      )}
+    </div>
+  ))}
+  <button 
+    onClick={addCategory} 
+    className={`p-1.5 rounded-full border border-dashed shrink-0 transition-all ${theme === 'dark' ? 'border-slate-700 text-slate-600 hover:text-emerald-500' : 'border-slate-300 text-slate-300 hover:text-emerald-500'}`}
+    title="Add New Category"
+  >
+    <PlusIcon />
+  </button>
+</div>
           {/* Updated Habit Cards Grid */}
           <motion.div variants={containerVariants} className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-3 mb-8">
             <AnimatePresence mode='popLayout'>
-{habits.map((habit, idx) => {
+{habits.filter(h => selectedCategory === 'all' || habitConfigs[h]?.category === selectedCategory).map((habit, idx) => {
   const isCircle = tabLayout === 'circle';
   const pct = analytics.habitPcts[habit] ?? 0;
-  const isEditing = editingHabitIdx === idx;
+  const isEditing = editingHabitName === habit;
   return (
     <motion.div 
       layout 
@@ -938,11 +1013,11 @@ return () => {
       {isCircle ? (
         <div className="z-10 text-center flex flex-col items-center px-2 w-full relative">
           {isEditing ? (
-            <input autoFocus className={`text-[8px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(idx)} onClick={(e) => e.stopPropagation()} />
+            <input autoFocus className={`text-[8px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(habit)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(habit)} onClick={(e) => e.stopPropagation()} />
           ) : (
             <div className="relative flex items-center justify-center w-full group/name min-h-[14px]">
               <p className="text-[clamp(7px,2.2vw,14px)] sm:text-[11px] md:text-sm font-black uppercase opacity-80 leading-[1.1] line-clamp-2 text-center w-full px-1 break-words">{habit}</p>
-              <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
+              <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitName(habit); setTempHabitName(habit); }}><EditIcon /></button>
             </div>
           )}
           <span className={`text-[19px] font-black mt-1 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
@@ -953,11 +1028,11 @@ return () => {
         <>
           <div className="flex items-center gap-1 mb-0.5 w-full justify-center px-1 min-h-[40px] flex-grow">
               {isEditing ? (
-                <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(idx)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(idx)} onClick={(e) => e.stopPropagation()} />
+                <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(habit)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(habit)} onClick={(e) => e.stopPropagation()} />
               ) : (
                 <div className="relative flex items-center justify-center w-full">
                   <p className={`text-[clamp(9px,2vw,16px)] sm:text-sm md:text-base font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} uppercase line-clamp-2 break-words text-center leading-[1.1] px-1`}>{habit}</p>
-                  <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitIdx(idx); setTempHabitName(habit); }}><EditIcon /></button>
+                  <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitName(habit); setTempHabitName(habit); }}><EditIcon /></button>
                 </div>
               )}
           </div>
@@ -972,13 +1047,20 @@ return () => {
   );
 })}
 </AnimatePresence>
-            <motion.button layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => {
-                const name = `Habit ${habits.length + 1}`; const newHabits = [...habits, name]; 
-                const newConfigs = {...habitConfigs, [name]: { steps: 1 }};
-                setHabits(newHabits); setHabitConfigs(newConfigs); save(trackerData, newHabits, newConfigs); setEditingHabitIdx(newHabits.length - 1); setTempHabitName(name);
-              }} className={`${getCardStyle()} flex items-center justify-center border-2 border-dashed transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl min-h-[100px]'} ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'}`}>
-              <PlusIcon />
-            </motion.button>
+<motion.button layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => {
+    const name = `Habit ${habits.length + 1}`; 
+    const categoryToAssign = selectedCategory === 'all' ? 'all' : selectedCategory; 
+    const newHabits = [...habits, name]; 
+    const newConfigs = {...habitConfigs, [name]: { steps: 1, category: categoryToAssign }};
+    setHabits(newHabits); 
+    setHabitConfigs(newConfigs); 
+    save(trackerData, newHabits, newConfigs); 
+    setEditingHabitName(name); 
+    setTempHabitName(name);
+  }}
+  className={`${getCardStyle()} flex items-center justify-center border-2 border-dashed transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl min-h-[100px]'} ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'}`}>
+  <PlusIcon />
+</motion.button>
           </motion.div>
 {/* Weekly Summary Popup Modal */}
         {showWeeklyModal && (
@@ -1287,11 +1369,37 @@ return () => {
                 <div className="flex-1 p-8 flex flex-col">
                   <div className="flex items-start justify-between mb-8 gap-4">
                     <div className="flex-1">
-                      {isEditingTabName ? (
-                        <input autoFocus className={`text-2xl font-black bg-transparent focus:outline-none border-b-2 border-emerald-500 w-full ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={handleTabRename} onKeyDown={(e) => e.key === 'Enter' && handleTabRename()} />
-                      ) : (
-                        <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight break-words pr-2 cursor-pointer hover:text-emerald-500 transition-colors flex items-center gap-3 group`} onClick={() => { setIsEditingTabName(true); setTempHabitName(viewingHabitMap); }}>{viewingHabitMap}<span className="opacity-0 group-hover:opacity-100 transition-opacity"><EditIcon /></span></h3>
-                      )}
+                      <div className="flex flex-wrap items-center gap-3">
+                        {isEditingTabName ? (
+                          <input autoFocus className={`text-2xl font-black bg-transparent focus:outline-none border-b-2 border-emerald-500 w-full ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={handleTabRename} onKeyDown={(e) => e.key === 'Enter' && handleTabRename()} />
+                        ) : (
+                          <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight break-words pr-2 cursor-pointer hover:text-emerald-500 transition-colors flex items-center gap-3 group`} onClick={() => { setIsEditingTabName(true); setTempHabitName(viewingHabitMap); }}>
+                            {viewingHabitMap}
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity"><EditIcon /></span>
+                          </h3>
+                        )}
+                        
+                        {/* Category Selector next to habit name */}
+                        <select 
+                          value={habitConfigs[viewingHabitMap]?.category || 'all'} 
+                          onChange={(e) => {
+                            const newConfigs = {
+                              ...habitConfigs,
+                              [viewingHabitMap]: { ...(habitConfigs[viewingHabitMap] || {steps: 1}), category: e.target.value }
+                            };
+                            setHabitConfigs(newConfigs);
+                            save(trackerData, habits, newConfigs);
+                          }}
+                          className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer focus:outline-none appearance-none
+                            ${theme === 'dark' ? 'bg-slate-800 text-emerald-400 border-slate-700 hover:border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.1)]' : 'bg-slate-100 text-emerald-600 border-slate-200 hover:border-emerald-400'}`}
+                        >
+                          <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Add to</option>
+                          {categories.filter(cat => cat !== 'all').map(cat => (
+                            <option key={cat} value={cat} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
                       <div className={`flex items-center gap-1 mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                         <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
                         <span className="text-[10px] font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
@@ -1456,7 +1564,7 @@ return () => {
               <p className={`text-sm ${getTextMuted()} mb-8 font-medium`}>This will permanently delete data for <span className="text-rose-500 font-bold">"{viewingHabitMap || tempHabitName}"</span>.</p>
               <div className="flex gap-4">
                 <button onClick={() => setShowDeleteConfirm(false)} className={`flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest ${theme === 'dark' ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>Cancel</button>
-                <button onClick={() => deleteHabit(viewingHabitMap || habits[editingHabitIdx])} className="flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-500 text-white shadow-lg shadow-rose-500/20">Delete</button>
+                <button onClick={() => deleteHabit(viewingHabitMap || editingHabitName)} className="flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-500 text-white shadow-lg shadow-rose-500/20">Delete</button>
               </div>
             </motion.div>
           </motion.div>
