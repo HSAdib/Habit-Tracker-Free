@@ -111,13 +111,13 @@ const getSafeKey = (date) => {
 
 const DEFAULT_HABITS = ["sleep 7h", "calisthenics", "meditation", "dept study", "coding", "vocab", "audiobook"];
 const DEFAULT_CONFIGS = {
-  "sleep 7h": { steps: 1, category: "health" },
-  "calisthenics": { steps: 1, category: "health" },
-  "meditation": { steps: 1, category: "lifestyle" },
-  "dept study": { steps: 1, category: "academic" },
-  "coding": { steps: 1, category: "dev" },
-  "vocab": { steps: 15, category: "academic" },
-  "audiobook": { steps: 1, category: "lifestyle" }
+  "sleep 7h": { steps: 1 },
+  "calisthenics": { steps: 1 },
+  "meditation": { steps: 1 },
+  "dept study": { steps: 1 },
+  "coding": { steps: 1},
+  "vocab": { steps: 15 },
+  "audiobook": { steps: 1 }
 };
 
 // Animation Variants
