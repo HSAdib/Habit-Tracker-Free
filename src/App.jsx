@@ -173,7 +173,6 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
       setCategories(newCats);
       localStorage.setItem('adib_habit_categories', JSON.stringify(newCats));
       
-      // এই ক্যাটাগরির হ্যাবিটগুলোকে 'all' ক্যাটাগরিতে পাঠিয়ে দেওয়া
       const newConfigs = { ...habitConfigs };
       Object.keys(newConfigs).forEach(h => {
         if (newConfigs[h].category === catToDelete) {
@@ -260,13 +259,11 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
         const remaining = Math.max(0, Math.ceil((endTimestamp - Date.now()) / 1000));
         setPomoTime(remaining);
         if (remaining <= 0) {
-          // পপ-আপ দেখানোর আগেই টাইমারটি বন্ধ করে দিচ্ছি যাতে এটি আর দ্বিতীয়বার ট্রিগার না হয়
           clearInterval(interval); 
           setPomoActive(false);
           localStorage.setItem('adib_pomo_active', 'false');
           localStorage.setItem('adib_pomo_time_left', '0');
           
-          // সামান্য বিলম্ব করে পপ-আপ দেখাচ্ছি যাতে UI আপডেট হওয়ার সুযোগ পায়
           setTimeout(() => {
             const title = pomoMode === 'work' ? "Session Complete!" : "Break Over!";
             const msg = pomoMode === 'work' ? "Work session done! Take a break." : "Back to work now!";
@@ -346,7 +343,6 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
       } else {
         const element = document.getElementById(`col-${todayKey}`);
         if (element) {
-          // Today-কে ৩য় কলামে দেখানোর জন্য ২টা কলামের জায়গা (colWidth * 2) আগে থেকে স্ক্রল করা
           const colWidth = element.offsetWidth;
           container.scrollTo({ 
             left: element.offsetLeft - 120 - (colWidth * 2), 
@@ -367,7 +363,7 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
         const dataContentHeight = scrollHeight - spacerHeight;
         
         // --- NEW: THE STOP LOGIC ---
-        // We want to stop scrolling when the 31st row (the end of dataContentHeight)
+        // to stop scrolling when the 31st row (the end of dataContentHeight)
         // is at the bottom of a 3-row view (header + 3 rows).
         const minHeightLimit = (3 * rowHeight) + headerHeight; // 268px
         const stopScrollAt = dataContentHeight - minHeightLimit;
@@ -378,7 +374,7 @@ const [heatmapFilter, setHeatmapFilter] = useState('all');
           setTableVisibleRows(3);
           return;
         }
-        // ---------------------------
+        
 
         const remainingDataHeight = dataContentHeight - scrollTop;
         const maxHeightLimit = (6 * rowHeight) + headerHeight; // 484px
@@ -426,7 +422,6 @@ return () => {
     if (newName === oldName) { setEditingHabitName(null); return; }
     if (!newName) { 
       setShowDeleteConfirm(true); 
-      // Ekhane setEditingHabitName(null) kora hobena jate delete button habit name-ti pay
     } else { 
       executeRename(oldName, newName); 
       setEditingHabitName(null);
@@ -700,12 +695,10 @@ return () => {
       let count = 0;
       let checkDate = new Date(today);
       
-      // আজকের ডাটা চেক করা
       const todayKey = getSafeKey(checkDate);
       const todayVal = trackerData[todayKey]?.[habit] ?? 0;
       const isTodayDone = (typeof todayVal === 'number' ? todayVal : (todayVal ? 100 : 0)) >= 100;
 
-      // যদি আজ করা না হয়ে থাকে, তবে গতকাল থেকে হিসাব শুরু হবে
       if (!isTodayDone) {
         checkDate.setDate(checkDate.getDate() - 1);
       }
@@ -1591,7 +1584,6 @@ return () => {
                       onChange={(e) => setTempGoalVal(e.target.value)} 
                       onBlur={() => {
                         let val = parseInt(tempGoalVal);
-                        // Validation: If empty or <= 0, default to 1
                         if (isNaN(val) || val < 1) val = 1;
                         setTempGoalVal(val);
                         const nc = {
@@ -1691,7 +1683,6 @@ return () => {
                     </div>
                     <div className="grid grid-cols-7 gap-3">
                       {habitInsights.last7Days.map((day, i) => {
-                        // Check if this specific day is currently being adjusted by the slider
                         const isLiveDragging = activeSlider?.dateKey === day.key && activeSlider?.habit === viewingHabitMap;
                         const displayPct = isLiveDragging ? activeSlider.value : day.pct;
 
@@ -1702,7 +1693,7 @@ return () => {
                                 id={`bar-fill-${day.key}`} // This allows direct DOM updates
                                 initial={{ height: 0 }}
                                 animate={{ height: `${displayPct}%` }}
-                                // Snappy spring physics from your video
+                                // Snappy spring physics
                                 transition={{ 
                                   type: "spring", 
                                   stiffness: 350, 
@@ -1758,7 +1749,6 @@ return () => {
             exit={{ opacity: 0 }} 
             className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md touch-none select-none" 
             onPointerUp={() => {
-              // ম্যানুয়াল DOM ওভাররাইডগুলো মুছে ফেলা যাতে রিয়্যাক্ট ক্লাসগুলো কাজ করতে পারে
               const barFill = document.getElementById(`bar-fill-${activeSlider.dateKey}`);
               if (barFill) {
                 barFill.style.backgroundColor = ''; 
