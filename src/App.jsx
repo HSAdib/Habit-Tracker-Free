@@ -135,6 +135,7 @@ export default function App() {
     (typeof window !== 'undefined' ? localStorage.getItem('adib_table_orientation') || 'vertical' : 'vertical')
   );
 const [showWeeklyModal, setShowWeeklyModal] = useState(false);
+const [heatmapFilter, setHeatmapFilter] = useState('all');
   const toggleTableOrientation = () => {
     const next = tableOrientation === 'vertical' ? 'horizontal' : 'vertical';
     setTableOrientation(next);
@@ -592,12 +593,28 @@ return () => {
     const firstDayOfYear = new Date(year, 0, 1).getDay(); 
     const cells = Array(firstDayOfYear).fill(null); 
     const daysInYear = (((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) ? 366 : 365);
+    
     for (let i = 0; i < daysInYear; i++) {
       const d = new Date(year, 0, 1, 12); d.setDate(d.getDate() + i); const key = getSafeKey(d);
-      let totalPct = 0; habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += typeof r === 'number' ? r : (r ? 100 : 0); });
-      const avg = habits.length > 0 ? totalPct / (habits.length * 100) : 0;
-      cells.push({ date: d, key, intensity: avg === 0 ? 0 : avg <= 0.25 ? 1 : avg <= 0.5 ? 2 : avg <= 0.75 ? 3 : 4 });
+      let intensity = 0;
+
+      if (heatmapFilter === 'all') {
+        let totalPct = 0; 
+        habits.forEach(h => { 
+          const r = trackerData[key]?.[h] ?? 0; 
+          totalPct += typeof r === 'number' ? r : (r ? 100 : 0); 
+        });
+        const avg = habits.length > 0 ? totalPct / (habits.length * 100) : 0;
+        intensity = avg === 0 ? 0 : avg <= 0.25 ? 1 : avg <= 0.5 ? 2 : avg <= 0.75 ? 3 : 4;
+      } else {
+        const r = trackerData[key]?.[heatmapFilter] ?? 0;
+        const val = typeof r === 'number' ? r : (r ? 100 : 0);
+        const ratio = val / 100;
+        intensity = ratio === 0 ? 0 : ratio <= 0.25 ? 1 : ratio <= 0.5 ? 2 : ratio <= 0.75 ? 3 : 4;
+      }
+      cells.push({ date: d, key, intensity });
     }
+
     const monthLabels = []; const addedMonths = new Set();
     cells.forEach((cell, index) => {
       if (cell && cell.date) {
@@ -610,7 +627,7 @@ return () => {
       }
     });
     return { cells, monthLabels };
-  }, [currentDate, trackerData, habits]);
+  }, [currentDate, trackerData, habits, heatmapFilter]);
 
   const trendPoints = useMemo(() => {
     if (daysInMonth.length < 2) return [];
@@ -771,7 +788,19 @@ return () => {
             <motion.div variants={itemVariants} className={`col-span-2 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border overflow-hidden flex flex-col transition-colors h-full min-w-0`}>
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2 md:gap-4">
                 <div className="flex items-center gap-2 md:gap-4">
-                  <p className={`text-[8px] md:text-[10px] font-black ${getTextMuted()} uppercase tracking-widest leading-none shrink-0`}>Activity Heatmap</p>
+                  <div className="flex items-center gap-2">
+  <p className={`text-[8px] md:text-[10px] font-black ${getTextMuted()} uppercase tracking-widest leading-none shrink-0`}>Activity Heatmap</p>
+  <select 
+    value={heatmapFilter} 
+    onChange={(e) => setHeatmapFilter(e.target.value)}
+    className={`ml-1 text-[9px] font-black uppercase bg-transparent border-none focus:outline-none cursor-pointer transition-colors ${theme === 'dark' ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}
+  >
+    <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
+    {habits.map(h => (
+      <option key={h} value={h} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{h}</option>
+    ))}
+  </select>
+</div>
                   <div className={`flex items-center gap-1.5 md:gap-3 border-l ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} pl-2 md:pl-4 overflow-hidden`}>
                     <div className="flex items-center gap-1" title="Mastery Score"><TargetIcon /><span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{analytics.monthlyPct}%</span></div>
                     <motion.button whileHover={{ y: -2 }} onClick={() => setShowAllNotes(true)} className={`flex items-center gap-1 transition-all p-0.5 rounded-lg ${theme === 'dark' ? 'text-blue-400 hover:bg-blue-900/20' : 'text-blue-600 hover:bg-blue-50/50'}`}><NoteIcon /><span className={`text-[10px] md:text-xs font-black`}>{analytics.noteCount}</span></motion.button>
