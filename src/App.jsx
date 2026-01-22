@@ -667,10 +667,19 @@ return () => {
     return 'bg-emerald-500 text-white border-emerald-600 shadow-lg shadow-emerald-900/20';
   };
   const getLevelBadgeStyle = (level) => {
-    if (level >= 15) return 'bg-purple-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]';
-    if (level >= 10) return 'bg-rose-500 text-white shadow-[0_0_10px_rgba(244,63,94,0.5)]';
-    if (level >= 5) return 'bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]';
-    return theme === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600';
+    const schemes = [
+      'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.3)]',
+      'bg-blue-500/10 text-blue-400 border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.3)]',
+      'bg-purple-500/10 text-purple-400 border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.3)]',
+      'bg-rose-500/10 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.3)]',
+      'bg-amber-500/10 text-amber-400 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+      'bg-cyan-500/10 text-cyan-400 border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.3)]',
+      'bg-indigo-500/10 text-indigo-400 border-indigo-500/40 shadow-[0_0_15px_rgba(99,102,241,0.3)]',
+      'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/40 shadow-[0_0_15px_rgba(217,70,239,0.3)]',
+      'bg-orange-500/10 text-orange-400 border-orange-500/40 shadow-[0_0_15px_rgba(249,115,22,0.3)]',
+      'bg-teal-500/10 text-teal-400 border-teal-500/40 shadow-[0_0_15px_rgba(20,184,166,0.3)]'
+    ];
+    return schemes[(level - 1) % schemes.length];
   };
   const getContainerBg = () => theme === 'dark' ? 'bg-black text-white' : 'bg-white text-slate-900';
   const getCardStyle = () => theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-sm' : 'bg-white border-slate-200 shadow-sm';
@@ -718,9 +727,15 @@ return () => {
                     </button>
                   </div>
 
-                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all duration-500 ${getLevelBadgeStyle(xpStats.level)}`}>
-                    Level {xpStats.level}
-                  </span>
+                  <div className="flex items-center gap-2">
+  <span className={`text-[9px] font-black uppercase tactivityracking-widest px-3 py-1 rounded-full border transition-all duration-500 ${getLevelBadgeStyle(xpStats.level)}`}>
+  Level {xpStats.level}
+</span>
+  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)]" title="Total Full Wins">
+    <TrophyIcon className="w-2.5 h-2.5 text-yellow-500" />
+    <span className="text-[9px] font-black text-yellow-500">{analytics.totalDone}</span>
+  </div>
+</div>
                 </div>
               </div>
             </div>
@@ -789,7 +804,9 @@ return () => {
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2 md:gap-4">
                 <div className="flex items-center gap-2 md:gap-4">
                   <div className="flex items-center gap-2">
-  <p className={`text-[8px] md:text-[10px] font-black ${getTextMuted()} uppercase tracking-widest leading-none shrink-0`}>Activity Heatmap</p>
+  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border transition-all duration-500 shrink-0 bg-emerald-500/10 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+  Activity Heatmap
+</span>
   <select 
     value={heatmapFilter} 
     onChange={(e) => setHeatmapFilter(e.target.value)}
@@ -801,11 +818,12 @@ return () => {
     ))}
   </select>
 </div>
-                  <div className={`flex items-center gap-1.5 md:gap-3 border-l ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} pl-2 md:pl-4 overflow-hidden`}>
-                    <div className="flex items-center gap-1" title="Mastery Score"><TargetIcon /><span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{analytics.monthlyPct}%</span></div>
-                    <motion.button whileHover={{ y: -2 }} onClick={() => setShowAllNotes(true)} className={`flex items-center gap-1 transition-all p-0.5 rounded-lg ${theme === 'dark' ? 'text-blue-400 hover:bg-blue-900/20' : 'text-blue-600 hover:bg-blue-50/50'}`}><NoteIcon /><span className={`text-[10px] md:text-xs font-black`}>{analytics.noteCount}</span></motion.button>
-                    <div className="flex items-center gap-1" title="Full Wins"><TrophyIcon /><span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{analytics.totalDone}</span></div>
-                  </div>
+                  <div className="flex items-center gap-1.5 md:gap-3 overflow-hidden pl-2 md:pl-4">
+  <motion.button whileHover={{ y: -2 }} onClick={() => setShowAllNotes(true)} className={`flex items-center gap-1 transition-all p-0.5 rounded-lg ${theme === 'dark' ? 'text-blue-400 hover:bg-blue-900/20' : 'text-blue-600 hover:bg-blue-50/50'}`}>
+    <NoteIcon />
+    <span className={`text-[10px] md:text-xs font-black`}>{analytics.noteCount}</span>
+  </motion.button>
+</div>
                 </div>
               </div>
               
@@ -840,10 +858,17 @@ return () => {
             </motion.div>
             
             <motion.div variants={itemVariants} className={`col-span-1 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors h-full min-w-0`}>
-              <div className="flex items-center justify-between mb-2 md:mb-4">
-                <p className={`text-[8px] md:text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Trend</p>
-                <div className="scale-75 md:scale-100"><ActivityIcon /></div>
-              </div>
+              <div className="flex items-center mb-2 md:mb-4">
+  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20" title="Mastery Score">
+    <TargetIcon className="text-emerald-500" />
+    <span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+      {analytics.monthlyPct}%
+    </span>
+  </div>
+  <div className="ml-auto scale-75 md:scale-100 flex items-center justify-center px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20" title="Activity Trend">
+    <ActivityIcon className="text-emerald-500" />
+  </div>
+</div>
               <div className="flex-grow flex items-center h-16 md:h-28 w-full relative">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <defs>
