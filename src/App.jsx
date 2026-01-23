@@ -625,8 +625,9 @@ return () => {
     Object.keys(trackerData).forEach(dateKey => {
       habits.forEach(habit => {
         const val = trackerData[dateKey]?.[habit] ?? 0;
-        // Standardized: (Percentage / 100) * 10 XP
-        totalXP += (val / 100) * 10;
+        const priority = habitConfigs[habit]?.priority || 1; 
+        // Now accurately scales from 1x to 10x XP
+        totalXP += (val / 100) * 10 * priority;
       });
     });
     
@@ -731,22 +732,48 @@ return () => {
     });
     const score = Math.round((monthlyEarned / (daysInMonth.length * 100)) * 100);
 
-    const allDates = Object.keys(trackerData).sort();
+    // --- সংশোধিত স্ট্রিক ক্যালকুলেশন ---
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     let currentStreak = 0;
     let bestStreak = 0;
     let tempStreak = 0;
 
-    if (allDates.length > 0) {
-      const firstDate = new Date(allDates[0]);
-      const today = new Date();
-      let d = new Date(firstDate);
+    // ১. কারেন্ট স্ট্রিক বের করা (আজ বা গতকাল থেকে পেছনে গণনা)
+    let checkDate = new Date(today);
+    const todayKey = getSafeKey(checkDate);
+    const todayValRaw = trackerData[todayKey]?.[viewingHabitMap] ?? 0;
+    const todayVal = typeof todayValRaw === 'number' ? todayValRaw : (todayValRaw ? 100 : 0);
 
+    // যদি আজ এখনও শেষ না হয়, তবে গতকাল থেকে স্ট্রিক চেক করা শুরু করবে
+    if (todayVal < 100) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    while (true) {
+      const key = getSafeKey(checkDate);
+      const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
+      const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
+
+      if (val >= 100) {
+        currentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    // ২. অল-টাইম বেস্ট স্ট্রিক বের করা
+    const allDates = Object.keys(trackerData).sort();
+    if (allDates.length > 0) {
+      let d = new Date(allDates[0]);
       while (d <= today) {
         const key = getSafeKey(d);
         const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
         const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
 
-        if (val >= 70) {
+        if (val >= 100) {
           tempStreak++;
           if (tempStreak > bestStreak) bestStreak = tempStreak;
         } else {
@@ -754,20 +781,10 @@ return () => {
         }
         d.setDate(d.getDate() + 1);
       }
-      
-      let checkDate = new Date();
-      while (true) {
-        const key = getSafeKey(checkDate);
-        const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
-        const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
-        if (val >= 70) {
-          currentStreak++;
-          checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-          break;
-        }
-      }
     }
+
+    // গ্যারান্টি: বেস্ট স্ট্রিক কখনোই কারেন্ট স্ট্রিকের চেয়ে কম হবে না
+    if (currentStreak > bestStreak) bestStreak = currentStreak;
 
     // --- New Last 7 Days Logic for specific habit ---
     const last7Days = [];
@@ -1563,10 +1580,11 @@ return () => {
         {/* Habit Detail Modal */}
         {viewingHabitMap && habitInsights && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }}>
-              <motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className={`rounded-[2.5rem] w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
+              {/* Forced Horizontal Layout for all modes */}
+<motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className={`rounded-[2rem] md:rounded-[2.5rem] w-[95vw] max-w-4xl h-fit max-h-[90vh] overflow-hidden shadow-2xl flex flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
                 
-                {/* LEFT SIDEBAR */}
-                <div className={`p-8 md:w-64 flex flex-col items-center border-b md:border-b-0 md:border-r ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                {/* FIXED LEFT SIDEBAR - Scaled for Mobile */}
+                <div className={`p-3 md:p-8 w-[130px] md:w-72 flex flex-col items-center border-r shrink-0 overflow-y-auto no-scrollbar ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
                   <div className="relative w-36 h-36 flex items-center justify-center mb-6">
                     <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 144 144">
                       <circle cx="72" cy="72" r="64" fill="none" stroke={theme==='dark'?'#334155':'#e2e8f0'} strokeWidth="10" />
@@ -1602,6 +1620,8 @@ return () => {
                       className={`w-full text-center text-xl font-black p-1 rounded bg-transparent focus:outline-none focus:text-emerald-500 transition-colors`} 
                     />
                   </div>
+
+                  {/* Priority slider removed from here to reduce clutter */}
                   
                   <div className="w-full space-y-4">
                     <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors`}><div className="text-emerald-600"><ActivityIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Rank</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.level}</span></div></div>
@@ -1631,8 +1651,8 @@ return () => {
                   </div>
                 </div>
 
-                {/* MAIN CALENDAR SECTION */}
-                <div className="flex-1 p-8 flex flex-col">
+                {/* MAIN CALENDAR SECTION - Responsive Padding */}
+                <div className="flex-1 p-4 md:p-8 flex flex-col overflow-y-auto custom-scrollbar">
                   <div className="flex items-start justify-between mb-8 gap-4">
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3">
@@ -1673,6 +1693,28 @@ return () => {
                         </div>
                     </div>
                     <button onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }} className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`}><XIcon /></button>
+                  </div>
+
+                  {/* Relocated Super Compact Priority Slider */}
+                  <div className={`mb-6 p-2 px-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200'} flex items-center gap-4`}>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className={`text-[8px] font-black uppercase ${getTextMuted()} tracking-widest`}>Priority</label>
+                      <span className="text-[11px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">{habitConfigs[viewingHabitMap]?.priority || 1}x</span>
+                    </div>
+                    <input 
+                      type="range" min="1" max="10" step="1"
+                      value={habitConfigs[viewingHabitMap]?.priority || 1}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        const nc = {
+                          ...habitConfigs,
+                          [viewingHabitMap]: { ...(habitConfigs[viewingHabitMap] || {steps: 1}), priority: val }
+                        };
+                        setHabitConfigs(nc);
+                        save(trackerData, habits, nc);
+                      }}
+                      className="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 transition-all"
+                    />
                   </div>
 
                   {/* Last 7 Days Activity Bar */}
