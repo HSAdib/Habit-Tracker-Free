@@ -1557,45 +1557,26 @@ return () => {
 
       {/* --- Modals --- */}
       <AnimatePresence>
-        {/* Note Viewer Modal */}
-        {showAllNotes && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4" onClick={() => setShowAllNotes(false)}>
-              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl flex flex-col`} onClick={e => e.stopPropagation()}>
-                  <div className={`p-8 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'} flex items-center justify-between`}>
-                      <div><h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Journal Archive</h3><p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest mt-1`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })} • {analytics.noteCount} Reflections</p></div>
-                      <button onClick={() => setShowAllNotes(false)} className={`p-3 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
-                      {currentMonthNotes && currentMonthNotes.length > 0 ? currentMonthNotes.map((entry, idx) => (
-                          <div key={idx} className={`group border-l-4 border-emerald-500 pl-6 py-2 transition-all ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-slate-50'} rounded-r-2xl`}>
-                              <div className="flex items-center gap-3 mb-2"><span className={`text-[10px] font-black text-emerald-600 uppercase ${theme === 'dark' ? 'bg-emerald-900/20' : 'bg-emerald-50'} px-2 py-1 rounded-md`}>{entry.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', weekday: 'short' })}</span><button onClick={() => { setShowAllNotes(false); setEditingNoteDate(entry.key); }} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-blue-500 transition-all"><EditIcon /></button></div>
-                              <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'} font-medium leading-relaxed italic`}>"{entry.note}"</p>
-                          </div>
-                      )) : <div className={`h-40 flex flex-col items-center justify-center ${getTextMuted()} gap-3`}><NoteIcon /><p className="font-bold text-sm">No reflections recorded yet.</p></div>}
-                  </div>
-              </motion.div>
-          </motion.div>
-        )}
-
-        {/* Habit Detail Modal */}
+        {/* Habit Detail Modal Clean Version Below */}
         {viewingHabitMap && habitInsights && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }}>
               {/* Forced Horizontal Layout for all modes */}
-<motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className={`rounded-[2rem] md:rounded-[2.5rem] w-[98vw] md:w-full max-w-4xl h-fit max-h-[95vh] overflow-hidden shadow-2xl flex flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
+{/* Compact Locked Layout: 20% Smaller & No Sidebar Scroll */}
+<motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className={`rounded-[1.2rem] md:rounded-[2rem] w-[98vw] md:w-full max-w-[720px] h-fit max-h-[85vh] overflow-hidden shadow-2xl flex flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
                 
-                {/* FIXED LEFT SIDEBAR - Scaled for Mobile */}
-                <div className={`p-2 md:p-8 w-[120px] md:w-72 flex flex-col items-center border-r shrink-0 overflow-y-auto no-scrollbar ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
-                  <div className="relative w-20 h-20 md:w-36 md:h-36 flex items-center justify-center mb-4 md:mb-6 shrink-0">
+                {/* Slim Sidebar - Forced Fit */}
+                <div className={`p-2 md:p-5 w-[105px] md:w-60 flex flex-col items-center border-r shrink-0 overflow-hidden ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                  <div className="relative w-14 h-14 md:w-28 md:h-28 flex items-center justify-center mb-2 md:mb-5 shrink-0">
                     <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 144 144">
                       <circle cx="72" cy="72" r="64" fill="none" stroke={theme==='dark'?'#334155':'#e2e8f0'} strokeWidth="10" />
                       <motion.circle initial={{ strokeDashoffset: 402 }} animate={{ strokeDashoffset: 402 - (402 * habitInsights.score / 100) }} transition={{ duration: 1.5, ease: "easeOut" }} cx="72" cy="72" r="64" fill="none" stroke="#10b981" strokeWidth="10" strokeDasharray={402} strokeLinecap="round" />
                     </svg>
-                    <div className="flex flex-col items-center"><span className={`text-xl md:text-4xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}><AnimatedNumber value={habitInsights.score} /></span><span className={`text-[7px] md:text-[9px] font-black ${getTextMuted()} uppercase tracking-widest`}>Score</span></div>
+                    <div className="flex flex-col items-center"><span className={`text-sm md:text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}><AnimatedNumber value={habitInsights.score} /></span><span className={`text-[5px] md:text-[8px] font-black ${getTextMuted()} uppercase tracking-widest`}>Score</span></div>
                   </div>
 
-                  {/* Corrected Single Goal Input - Compact Scaled */}
-                  <div className={`w-full mb-4 md:mb-8 p-2 md:p-4 rounded-xl md:rounded-2xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'} shadow-sm`}>
-                    <label className={`text-[7px] md:text-[8px] font-black uppercase ${getTextMuted()} block mb-1 md:mb-2 text-center`}>Goal Steps</label>
+                  {/* Super Compact Goal Input */}
+                  <div className={`w-full mb-2 md:mb-5 p-1 md:p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'} shadow-sm`}>
+                    <label className={`text-[5px] md:text-[7px] font-black uppercase ${getTextMuted()} block mb-0.5 text-center`}>Goal Steps</label>
                     <input 
                       type="number" 
                       value={tempGoalVal} 
@@ -1623,27 +1604,39 @@ return () => {
 
                   {/* Priority slider removed from here to reduce clutter */}
                   
-                  <div className="w-full space-y-4">
-                    <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors`}><div className="text-emerald-600"><ActivityIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Rank</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.level}</span></div></div>
-<div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors`}><div className="text-orange-600"><FlameIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Current Streak</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.currentStreak} Days</span></div></div>
-<div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-lg' : 'bg-white border-slate-100 shadow-sm'} p-4 rounded-2xl border flex items-center gap-4 transition-colors ring-2 ring-emerald-500/10`}><div className="text-yellow-500"><TrophyIcon /></div><div><span className={`text-[10px] block uppercase font-black ${getTextMuted()}`}>Personal Best</span><span className={`text-sm font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.bestStreak} Days</span></div></div>
-                    
+                  <div className="w-full space-y-1.5 md:space-y-4">
+                    {/* Unified Rank Card with Trophy Icon */}
+                    <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-sm' : 'bg-white border-slate-100 shadow-sm'} py-2 px-2 md:p-4 rounded-xl border flex flex-col items-center text-center transition-all relative overflow-hidden group/rank w-full`}>
+                      <div className={`mb-1 transition-all duration-500 ${
+                        habitInsights.level === "Grandmaster" ? "text-emerald-500 scale-110 drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]" : 
+                        habitInsights.level === "Elite" ? "text-blue-500" : 
+                        habitInsights.level === "Adept" ? "text-purple-500" : 
+                        habitInsights.level === "Apprentice" ? "text-amber-500" : "text-slate-400 opacity-50"
+                      }`}>
+                        <TrophyIcon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className={`text-[6px] md:text-[9px] block uppercase font-black ${getTextMuted()} leading-none mb-0.5`}>Rank</span>
+                        <span className={`text-[10px] md:text-xs font-black transition-colors ${
+                          habitInsights.level === "Grandmaster" ? "text-emerald-500" : (theme === 'dark' ? 'text-slate-200' : 'text-slate-800')
+                        }`}>{habitInsights.level}</span>
+                      </div>
+                      
+                      {/* Sub-indicator for Milestone Progress inside the card */}
+                      <div className="flex gap-0.5 mt-2 opacity-30 group-hover/rank:opacity-100 transition-opacity">
+                        {['Seed', 'Apprentice', 'Adept', 'Elite', 'Grandmaster'].map((r) => (
+                          <div key={r} className={`w-1 h-1 rounded-full ${habitInsights.level === r ? 'bg-emerald-500 scale-125' : 'bg-slate-600'}`} />
+                        ))}
+                      </div>
+                    </div>
 
-<div className="mt-6 w-full px-2">
-  <p className={`text-[8px] font-black uppercase ${getTextMuted()} mb-3 tracking-widest text-center`}>Milestone Progress</p>
-  <div className="grid grid-cols-5 gap-1.5">
-    {['Seed', 'Apprentice', 'Adept', 'Elite', 'Grandmaster'].map((rank) => (
-      <div key={rank} className={`aspect-square rounded-xl border flex flex-col items-center justify-center transition-all duration-700 ${habitInsights.level === rank ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)] scale-110 z-10' : 'border-transparent opacity-20 grayscale'}`}>
-        <TrophyIcon />
-        <span className="text-[5px] font-black uppercase mt-1 text-[5px] leading-tight text-center">{rank}</span>
-      </div>
-    ))}
-  </div>
-</div>
+                    <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-sm' : 'bg-white border-slate-100 shadow-sm'} py-2 px-2 md:p-3 rounded-xl border flex flex-col items-center text-center transition-colors w-full`}><div className="text-orange-600 scale-75 md:scale-90 mb-1"><FlameIcon /></div><div><span className={`text-[6px] md:text-[9px] block uppercase font-black ${getTextMuted()} leading-none`}>Streak</span><span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.currentStreak}d</span></div></div>
+                    <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800 shadow-sm' : 'bg-white border-slate-100 shadow-sm'} py-2 px-2 md:p-3 rounded-xl border flex flex-col items-center text-center transition-colors ring-2 ring-emerald-500/10 w-full`}><div className="text-yellow-500 scale-75 md:scale-90 mb-1"><TrophyIcon /></div><div><span className={`text-[6px] md:text-[9px] block uppercase font-black ${getTextMuted()} leading-none`}>Best</span><span className={`text-[10px] md:text-xs font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{habitInsights.bestStreak}d</span></div></div>
+                    {/* Redundant Milestone grid removed */}
                   </div>
 
-                  {/* Fixed Button Layout - Stacks on Mobile to prevent overflow */}
-                  <div className="flex flex-col md:flex-row gap-2 w-full mt-8">
+                  {/* Buttons Fix - Reduced Padding & Margin */}
+                  <div className="flex flex-col gap-1.5 w-full mt-4 md:mt-8">
                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => toggleArchiveHabit(viewingHabitMap)} className={`w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white border border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-500 hover:text-white'}`}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7"/><path d="M9 13v-3"/><path d="M15 13v-3"/></svg>
                       Archive
@@ -1652,21 +1645,20 @@ return () => {
                   </div>
                 </div>
 
-                {/* MAIN CALENDAR SECTION - Compact Spacing */}
-                <div className="flex-1 p-3 md:p-8 flex flex-col overflow-y-auto custom-scrollbar">
-                  <div className="flex items-start justify-between mb-8 gap-4">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-3">
+                {/* MAIN CALENDAR SECTION - 20% Smaller Padding */}
+                <div className="flex-1 p-2 md:p-5 flex flex-col overflow-y-auto custom-scrollbar">
+                  <div className="flex items-start justify-between mb-6 gap-3">
+                    <div className="flex-1 flex flex-col items-center text-center">
+                      <div className="flex flex-col items-center gap-1.5 w-full">
                         {isEditingTabName ? (
-                          <input autoFocus className={`text-2xl font-black bg-transparent focus:outline-none border-b-2 border-emerald-500 w-full ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={handleTabRename} onKeyDown={(e) => e.key === 'Enter' && handleTabRename()} />
+                          <input autoFocus className={`text-xl font-black bg-transparent focus:outline-none border-b-2 border-emerald-500 text-center w-full max-w-[200px] ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={handleTabRename} onKeyDown={(e) => e.key === 'Enter' && handleTabRename()} />
                         ) : (
-                          <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight break-words pr-2 cursor-pointer hover:text-emerald-500 transition-colors flex items-center gap-3 group`} onClick={() => { setIsEditingTabName(true); setTempHabitName(viewingHabitMap); }}>
+                          <h3 className={`text-lg md:text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight cursor-pointer hover:text-emerald-500 transition-colors flex items-center justify-center gap-2 group w-full`} onClick={() => { setIsEditingTabName(true); setTempHabitName(viewingHabitMap); }}>
                             {viewingHabitMap}
                             <span className="opacity-0 group-hover:opacity-100 transition-opacity"><EditIcon /></span>
                           </h3>
                         )}
                         
-                        {/* Category Selector next to habit name */}
                         <select 
                           value={habitConfigs[viewingHabitMap]?.category || 'all'} 
                           onChange={(e) => {
@@ -1677,17 +1669,17 @@ return () => {
                             setHabitConfigs(newConfigs);
                             save(trackerData, habits, newConfigs);
                           }}
-                          className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer focus:outline-none appearance-none
-                            ${theme === 'dark' ? 'bg-slate-800 text-emerald-400 border-slate-700 hover:border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.1)]' : 'bg-slate-100 text-emerald-600 border-slate-200 hover:border-emerald-400'}`}
+                          className={`px-3 py-1 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer focus:outline-none appearance-none text-center
+                            ${theme === 'dark' ? 'bg-slate-800 text-emerald-400 border-slate-700 hover:border-emerald-500' : 'bg-slate-100 text-emerald-600 border-slate-200 hover:border-emerald-400'}`}
                         >
-                          <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Add to category</option>
+                          <option value="all">Add to category</option>
                           {categories.filter(cat => cat !== 'all').map(cat => (
-                            <option key={cat} value={cat} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{cat}</option>
+                            <option key={cat} value={cat}>{cat}</option>
                           ))}
                         </select>
                       </div>
                       
-                      <div className={`flex items-center gap-1 mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <div className={`flex items-center justify-center gap-1 mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                         <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
                         <span className="text-[10px] font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
                         <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
