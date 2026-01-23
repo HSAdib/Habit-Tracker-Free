@@ -1581,21 +1581,21 @@ return () => {
         {viewingHabitMap && habitInsights && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }}>
               {/* Forced Horizontal Layout for all modes */}
-<motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className={`rounded-[2rem] md:rounded-[2.5rem] w-[95vw] max-w-4xl h-fit max-h-[90vh] overflow-hidden shadow-2xl flex flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
+<motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className={`rounded-[2rem] md:rounded-[2.5rem] w-[98vw] md:w-full max-w-4xl h-fit max-h-[95vh] overflow-hidden shadow-2xl flex flex-row transition-colors ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`} onClick={(e) => e.stopPropagation()}>
                 
                 {/* FIXED LEFT SIDEBAR - Scaled for Mobile */}
-                <div className={`p-3 md:p-8 w-[130px] md:w-72 flex flex-col items-center border-r shrink-0 overflow-y-auto no-scrollbar ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
-                  <div className="relative w-36 h-36 flex items-center justify-center mb-6">
+                <div className={`p-2 md:p-8 w-[120px] md:w-72 flex flex-col items-center border-r shrink-0 overflow-y-auto no-scrollbar ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-100'}`}>
+                  <div className="relative w-20 h-20 md:w-36 md:h-36 flex items-center justify-center mb-4 md:mb-6 shrink-0">
                     <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 144 144">
                       <circle cx="72" cy="72" r="64" fill="none" stroke={theme==='dark'?'#334155':'#e2e8f0'} strokeWidth="10" />
                       <motion.circle initial={{ strokeDashoffset: 402 }} animate={{ strokeDashoffset: 402 - (402 * habitInsights.score / 100) }} transition={{ duration: 1.5, ease: "easeOut" }} cx="72" cy="72" r="64" fill="none" stroke="#10b981" strokeWidth="10" strokeDasharray={402} strokeLinecap="round" />
                     </svg>
-                    <div className="flex flex-col items-center"><span className={`text-4xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}><AnimatedNumber value={habitInsights.score} /></span><span className={`text-[9px] font-black ${getTextMuted()} uppercase tracking-widest`}>Score</span></div>
+                    <div className="flex flex-col items-center"><span className={`text-xl md:text-4xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}><AnimatedNumber value={habitInsights.score} /></span><span className={`text-[7px] md:text-[9px] font-black ${getTextMuted()} uppercase tracking-widest`}>Score</span></div>
                   </div>
 
-                  {/* Corrected Single Goal Input */}
-                  <div className={`w-full mb-8 p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'} shadow-sm`}>
-                    <label className={`text-[8px] font-black uppercase ${getTextMuted()} block mb-2 text-center`}>Daily Goal Steps</label>
+                  {/* Corrected Single Goal Input - Compact Scaled */}
+                  <div className={`w-full mb-4 md:mb-8 p-2 md:p-4 rounded-xl md:rounded-2xl border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-slate-200'} shadow-sm`}>
+                    <label className={`text-[7px] md:text-[8px] font-black uppercase ${getTextMuted()} block mb-1 md:mb-2 text-center`}>Goal Steps</label>
                     <input 
                       type="number" 
                       value={tempGoalVal} 
@@ -1642,17 +1642,18 @@ return () => {
 </div>
                   </div>
 
-                  <div className="flex gap-2 w-full mt-8">
-                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => toggleArchiveHabit(viewingHabitMap)} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white border border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-500 hover:text-white'}`}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7"/><path d="M9 13v-3"/><path d="M15 13v-3"/></svg>
+                  {/* Fixed Button Layout - Stacks on Mobile to prevent overflow */}
+                  <div className="flex flex-col md:flex-row gap-2 w-full mt-8">
+                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => toggleArchiveHabit(viewingHabitMap)} className={`w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white border border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-500 hover:text-white'}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7"/><path d="M9 13v-3"/><path d="M15 13v-3"/></svg>
                       Archive
                     </motion.button>
-                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete</motion.button>
+                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} className="w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete</motion.button>
                   </div>
                 </div>
 
-                {/* MAIN CALENDAR SECTION - Responsive Padding */}
-                <div className="flex-1 p-4 md:p-8 flex flex-col overflow-y-auto custom-scrollbar">
+                {/* MAIN CALENDAR SECTION - Compact Spacing */}
+                <div className="flex-1 p-3 md:p-8 flex flex-col overflow-y-auto custom-scrollbar">
                   <div className="flex items-start justify-between mb-8 gap-4">
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3">
