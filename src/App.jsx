@@ -1090,9 +1090,9 @@ return () => {
     ))}
   </select>
 </div> </div>
-                  <div className="flex items-center gap-1.5 md:gap-3 overflow-hidden pl-2 md:pl-4">
+                  <div className="flex items-center gap-1.5 md:gap-3 pl-2 md:pl-4">
   <motion.button 
-    whileHover={{ scale: 1.05 }} 
+    whileHover={{ scale: 1.05 }}
     whileTap={{ scale: 0.95 }}
     onClick={() => setShowAllNotes(true)} 
     className={`flex items-center gap-1.5 transition-all px-2.5 py-1.5 rounded-xl border relative
@@ -1442,21 +1442,41 @@ return () => {
           </motion.div>
         )}
 
-        {showArchiveModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[160] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowArchiveModal(false)}>
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl relative`} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowArchiveModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
-              <div className="mb-8">
-                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Manage Habits</p>
-                <h3 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Archived Habits</h3>
+        {/* --- JOURNAL HISTORY MODAL --- */}
+        {showAllNotes && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[180] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowAllNotes(false)}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl relative flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setShowAllNotes(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              
+              <div className="mb-6 shrink-0">
+                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Reflection Log</p>
+                <h3 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Journal History</h3>
               </div>
-              <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-                {archivedHabits.length > 0 ? archivedHabits.map((habit, i) => (
-                  <div key={i} className={`p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'} flex items-center justify-between`}>
-                    <span className={`text-[10px] font-black uppercase ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{habit}</span>
-                    <button onClick={() => toggleArchiveHabit(habit)} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all">Restore</button>
+
+              <div className="overflow-y-auto custom-scrollbar pr-2 space-y-4">
+                {Object.keys(trackerData).filter(k => trackerData[k]?.note).length > 0 ? (
+                  Object.entries(trackerData)
+                    .filter(([k, v]) => v.note && v.note.trim())
+                    .sort((a, b) => new Date(b[0]) - new Date(a[0])) // Sort by newest first
+                    .map(([dateKey, data]) => (
+                      <div key={dateKey} className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={`text-[9px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'} bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20`}>
+                            {new Date(dateKey).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                          <button onClick={() => { setEditingNoteDate(dateKey); setShowAllNotes(false); }} className={`text-[9px] font-black uppercase hover:text-emerald-500 transition-colors ${getTextMuted()}`}>Edit</button>
+                        </div>
+                        <p className={`text-sm font-medium whitespace-pre-wrap leading-relaxed ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                          {data.note}
+                        </p>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-center py-20 opacity-30 flex flex-col items-center">
+                    <NoteIcon />
+                    <p className="font-black uppercase text-xs mt-4">No entries yet</p>
                   </div>
-                )) : <div className="text-center py-10 opacity-30 font-black uppercase text-xs">No archived habits</div>}
+                )}
               </div>
             </motion.div>
           </motion.div>
