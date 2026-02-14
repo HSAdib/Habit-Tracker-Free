@@ -148,6 +148,8 @@ export default function App() {
 );
 const [showWeeklyModal, setShowWeeklyModal] = useState(false);
 const [heatmapFilter, setHeatmapFilter] = useState('all');
+const [weeklyGraphFilter, setWeeklyGraphFilter] = useState('all');
+const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -688,6 +690,24 @@ return () => {
     // Added weeklyStats to return object
     return { topHabits, avgScore, weeklyStats }; 
   }, [trackerData, habits]);
+  const weeklyGraphData = useMemo(() => {
+    if (weeklyGraphFilter === 'all') return weeklySummary.weeklyStats;
+    
+    // Generate last 7 days data for the selected habit
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = getSafeKey(d);
+      const valRaw = trackerData[key]?.[weeklyGraphFilter] ?? 0;
+      const score = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
+      days.push({ 
+        name: d.toLocaleDateString(undefined, { weekday: 'short' }), 
+        score 
+      });
+    }
+    return days;
+  }, [weeklyGraphFilter, weeklySummary, trackerData]);
   const habitStreaks = useMemo(() => {
     const streaks = {};
     const today = new Date();
@@ -856,12 +876,21 @@ return () => {
   const trendPoints = useMemo(() => {
     if (daysInMonth.length < 2) return [];
     return daysInMonth.map((day, idx) => {
-      const key = getSafeKey(day); let totalPct = 0;
-      habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += (typeof r === 'number' ? r : (r ? 100 : 0)); });
-      const avgPct = habits.length > 0 ? totalPct / habits.length : 0;
-      return { x: (idx / (daysInMonth.length - 1)) * 100, y: 100 - avgPct };
+      const key = getSafeKey(day); 
+      let pct = 0;
+
+      if (dashboardGraphFilter === 'all') {
+         let totalPct = 0;
+         habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += (typeof r === 'number' ? r : (r ? 100 : 0)); });
+         pct = habits.length > 0 ? totalPct / habits.length : 0;
+      } else {
+         const r = trackerData[key]?.[dashboardGraphFilter] ?? 0;
+         pct = typeof r === 'number' ? r : (r ? 100 : 0);
+      }
+      
+      return { x: (idx / (daysInMonth.length - 1)) * 100, y: 100 - pct };
     }).filter(p => !isNaN(p.x));
-  }, [daysInMonth, trackerData, habits]);
+  }, [daysInMonth, trackerData, habits, dashboardGraphFilter]);
 
   const solveFluidPath = (points) => {
     if (!points || points.length < 2) return "";
@@ -1117,16 +1146,31 @@ return () => {
             </motion.div>
             
             <motion.div variants={itemVariants} className={`col-span-1 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors h-full min-w-0`}>
-              <div className="flex items-center mb-2 md:mb-4">
-  <div className="flex items-center gap-2" title="Mastery Score">
-    <div className="text-emerald-500">
-      <TargetIcon />
-    </div>
-    <span className={`text-[10px] md:text-sm font-black ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
-      {analytics.monthlyPct}%
-    </span>
-  </div>
-  <div className="ml-auto flex items-center gap-2">
+              <div className="flex items-center mb-2 md:mb-4 justify-between">
+                <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                  <div className="text-emerald-500 shrink-0">
+                    <TargetIcon />
+                  </div>
+                  <span className={`text-[10px] md:text-sm font-black ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    {dashboardGraphFilter === 'all' ? analytics.monthlyPct : (analytics.habitPcts[dashboardGraphFilter] || 0)}%
+                  </span>
+                  
+                  <select 
+                    value={dashboardGraphFilter} 
+                    onChange={(e) => setDashboardGraphFilter(e.target.value)}
+                    className={`text-[8px] md:text-[9px] font-black uppercase px-2 py-0.5 rounded-full border transition-all cursor-pointer focus:outline-none max-w-[100px] truncate
+                      ${theme === 'dark' 
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20' 
+                        : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300 shadow-sm'}`}
+                  >
+                    <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
+                    {habits.map(h => (
+                      <option key={h} value={h} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{h}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
   <div className="tooltip-trigger">
     <motion.button 
       whileHover={{ scale: 1.05 }}
@@ -1320,15 +1364,34 @@ return () => {
                   <span className="text-4xl font-black text-emerald-500">{weeklySummary.avgScore}%</span>
                   <span className={`text-[9px] font-black uppercase mt-2 ${getTextMuted()}`}>7-Day Average</span>
                 </div>
-               {/* --- NEW VISUALISATION SECTION --- */}
+                
+              {/* --- NEW VISUALISATION SECTION --- */}
               <div className="mt-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <ActivityIcon className="w-4 h-4 text-emerald-500" />
-                  <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Performance Graph</p>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <ActivityIcon className="w-4 h-4 text-emerald-500" />
+                    <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>
+                      {weeklyGraphFilter === 'all' ? 'Performance Graph' : `${weeklyGraphFilter} Trend`}
+                    </p>
+                  </div>
+                  <select 
+                    value={weeklyGraphFilter} 
+                    onChange={(e) => setWeeklyGraphFilter(e.target.value)}
+                    className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border transition-all cursor-pointer focus:outline-none
+                      ${theme === 'dark' 
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20' 
+                        : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300'}`}
+                  >
+                    <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
+                    {habits.map(h => (
+                      <option key={h} value={h} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{h}</option>
+                    ))}
+                  </select>
                 </div>
+                
                 <div className={`w-full h-48 rounded-2xl border p-4 ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={weeklySummary.weeklyStats}>
+                    <BarChart data={weeklyGraphData}>
                       <XAxis 
                         dataKey="name" 
                         stroke={theme === 'dark' ? '#64748b' : '#94a3b8'} 
@@ -1352,7 +1415,7 @@ return () => {
                         }}
                       />
                       <Bar dataKey="score" radius={[4, 4, 4, 4]}>
-                        {weeklySummary.weeklyStats.map((entry, index) => (
+                        {weeklyGraphData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.score >= 80 ? '#10b981' : entry.score >= 50 ? '#3b82f6' : '#64748b'} />
                         ))}
                       </Bar>
@@ -1360,6 +1423,7 @@ return () => {
                   </ResponsiveContainer>
                 </div>
               </div>
+              {/* --- END NEW VISUALISATION SECTION --- */}
               {/* --- END NEW VISUALISATION SECTION --- */}
                 <div className="col-span-2 space-y-3">
                   <div className="flex items-center gap-2 mb-2">
