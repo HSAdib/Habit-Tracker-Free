@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Analytics } from "@vercel/analytics/react";
 import { motion, AnimatePresence, animate } from 'framer-motion';
-
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 // --- Icons ---
 const TimerIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -685,7 +685,8 @@ return () => {
     const topHabits = [...weeklyStats].sort((a, b) => b.score - a.score).slice(0, 3);
     const avgScore = habits.length > 0 ? Math.round(weeklyStats.reduce((acc, h) => acc + h.score, 0) / habits.length) : 0;
 
-    return { topHabits, avgScore };
+    // Added weeklyStats to return object
+    return { topHabits, avgScore, weeklyStats }; 
   }, [trackerData, habits]);
   const habitStreaks = useMemo(() => {
     const streaks = {};
@@ -1319,7 +1320,47 @@ return () => {
                   <span className="text-4xl font-black text-emerald-500">{weeklySummary.avgScore}%</span>
                   <span className={`text-[9px] font-black uppercase mt-2 ${getTextMuted()}`}>7-Day Average</span>
                 </div>
-
+               {/* --- NEW VISUALISATION SECTION --- */}
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <ActivityIcon className="w-4 h-4 text-emerald-500" />
+                  <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Performance Graph</p>
+                </div>
+                <div className={`w-full h-48 rounded-2xl border p-4 ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={weeklySummary.weeklyStats}>
+                      <XAxis 
+                        dataKey="name" 
+                        stroke={theme === 'dark' ? '#64748b' : '#94a3b8'} 
+                        fontSize={8} 
+                        tickLine={false} 
+                        axisLine={false}
+                        interval={0}
+                        tickFormatter={(val) => val.slice(0, 3).toUpperCase()}
+                      />
+                      <RechartsTooltip 
+                        cursor={{ fill: theme === 'dark' ? '#334155' : '#e2e8f0', opacity: 0.4 }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className={`px-2 py-1 rounded-lg border text-xs font-black uppercase ${theme === 'dark' ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+                                {payload[0].payload.name}: <span className="text-emerald-500">{payload[0].value}%</span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar dataKey="score" radius={[4, 4, 4, 4]}>
+                        {weeklySummary.weeklyStats.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.score >= 80 ? '#10b981' : entry.score >= 50 ? '#3b82f6' : '#64748b'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              {/* --- END NEW VISUALISATION SECTION --- */}
                 <div className="col-span-2 space-y-3">
                   <div className="flex items-center gap-2 mb-2">
                     <TrophyIcon className="text-yellow-500" />
