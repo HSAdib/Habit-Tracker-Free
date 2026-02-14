@@ -192,7 +192,9 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
   const [tableHeight, setTableHeight] = useState(484);
   const [tempGoalVal, setTempGoalVal] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
+// --- LEVEL UP STATE ---
+  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  const prevLevelRef = useRef(null);
   // Pomodoro States
   const [showPomo, setShowPomo] = useState(false);
   const [pomoWorkTime, setPomoWorkTime] = useState(() => (typeof window !== 'undefined' ? parseInt(localStorage.getItem('adib_pomo_work')) || 25 : 25));
@@ -649,6 +651,57 @@ return () => {
       progressXP: Math.round(progressXP) 
     };
   }, [trackerData, habits, habitConfigs]);;
+
+  // --- LEVEL UP EFFECT ---
+  useEffect(() => {
+    if (prevLevelRef.current === null) {
+      prevLevelRef.current = xpStats.level;
+      return;
+    }
+
+    if (xpStats.level > prevLevelRef.current) {
+      setShowLevelUpModal(true);
+      
+      // 1. Play Victory Sound (Arpeggio)
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const playNote = (freq, time, duration) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + time);
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime + time);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + time + duration);
+          osc.start(audioCtx.currentTime + time);
+          osc.stop(audioCtx.currentTime + time + duration);
+        };
+        // C Major Fanfare: C5 -> E5 -> G5 -> C6
+        playNote(523.25, 0, 0.2);
+        playNote(659.25, 0.1, 0.2);
+        playNote(783.99, 0.2, 0.2);
+        playNote(1046.50, 0.4, 0.8);
+      } catch (e) { console.error("Audio play failed", e); }
+
+      // 2. Trigger Massive Confetti
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+      s.onload = () => {
+        const duration = 3000;
+        const end = Date.now() + duration;
+        (function frame() {
+          if (typeof window.confetti === 'function') {
+            window.confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#10b981', '#3b82f6', '#f59e0b'] });
+            window.confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#10b981', '#3b82f6', '#f59e0b'] });
+          }
+          if (Date.now() < end) requestAnimationFrame(frame);
+        }());
+      };
+      document.head.appendChild(s);
+    }
+    prevLevelRef.current = xpStats.level;
+  }, [xpStats.level]);
 
   const analytics = useMemo(() => {
     let totalEarnedWeight = 0; let totalPossibleWeight = 0; let noteCount = 0; const stats = {};
@@ -2000,7 +2053,48 @@ return () => {
             </motion.div>
           </motion.div>
         )}
-
+{/* --- LEVEL UP MODAL --- */}
+        {showLevelUpModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4" onClick={() => setShowLevelUpModal(false)}>
+            <motion.div 
+              initial={{ scale: 0.5, y: 100 }} 
+              animate={{ scale: 1, y: 0 }} 
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", bounce: 0.5 }}
+              className="relative w-full max-w-sm bg-slate-900 border-2 border-emerald-500/50 rounded-[3rem] p-10 text-center overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.4)]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Radial Burst Background */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500/20 via-slate-900/50 to-slate-900 z-0 animate-pulse"></div>
+              
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="w-24 h-24 mb-6 rounded-full bg-gradient-to-tr from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 animate-bounce">
+                  {/* Big Custom Trophy Icon */}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                </div>
+                
+                <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2 drop-shadow-md">
+                  LEVEL UP!
+                </h2>
+                
+                <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-emerald-300 to-emerald-600 mb-4 filter drop-shadow-[0_4px_0_rgba(6,78,59,0.5)]">
+                  {xpStats.level}
+                </div>
+                
+                <p className="text-emerald-400 font-black uppercase tracking-[0.3em] text-xs mb-8">
+                  Keep Crushing It
+                </p>
+                
+                <button 
+                  onClick={() => setShowLevelUpModal(false)}
+                  className="w-full py-4 rounded-2xl bg-white text-emerald-600 font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl"
+                >
+                  Continue
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
         {showPomo && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4" onClick={() => setShowPomo(false)}>
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[3rem] p-10 w-full max-w-sm text-center shadow-2xl relative`} onClick={e => e.stopPropagation()}>
