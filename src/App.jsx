@@ -951,7 +951,14 @@ return () => {
           {/* Dashboard Header */}
           <motion.div variants={itemVariants} className={`flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-6 ${getCardStyle()} p-6 rounded-[2.5rem] border transition-colors relative overflow-hidden`}>
             <div className="flex items-center gap-4 z-10">
-              <motion.div whileHover={{ scale: 1.1, rotate: 5 }} className="bg-emerald-600 p-3 rounded-2xl text-white shadow-lg animate-glow"><ZapIcon /></motion.div>
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 5 }} 
+                whileTap={{ scale: 0.9 }}
+                onClick={() => window.location.reload()}
+                className="bg-emerald-600 p-3 rounded-2xl text-white shadow-lg animate-glow cursor-pointer"
+              >
+                <ZapIcon />
+              </motion.div>
               
               <div>
                 <h1 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} tracking-tight leading-none`}>Habit Mastery</h1>
