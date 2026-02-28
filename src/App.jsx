@@ -74,8 +74,10 @@ const TableRotateIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <rect width="10" height="14" x="3" y="5" rx="1.5" opacity="0.4"/>
     <rect width="14" height="10" x="7" y="11" rx="1.5" />
-    
   </svg>
+);
+const TextSizeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>
 );
 const ImportIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
@@ -192,6 +194,20 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
   const [tableHeight, setTableHeight] = useState(484);
   const [tempGoalVal, setTempGoalVal] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showTextSizeModal, setShowTextSizeModal] = useState(false);
+  const [textSizes, setTextSizes] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('adib_text_sizes');
+      return saved ? JSON.parse(saved) : { habit: 14, table1: 12, table2: 11 };
+    }
+    return { habit: 14, table1: 12, table2: 11 };
+  });
+
+  const updateTextSize = (key, value) => {
+    const newSizes = { ...textSizes, [key]: parseInt(value) };
+    setTextSizes(newSizes);
+    localStorage.setItem('adib_text_sizes', JSON.stringify(newSizes));
+  };
 // --- LEVEL UP STATE ---
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const prevLevelRef = useRef(null);
@@ -1114,6 +1130,18 @@ return () => {
                     >
                       {tabLayout === 'square' ? <TargetIcon /> : <SquareTargetIcon />}
                     </button>
+
+                    <button 
+                      onClick={() => setShowTextSizeModal(true)}
+                      className={`p-1.5 rounded-lg transition-all border active:scale-90
+                        ${theme === 'dark' 
+                          ? 'bg-slate-800 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)] hover:border-emerald-500/50' 
+                          : 'bg-white border-emerald-200 text-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.15)] hover:border-emerald-400'
+                        }`}
+                      title="Adjust Text Sizes"
+                    >
+                      <TextSizeIcon />
+                    </button>
                   </div>
 
                   {/* Status Zone - Separated from Buttons */}
@@ -1454,7 +1482,7 @@ return () => {
             <input autoFocus className={`text-[8px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(habit)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(habit)} onClick={(e) => e.stopPropagation()} />
           ) : (
             <div className="relative flex items-center justify-center w-full group/name min-h-[14px]">
-              <p className="text-[clamp(7px,2.2vw,14px)] sm:text-[11px] md:text-sm font-black uppercase opacity-80 leading-[1.1] line-clamp-2 text-center w-full px-1 break-words">{habit}</p>
+              <p style={{ fontSize: `${textSizes.habit}px` }} className="font-black uppercase opacity-80 leading-[1.1] line-clamp-2 text-center w-full px-1 break-words">{habit}</p>
               <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitName(habit); setTempHabitName(habit); }}><EditIcon /></button>
             </div>
           )}
@@ -1469,7 +1497,7 @@ return () => {
                 <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(habit)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(habit)} onClick={(e) => e.stopPropagation()} />
               ) : (
                 <div className="relative flex items-center justify-center w-full">
-                  <p className={`text-[clamp(9px,2vw,16px)] sm:text-sm md:text-base font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} uppercase line-clamp-2 break-words text-center leading-[1.1] px-1`}>{habit}</p>
+                  <p style={{ fontSize: `${textSizes.habit}px` }} className={`font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} uppercase line-clamp-2 break-words text-center leading-[1.1] px-1`}>{habit}</p>
                   <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitName(habit); setTempHabitName(habit); }}><EditIcon /></button>
                 </div>
               )}
@@ -1668,7 +1696,7 @@ return () => {
                             </th>
 
                             {/* FILTERED HABITS HEADER */}
-                            {habits.filter(h => !archivedHabits.includes(h)).map((h, i) => <th key={i} className={`p-2 border-r ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-600'} text-[12px] uppercase text-center font-black transition-colors`}><div className="px-1 leading-tight break-words" title={h}>{h}</div></th>)}
+                            {habits.filter(h => !archivedHabits.includes(h)).map((h, i) => <th key={i} className={`p-2 border-r ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-600'} uppercase text-center font-black transition-colors`} style={{ fontSize: `${textSizes.table1}px` }}><div className="px-1 leading-tight break-words" title={h}>{h}</div></th>)}
                             <th className={`p-4 font-black text-emerald-600 text-[14px] sticky top-0 right-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-l w-[100px] z-40 text-center`}>Efficiency</th>
                         </tr>
                     </thead>
@@ -1797,7 +1825,7 @@ return () => {
                         {/* FILTERED HABITS ROWS */}
                         {habits.filter(h => !archivedHabits.includes(h)).map((habit, hIdx) => (
                             <tr key={hIdx} className="h-[68px]">
-                                <td className={`p-1 font-black text-[clamp(7.5px,1.5vw,11px)] sm:text-[11px] uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${getTableHeadStyle()} text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
+                                <td className={`p-1 font-black uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${getTableHeadStyle()} text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`} style={{ fontSize: `${textSizes.table2}px` }}>
                                     <div className="truncate w-full px-1 font-black leading-tight">{habit}</div>
                                 </td>
                                 {daysInMonth.map(day => {
@@ -2373,6 +2401,52 @@ return () => {
                   <RefreshIcon />
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* --- TEXT SIZE MODAL --- */}
+        {showTextSizeModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowTextSizeModal(false)}>
+            <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2rem] w-full max-w-sm p-6 shadow-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
+              
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><TextSizeIcon /></div>
+                  <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Text Sizes</h3>
+                </div>
+                <button onClick={() => setShowTextSizeModal(false)} className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><XIcon /></button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Habit Tab Size */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Habit Tabs</label>
+                    <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">{textSizes.habit}px</span>
+                  </div>
+                  <input type="range" min="8" max="24" step="1" value={textSizes.habit} onChange={(e) => updateTextSize('habit', e.target.value)} className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                </div>
+
+                {/* Table 1 (Vertical) Size */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Table 1 Text (Vertical)</label>
+                    <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">{textSizes.table1}px</span>
+                  </div>
+                  <input type="range" min="8" max="24" step="1" value={textSizes.table1} onChange={(e) => updateTextSize('table1', e.target.value)} className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                </div>
+
+                {/* Table 2 (Horizontal) Size */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Table 2 Text (Horizontal)</label>
+                    <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">{textSizes.table2}px</span>
+                  </div>
+                  <input type="range" min="6" max="20" step="1" value={textSizes.table2} onChange={(e) => updateTextSize('table2', e.target.value)} className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                </div>
+              </div>
+
             </motion.div>
           </motion.div>
         )}
