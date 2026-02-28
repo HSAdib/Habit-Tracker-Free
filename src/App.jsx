@@ -1519,7 +1519,7 @@ return () => {
                 </div>
                 
               {/* --- NEW VISUALISATION SECTION --- */}
-              <div className="mt-6">
+              <div className="col-span-1 md:col-span-2">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <ActivityIcon className="w-4 h-4 text-emerald-500" />
@@ -1578,7 +1578,7 @@ return () => {
               </div>
               {/* --- END NEW VISUALISATION SECTION --- */}
               {/* --- END NEW VISUALISATION SECTION --- */}
-                <div className="col-span-2 space-y-3">
+                <div className="col-span-1 md:col-span-3 space-y-3">
                   <div className="flex items-center gap-2 mb-2">
                     <TrophyIcon className="text-yellow-500" />
                     <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-widest`}>Top Achievements</p>
