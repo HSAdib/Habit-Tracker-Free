@@ -198,9 +198,10 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
   const [textSizes, setTextSizes] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('adib_text_sizes');
-      return saved ? JSON.parse(saved) : { habit: 14, table1: 12, table2: 11 };
+      const parsed = saved ? JSON.parse(saved) : {};
+      return { habit: 14, table1: 12, table2: 11, tabSize: 110, ...parsed };
     }
-    return { habit: 14, table1: 12, table2: 11 };
+    return { habit: 14, table1: 12, table2: 11, tabSize: 110 };
   });
 
   const updateTextSize = (key, value) => {
@@ -1138,7 +1139,7 @@ return () => {
                           ? 'bg-slate-800 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)] hover:border-emerald-500/50' 
                           : 'bg-white border-emerald-200 text-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.15)] hover:border-emerald-400'
                         }`}
-                      title="Adjust Text Sizes"
+                      title="Adjust Display Sizes"
                     >
                       <TextSizeIcon />
                     </button>
@@ -1446,7 +1447,7 @@ return () => {
   ))}
 </div>
           {/* Updated Habit Cards Grid */}
-          <motion.div variants={containerVariants} className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-3 mb-8">
+          <motion.div variants={containerVariants} className="grid gap-3 mb-8" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${textSizes.tabSize || 110}px, 1fr))` }}>
             <AnimatePresence mode='popLayout'>
 {habits.filter(h => !archivedHabits.includes(h) && (selectedCategory === 'all' || habitConfigs[h]?.category === selectedCategory)).map((habit, idx) => {
   const isCircle = tabLayout === 'circle';
@@ -1459,7 +1460,7 @@ return () => {
       whileHover={{ y: -5, scale: isCircle ? 1.05 : 1 }} 
       key={habit} 
       className={`${getCardStyle()} cursor-pointer overflow-hidden group transition-all relative flex flex-col items-center justify-center
-        ${isCircle ? 'rounded-full aspect-square border-0' : 'p-2 rounded-2xl border min-h-[100px] hover:shadow-lg'}`} 
+        ${isCircle ? 'rounded-full aspect-square border-0' : 'p-2 rounded-2xl border aspect-square hover:shadow-lg'}`}
       onClick={() => setViewingHabitMap(habit)}
     >
       
@@ -1524,7 +1525,7 @@ return () => {
     setEditingHabitName(name); 
     setTempHabitName(name);
   }}
-  className={`${getCardStyle()} flex items-center justify-center border-2 border-dashed transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl min-h-[100px]'} ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'}`}>
+  className={`${getCardStyle()} flex items-center justify-center border-2 border-dashed transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl aspect-square'} ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'}`}>
   <PlusIcon />
 </motion.button>
           </motion.div>
@@ -2413,16 +2414,25 @@ return () => {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-xl ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><TextSizeIcon /></div>
-                  <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Text Sizes</h3>
+                  <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Display Settings</h3>
                 </div>
                 <button onClick={() => setShowTextSizeModal(false)} className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><XIcon /></button>
               </div>
 
               <div className="space-y-6">
+                {/* Habit Card Size */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Habit Card Size</label>
+                    <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">{textSizes.tabSize || 110}px</span>
+                  </div>
+                  <input type="range" min="60" max="200" step="5" value={textSizes.tabSize || 110} onChange={(e) => updateTextSize('tabSize', e.target.value)} className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                </div>
+
                 {/* Habit Tab Size */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <label className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Habit Tabs</label>
+                    <label className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Habit Text</label>
                     <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">{textSizes.habit}px</span>
                   </div>
                   <input type="range" min="8" max="24" step="1" value={textSizes.habit} onChange={(e) => updateTextSize('habit', e.target.value)} className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
@@ -2445,6 +2455,20 @@ return () => {
                   </div>
                   <input type="range" min="6" max="20" step="1" value={textSizes.table2} onChange={(e) => updateTextSize('table2', e.target.value)} className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
                 </div>
+              </div>
+
+              {/* Restore Defaults Button */}
+              <div className={`mt-8 pt-6 border-t ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
+                <button 
+                  onClick={() => {
+                    const defaults = { habit: 14, table1: 12, table2: 11, tabSize: 110 };
+                    setTextSizes(defaults);
+                    localStorage.setItem('adib_text_sizes', JSON.stringify(defaults));
+                  }} 
+                  className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
+                >
+                  <RefreshIcon /> Restore Defaults
+                </button>
               </div>
 
             </motion.div>
