@@ -82,6 +82,15 @@ const TextSizeIcon = () => (
 const ImportIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
 );
+const OrderIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="10" x2="21" y1="6" y2="6"/><line x1="10" x2="21" y1="12" y2="12"/><line x1="10" x2="21" y1="18" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+);
+const ChevronUpIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+);
+const ChevronDownIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+);
 const AnimatedNumber = ({ value }) => {
   const digits = String(value).split('');
   return (
@@ -238,6 +247,7 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
     return [];
   });
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 // --- CATEGORY MANAGER STATE ---
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [newCatInput, setNewCatInput] = useState("");
@@ -1409,6 +1419,8 @@ return () => {
   </button>
 
   <div className={`w-px h-4 mx-1 ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'}`}></div>
+  
+  
 
   {/* EXISTING CATEGORIES (Clean Look) */}
   {categories.map(cat => (
@@ -1525,9 +1537,20 @@ return () => {
     setEditingHabitName(name); 
     setTempHabitName(name);
   }}
-  className={`${getCardStyle()} flex items-center justify-center border-2 border-dashed transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl aspect-square'} ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'}`}>
+  className={`${getCardStyle()} flex items-center justify-center border-2 border-dashed transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl aspect-square'} ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'}`}
+  title="Add New Habit"
+>
   <PlusIcon />
 </motion.button>
+
+{selectedCategory === 'all' && (
+  <motion.button layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowOrderModal(true)}
+    className={`${getCardStyle()} flex items-center justify-center border-2 transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl aspect-square'} ${theme === 'dark' ? 'border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-700' : 'border-slate-200 text-slate-400 hover:text-emerald-500 hover:border-emerald-400'}`}
+    title="Edit Habit Order"
+  >
+    <OrderIcon />
+  </motion.button>
+)}
           </motion.div>
 {/* Weekly Summary Popup Modal */}
         {showWeeklyModal && (
@@ -2180,6 +2203,59 @@ return () => {
               <div className="flex gap-4">
                 <button onClick={() => setShowDeleteConfirm(false)} className={`flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest ${theme === 'dark' ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>Cancel</button>
                 <button onClick={() => deleteHabit(viewingHabitMap || editingHabitName)} className="flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-500 text-white shadow-lg shadow-rose-500/20">Delete</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+{/* --- ORDER MODAL --- */}
+        {showOrderModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[350] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowOrderModal(false)}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setShowOrderModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-emerald-500 transition-all`}><XIcon /></button>
+              
+              <div className="mb-6 shrink-0">
+                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Manage Display</p>
+                <h3 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Edit Order</h3>
+              </div>
+
+              <div className="overflow-y-auto custom-scrollbar pr-2 space-y-2">
+                {habits.map((habit, index) => (
+                  <div key={habit} className={`p-3 rounded-2xl border flex items-center justify-between transition-colors ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs font-black w-5 text-center ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{index + 1}</span>
+                      <span className={`text-sm font-black uppercase ${archivedHabits.includes(habit) ? 'opacity-40 line-through' : ''} ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{habit}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => {
+                          if (index === 0) return;
+                          const newHabits = [...habits];
+                          [newHabits[index - 1], newHabits[index]] = [newHabits[index], newHabits[index - 1]];
+                          setHabits(newHabits);
+                          save(trackerData, newHabits, habitConfigs);
+                        }}
+                        disabled={index === 0}
+                        className={`p-1.5 rounded-lg transition-all ${index === 0 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'hover:bg-slate-700 hover:text-emerald-400' : 'hover:bg-slate-200 hover:text-emerald-600')} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
+                      >
+                        <ChevronUpIcon />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (index === habits.length - 1) return;
+                          const newHabits = [...habits];
+                          [newHabits[index + 1], newHabits[index]] = [newHabits[index], newHabits[index + 1]];
+                          setHabits(newHabits);
+                          save(trackerData, newHabits, habitConfigs);
+                        }}
+                        disabled={index === habits.length - 1}
+                        className={`p-1.5 rounded-lg transition-all ${index === habits.length - 1 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'hover:bg-slate-700 hover:text-emerald-400' : 'hover:bg-slate-200 hover:text-emerald-600')} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
+                      >
+                        <ChevronDownIcon />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
           </motion.div>
