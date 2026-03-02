@@ -1046,7 +1046,7 @@ return () => {
                     <button 
                       onClick={() => setShowLevelDetailsModal(true)}
                       className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-500 cursor-pointer hover:scale-105 active:scale-95 ${getLevelBadgeStyle(xpStats.level)}`}
-                      title="View Rank Details"
+                      title="View Level Details"
                     >
                       Level {xpStats.level}
                     </button>
@@ -2393,7 +2393,7 @@ return () => {
               
               <div className="mb-8 shrink-0">
                 <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Mastery Engine</p>
-                <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Rank Details</h3>
+                <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Level Details</h3>
               </div>
 
               <div className="flex flex-col items-center mb-8">
