@@ -2,18 +2,9 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Analytics } from "@vercel/analytics/react";
-import { motion, AnimatePresence, animate } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
 // --- Icons ---
-const TimerIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-);
-const PlayIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="m7 4 12 8-12 8V4z"/></svg>
-);
-const PauseIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect width="4" height="16" x="6" y="4" rx="1"/><rect width="4" height="16" x="14" y="4" rx="1"/></svg>
-);
 const RefreshIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
 );
@@ -203,7 +194,6 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
   };
   const [activeSlider, setActiveSlider] = useState(null); 
   const [isEditingTabName, setIsEditingTabName] = useState(false);
-  const [tableVisibleRows, setTableVisibleRows] = useState(6);
   const [tableHeight, setTableHeight] = useState(484);
   const [tempGoalVal, setTempGoalVal] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -224,6 +214,7 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
   };
 // --- LEVEL UP STATE ---
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  const [showLevelDetailsModal, setShowLevelDetailsModal] = useState(false);
   const prevLevelRef = useRef(null);
   const [archivedHabits, setArchivedHabits] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -275,32 +266,6 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
       setNewCatInput("");
     }
   };
-  // --- Push Notification Logic ---
-  const requestNotificationPermission = () => {
-    if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  };
-
-  const triggerNotification = (title, body) => {
-    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([500, 200, 500]);
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-      oscillator.start(); oscillator.stop(audioCtx.currentTime + 1);
-    } catch (e) {}
-    if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "granted") {
-      new Notification(title, { body, icon: 'https://cdn-icons-png.flaticon.com/512/2550/2550324.png' });
-    }
-  };
-
   const longPressTimer = useRef(null);
   const scrollContainerRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -379,7 +344,6 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
         if (scrollTop > stopScrollAt) {
           container.scrollTop = stopScrollAt;
           setTableHeight(minHeightLimit);
-          setTableVisibleRows(3);
           return;
         }
         
@@ -392,11 +356,6 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
         if (targetHeight < minHeightLimit) targetHeight = minHeightLimit;
 
         setTableHeight(targetHeight);
-
-        const calculatedRows = Math.max(3, Math.min(6, Math.ceil((targetHeight - headerHeight) / rowHeight)));
-        if (calculatedRows !== tableVisibleRows) {
-          setTableVisibleRows(calculatedRows);
-        }
       }
     };
 const container = scrollContainerRef.current;
@@ -796,39 +755,6 @@ return () => {
     }
     return days;
   }, [weeklyGraphFilter, weeklySummary, trackerData]);
-  const habitStreaks = useMemo(() => {
-    const streaks = {};
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    habits.forEach(habit => {
-      let count = 0;
-      let checkDate = new Date(today);
-      
-      const todayKey = getSafeKey(checkDate);
-      const todayVal = trackerData[todayKey]?.[habit] ?? 0;
-      const isTodayDone = (typeof todayVal === 'number' ? todayVal : (todayVal ? 100 : 0)) >= 100;
-
-      if (!isTodayDone) {
-        checkDate.setDate(checkDate.getDate() - 1);
-      }
-
-      while (true) {
-        const key = getSafeKey(checkDate);
-        const valRaw = trackerData[key]?.[habit] ?? 0;
-        const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
-
-        if (val >= 100) {
-          count++;
-          checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-          break;
-        }
-      }
-      streaks[habit] = count;
-    });
-    return streaks;
-  }, [trackerData, habits]);
 
   const habitInsights = useMemo(() => {
     if (!viewingHabitMap) return null;
@@ -841,7 +767,6 @@ return () => {
     });
     const score = Math.round((monthlyEarned / (daysInMonth.length * 100)) * 100);
 
-    // --- সংশোধিত স্ট্রিক ক্যালকুলেশন ---
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -849,14 +774,13 @@ return () => {
     let bestStreak = 0;
     let tempStreak = 0;
 
-    // ১. কারেন্ট স্ট্রিক বের করা (আজ বা গতকাল থেকে পেছনে গণনা)
+    // Calculate current streak (counting backwards from today/yesterday)
     let checkDate = new Date(today);
     const todayKey = getSafeKey(checkDate);
     const todayValRaw = trackerData[todayKey]?.[viewingHabitMap] ?? 0;
     const todayVal = typeof todayValRaw === 'number' ? todayValRaw : (todayValRaw ? 100 : 0);
 
-    // যদি আজ এখনও শেষ না হয়, তবে গতকাল থেকে স্ট্রিক চেক করা শুরু করবে
-    if (todayVal < 100) {
+    if (Math.round(todayVal) < 100) {
       checkDate.setDate(checkDate.getDate() - 1);
     }
 
@@ -865,7 +789,7 @@ return () => {
       const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
       const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
 
-      if (val >= 100) {
+      if (Math.round(val) >= 100) {
         currentStreak++;
         checkDate.setDate(checkDate.getDate() - 1);
       } else {
@@ -873,16 +797,19 @@ return () => {
       }
     }
 
-    // ২. অল-টাইম বেস্ট স্ট্রিক বের করা
+    // Calculate all-time best streak
     const allDates = Object.keys(trackerData).sort();
     if (allDates.length > 0) {
-      let d = new Date(allDates[0]);
+      // Parse date locally to prevent UTC timezone offset bugs
+      const [y, m, d_str] = allDates[0].split('-');
+      let d = new Date(parseInt(y), parseInt(m) - 1, parseInt(d_str), 0, 0, 0, 0);
+      
       while (d <= today) {
         const key = getSafeKey(d);
         const valRaw = trackerData[key]?.[viewingHabitMap] ?? 0;
         const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
 
-        if (val >= 100) {
+        if (Math.round(val) >= 100) {
           tempStreak++;
           if (tempStreak > bestStreak) bestStreak = tempStreak;
         } else {
@@ -892,7 +819,6 @@ return () => {
       }
     }
 
-    // গ্যারান্টি: বেস্ট স্ট্রিক কখনোই কারেন্ট স্ট্রিকের চেয়ে কম হবে না
     if (currentStreak > bestStreak) bestStreak = currentStreak;
 
     // --- New Last 7 Days Logic for specific habit ---
@@ -1116,9 +1042,13 @@ return () => {
 
                   {/* Status Zone - Separated from Buttons */}
                   <div className={`flex items-center gap-3 ml-4 md:ml-8 pl-4 md:pl-6 border-l ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-500 cursor-default ${getLevelBadgeStyle(xpStats.level)}`}>
+                    <button 
+                      onClick={() => setShowLevelDetailsModal(true)}
+                      className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-500 cursor-pointer hover:scale-105 active:scale-95 ${getLevelBadgeStyle(xpStats.level)}`}
+                      title="View Rank Details"
+                    >
                       Level {xpStats.level}
-                    </span>
+                    </button>
                     <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)] cursor-default" title="Total Full Wins">
                       <TrophyIcon className="w-2.5 h-2.5 text-yellow-500" />
                       <span className="text-[9px] font-black text-yellow-500">{analytics.totalDone}</span>
@@ -2445,6 +2375,84 @@ return () => {
             </motion.div>
           </motion.div>
         )}
+
+        {/* --- LEVEL DETAILS MODAL --- */}
+        {showLevelDetailsModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowLevelDetailsModal(false)}>
+            <motion.div 
+              initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }} 
+              className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2rem] w-full max-w-sm p-8 shadow-2xl relative overflow-hidden`} 
+              onClick={e => e.stopPropagation()}
+            >
+              <button onClick={() => setShowLevelDetailsModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              
+              <div className="mb-8 shrink-0">
+                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Mastery Engine</p>
+                <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Rank Details</h3>
+              </div>
+
+              <div className="flex flex-col items-center mb-8">
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-4 border-4 shadow-xl ${getLevelBadgeStyle(xpStats.level)}`}>
+                  <span className="text-4xl font-black">{xpStats.level}</span>
+                </div>
+                <p className={`text-xs font-black uppercase tracking-widest ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Total XP: <span className={theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}>{xpStats.totalXP}</span>
+                </p>
+              </div>
+
+              <div className="space-y-3 p-5 rounded-2xl border bg-slate-50/5 dark:bg-slate-800/30 dark:border-slate-700/50 border-slate-200/50">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                  <span className={getTextMuted()}>Current Progress</span>
+                  <span className={theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}>{xpStats.progressXP} / {xpStats.requiredXP} XP</span>
+                </div>
+                <div className={`h-4 w-full rounded-full overflow-hidden ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-300'}`}>
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${xpStats.progressPct}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full bg-gradient-to-r from-emerald-600 to-blue-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                </div>
+                <p className={`text-[9px] text-center font-bold ${getTextMuted()} pt-1`}>
+                  Earn {xpStats.requiredXP - xpStats.progressXP} more XP to reach Level {xpStats.level + 1}
+                </p>
+              </div>
+
+              {/* Timeline Roadmap */}
+              <div className="mt-8 flex flex-col gap-5 relative px-2">
+                {/* The vertical line */}
+                <div className="absolute left-[17px] top-2 bottom-2 w-[2px] bg-slate-200 dark:bg-slate-700/50" />
+                
+                {[Math.max(1, xpStats.level - 1), Math.max(1, xpStats.level - 1) + 1, Math.max(1, xpStats.level - 1) + 2, Math.max(1, xpStats.level - 1) + 3].map((l) => {
+                  const isPast = l < xpStats.level;
+                  const isCurrent = l === xpStats.level;
+                  const targetXP = Math.pow(l - 1, 2) * 100;
+                  
+                  return (
+                    <div key={l} className={`relative flex items-center gap-5 ${isPast ? 'opacity-50' : ''}`}>
+                      <div className={`w-5 h-5 rounded-full border-2 z-10 shrink-0 ${
+                        isPast ? 'bg-emerald-500 border-emerald-500' : 
+                        isCurrent ? 'bg-white dark:bg-slate-900 border-emerald-500 ring-4 ring-emerald-500/20' : 
+                        'bg-slate-100 border-slate-300 dark:bg-slate-800 dark:border-slate-600'
+                      } flex items-center justify-center transition-all`}>
+                        {isPast && <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                        {isCurrent && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
+                      </div>
+                      
+                      <div className="flex-1 flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <span className={`text-[11px] font-black uppercase tracking-widest ${isCurrent ? (theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600') : (theme === 'dark' ? 'text-slate-300' : 'text-slate-600')}`}>
+                            Level {l}
+                          </span>
+                          {isCurrent && <span className={`text-[8px] font-bold ${getTextMuted()} uppercase tracking-widest mt-0.5`}>Current Rank</span>}
+                        </div>
+                        <span className={`text-[10px] font-black ${isCurrent ? (theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600') : (theme === 'dark' ? 'text-slate-500' : 'text-slate-400')}`}>
+                          {targetXP} XP
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {/* --- TEXT SIZE MODAL --- */}
         {showTextSizeModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowTextSizeModal(false)}>
