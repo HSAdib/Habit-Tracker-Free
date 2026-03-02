@@ -1500,20 +1500,39 @@ return () => {
           </motion.div>
 {/* Monthly Graph Detailed Modal */}
         {showMonthlyGraphModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowMonthlyGraphModal(false)}>
-            <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2rem] w-full max-w-4xl p-6 md:p-8 shadow-2xl relative flex flex-col`} onClick={e => e.stopPropagation()}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowMonthlyGraphModal(false)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[1.2rem] md:rounded-[2rem] w-full max-w-4xl p-6 md:p-8 shadow-2xl relative flex flex-col`} onClick={e => e.stopPropagation()}>
               <button onClick={() => setShowMonthlyGraphModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
               
-              <div className="mb-6">
-                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Monthly Trends</p>
-                <div className="flex items-center gap-4">
-                  <h3 className={`text-2xl md:text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                    {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                  </h3>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}>
-                    {dashboardGraphFilter === 'all' ? 'Overall Efficiency' : dashboardGraphFilter}
-                  </span>
+              <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                  <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-2`}>Monthly Trends</p>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:text-emerald-400' : 'bg-slate-100 text-slate-500 hover:text-emerald-600'}`}>
+                      <ChevronLeftIcon />
+                    </button>
+                    <h3 className={`text-2xl md:text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} min-w-[160px] md:min-w-[200px] text-center`}>
+                      {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                    </h3>
+                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:text-emerald-400' : 'bg-slate-100 text-slate-500 hover:text-emerald-600'}`}>
+                      <ChevronRightIcon />
+                    </button>
+                  </div>
                 </div>
+                
+                <select 
+                  value={dashboardGraphFilter}
+                  onChange={(e) => setDashboardGraphFilter(e.target.value)}
+                  className={`text-[11px] font-black uppercase px-3 py-2 rounded-full border transition-all duration-500 cursor-pointer focus:outline-none max-w-[120px] md:max-w-[160px] truncate shrink-0
+                    ${theme === 'dark' 
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:bg-emerald-500/20' 
+                      : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300 shadow-sm'}`}
+                >
+                  <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
+                  {habits.map(h => (
+                    <option key={h} value={h} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{h}</option>
+                  ))}
+                </select>
               </div>
 
               <div className={`w-full h-[60vh] rounded-3xl border p-4 md:p-6 ${theme === 'dark' ? 'bg-slate-800/30 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
