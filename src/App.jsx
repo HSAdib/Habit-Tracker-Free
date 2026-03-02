@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Analytics } from "@vercel/analytics/react";
 import { motion, AnimatePresence, animate } from 'framer-motion';
-import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
 // --- Icons ---
 const TimerIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -62,6 +62,9 @@ const FlameIcon = () => (
 );
 const ExportIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+);
+const MaximizeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
 );
 const SunIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
@@ -158,6 +161,7 @@ export default function App() {
   (typeof window !== 'undefined' ? localStorage.getItem('adib_table_orientation') || 'horizontal' : 'horizontal')
 );
 const [showWeeklyModal, setShowWeeklyModal] = useState(false);
+const [showMonthlyGraphModal, setShowMonthlyGraphModal] = useState(false);
 const [heatmapFilter, setHeatmapFilter] = useState('all');
 const [weeklyGraphFilter, setWeeklyGraphFilter] = useState('all');
 const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
@@ -221,24 +225,6 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
 // --- LEVEL UP STATE ---
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const prevLevelRef = useRef(null);
-  // Pomodoro States
-  const [showPomo, setShowPomo] = useState(false);
-  const [pomoWorkTime, setPomoWorkTime] = useState(() => (typeof window !== 'undefined' ? parseInt(localStorage.getItem('adib_pomo_work')) || 25 : 25));
-  const [pomoBreakTime, setPomoBreakTime] = useState(() => (typeof window !== 'undefined' ? parseInt(localStorage.getItem('adib_pomo_break')) || 5 : 5));
-  const [pomoMode, setPomoMode] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_pomo_mode') || 'work' : 'work'));
-  const [pomoActive, setPomoActive] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_pomo_active') === 'true' : false));
-  const [pomoTime, setPomoTime] = useState(() => {
-    if (typeof window === 'undefined') return 25 * 60;
-    const active = localStorage.getItem('adib_pomo_active') === 'true';
-    if (active) {
-      const end = parseInt(localStorage.getItem('adib_pomo_end_timestamp'));
-      const diff = Math.max(0, Math.ceil((end - Date.now()) / 1000));
-      return diff;
-    }
-    const savedLeft = localStorage.getItem('adib_pomo_time_left');
-    return savedLeft !== null ? parseInt(savedLeft) : (parseInt(localStorage.getItem('adib_pomo_work')) || 25) * 60;
-  });
-  const [isEditingPomo, setIsEditingPomo] = useState(false);
   const [archivedHabits, setArchivedHabits] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('adib_habit_archived');
@@ -315,55 +301,6 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
     }
   };
 
-  useEffect(() => {
-    let interval = null;
-    if (pomoActive && pomoTime > 0) {
-      const storedEnd = parseInt(localStorage.getItem('adib_pomo_end_timestamp'));
-      const activeState = localStorage.getItem('adib_pomo_active') === 'true';
-      const endTimestamp = (activeState && storedEnd > Date.now()) ? storedEnd : Date.now() + pomoTime * 1000;
-      
-      localStorage.setItem('adib_pomo_end_timestamp', endTimestamp);
-      localStorage.setItem('adib_pomo_active', 'true');
-      localStorage.setItem('adib_pomo_mode', pomoMode);
-
-      interval = setInterval(() => {
-        const remaining = Math.max(0, Math.ceil((endTimestamp - Date.now()) / 1000));
-        setPomoTime(remaining);
-        if (remaining <= 0) {
-          clearInterval(interval); 
-          setPomoActive(false);
-          localStorage.setItem('adib_pomo_active', 'false');
-          localStorage.setItem('adib_pomo_time_left', '0');
-          
-          setTimeout(() => {
-            const title = pomoMode === 'work' ? "Session Complete!" : "Break Over!";
-            const msg = pomoMode === 'work' ? "Work session done! Take a break." : "Back to work now!";
-            triggerNotification(title, msg);
-            alert(msg);
-          }, 100);
-        }
-      }, 1000);
-    } else {
-      if (pomoActive && pomoTime === 0) {
-        setPomoActive(false);
-        localStorage.setItem('adib_pomo_active', 'false');
-        const title = pomoMode === 'work' ? "Session Complete!" : "Break Over!";
-        const msg = pomoMode === 'work' ? "Work session done! Take a break." : "Back to work now!";
-        triggerNotification(title, msg);
-        alert(msg);
-      }
-      localStorage.setItem('adib_pomo_active', 'false');
-      localStorage.setItem('adib_pomo_time_left', pomoTime);
-    }
-    return () => { if(interval) clearInterval(interval); };
-  }, [pomoActive, pomoMode]);
-
-  const formatPomoTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-  
   const longPressTimer = useRef(null);
   const scrollContainerRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -1024,6 +961,28 @@ return () => {
     return { cells, monthLabels };
   }, [currentDate, trackerData, habits, heatmapFilter]);
 
+  const monthlyGraphData = useMemo(() => {
+    return daysInMonth.map((day) => {
+      const key = getSafeKey(day); 
+      let pct = 0;
+
+      if (dashboardGraphFilter === 'all') {
+         let totalPct = 0;
+         habits.forEach(h => { const r = trackerData[key]?.[h] ?? 0; totalPct += (typeof r === 'number' ? r : (r ? 100 : 0)); });
+         pct = habits.length > 0 ? totalPct / habits.length : 0;
+      } else {
+         const r = trackerData[key]?.[dashboardGraphFilter] ?? 0;
+         pct = typeof r === 'number' ? r : (r ? 100 : 0);
+      }
+      
+      return { 
+        date: day.getDate(), 
+        fullDate: day.toLocaleDateString(undefined, { month: 'short', day: 'numeric', weekday: 'short' }),
+        score: Math.round(pct)
+      };
+    });
+  }, [daysInMonth, trackerData, habits, dashboardGraphFilter]);
+
   const trendPoints = useMemo(() => {
     if (daysInMonth.length < 2) return [];
     return daysInMonth.map((day, idx) => {
@@ -1328,9 +1287,9 @@ return () => {
                     <select 
                       value={dashboardGraphFilter}
                       onChange={(e) => setDashboardGraphFilter(e.target.value)}
-                      className={`text-[8px] md:text-[11px] font-black uppercase px-2 py-0.5 md:px-3 md:py-1 rounded-md border transition-all cursor-pointer focus:outline-none max-w-[80px] md:max-w-[160px] truncate
+                      className={`text-[11px] font-black uppercase px-2 py-1 rounded-full border transition-all duration-500 cursor-pointer focus:outline-none max-w-[80px] md:max-w-[120px] truncate
                         ${theme === 'dark' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20' 
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:bg-emerald-500/20' 
                           : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300 shadow-sm'}`}
                     >
                       <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
@@ -1346,34 +1305,21 @@ return () => {
                   </span>
                 </div>
 
-                {/* Right Side: Pomo Button (Unchanged) */}
-                <div className="flex items-center gap-2 shrink-0">
-  <div className="tooltip-trigger">
-    <motion.button 
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={() => { requestNotificationPermission(); setShowPomo(true); }} 
-      className={`px-2 py-2 rounded-2xl border flex flex-col items-center gap-1 transition-all relative
-        ${pomoActive 
-          ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
-          : (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm')
-        }`}
-    >
-      <TimerIcon />
-      <span className="text-[9px] font-black leading-none">
-        {pomoActive ? formatPomoTime(pomoTime) : (pomoMode === 'work' ? pomoWorkTime : pomoBreakTime) + 'm'}
-      </span>
+                {/* Right Side: Expand Graph Button */}
+                <div className="flex items-center gap-2 shrink-0 z-20">
+                  <button 
+                    onClick={() => setShowMonthlyGraphModal(true)}
+                    className={`p-2 rounded-xl transition-all border
+                      ${theme === 'dark' 
+                        ? 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-emerald-400 hover:bg-slate-800' 
+                        : 'bg-white border-slate-200 text-slate-500 hover:text-emerald-600 hover:bg-slate-50 shadow-sm'}`}
+                    title="Detailed Monthly Graph"
+                  >
+                    <MaximizeIcon />
+                  </button>
+                </div>
 
-      {pomoActive && (
-        <span className="absolute -top-1 -right-1 flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-        </span>
-      )}
-    </motion.button>
-  </div>
-</div>
-</div>
+                </div>
               <div className="flex-grow flex items-center h-16 md:h-28 w-full relative">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <defs>
@@ -1552,6 +1498,80 @@ return () => {
   </motion.button>
 )}
           </motion.div>
+{/* Monthly Graph Detailed Modal */}
+        {showMonthlyGraphModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowMonthlyGraphModal(false)}>
+            <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2rem] w-full max-w-4xl p-6 md:p-8 shadow-2xl relative flex flex-col`} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setShowMonthlyGraphModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              
+              <div className="mb-6">
+                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Monthly Trends</p>
+                <div className="flex items-center gap-4">
+                  <h3 className={`text-2xl md:text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                    {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}>
+                    {dashboardGraphFilter === 'all' ? 'Overall Efficiency' : dashboardGraphFilter}
+                  </span>
+                </div>
+              </div>
+
+              <div className={`w-full h-[60vh] rounded-3xl border p-4 md:p-6 ${theme === 'dark' ? 'bg-slate-800/30 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={monthlyGraphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.6}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#334155' : '#e2e8f0'} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke={theme === 'dark' ? '#64748b' : '#94a3b8'} 
+                      fontSize={10} 
+                      tickLine={false} 
+                      axisLine={false}
+                      tickMargin={10}
+                    />
+                    <YAxis 
+                      stroke={theme === 'dark' ? '#64748b' : '#94a3b8'} 
+                      fontSize={10} 
+                      tickLine={false} 
+                      axisLine={false}
+                      domain={[0, 100]}
+                      tickFormatter={(val) => `${val}%`}
+                    />
+                    <RechartsTooltip 
+                      cursor={{ stroke: '#10b981', strokeWidth: 2, strokeDasharray: '4 4' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className={`px-3 py-2 rounded-xl border shadow-xl flex flex-col gap-1 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                              <span className={`text-[10px] font-black uppercase ${getTextMuted()}`}>{payload[0].payload.fullDate}</span>
+                              <span className="text-sm font-black text-emerald-500">{payload[0].value}% Score</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="score" 
+                      stroke="#10b981" 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#colorScore)" 
+                      activeDot={{ r: 6, fill: '#10b981', stroke: theme === 'dark' ? '#0f172a' : '#ffffff', strokeWidth: 3 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
 {/* Weekly Summary Popup Modal */}
         {showWeeklyModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowWeeklyModal(false)}>
@@ -1582,10 +1602,10 @@ return () => {
                   <select 
                     value={weeklyGraphFilter} 
                     onChange={(e) => setWeeklyGraphFilter(e.target.value)}
-                    className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border transition-all cursor-pointer focus:outline-none
+                    className={`text-[11px] font-black uppercase px-2 py-1 rounded-full border transition-all duration-500 cursor-pointer focus:outline-none max-w-[80px] md:max-w-[120px] truncate
                       ${theme === 'dark' 
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20' 
-                        : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300'}`}
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:bg-emerald-500/20' 
+                        : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300 shadow-sm'}`}
                   >
                     <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
                     {habits.map(h => (
@@ -2411,77 +2431,6 @@ return () => {
             </motion.div>
           </motion.div>
         )}
-        {showPomo && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4" onClick={() => setShowPomo(false)}>
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[3rem] p-10 w-full max-w-sm text-center shadow-2xl relative`} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowPomo(false)} className="absolute top-6 right-6 p-2 text-slate-500 hover:text-rose-500 transition-all"><XIcon /></button>
-              
-              <div className="flex flex-col items-center gap-4 mb-8">
-                <div className="flex gap-2 justify-center items-center">
-                  {['work', 'break'].map(m => (
-                    <button key={m} onClick={() => { setPomoMode(m); setPomoTime(m === 'work' ? pomoWorkTime*60 : pomoBreakTime*60); setPomoActive(false); setIsEditingPomo(false); }} className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${pomoMode === m ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>{m}</button>
-                  ))}
-                  <button onClick={() => setIsEditingPomo(!isEditingPomo)} className={`p-1.5 rounded-lg transition-all ${isEditingPomo ? 'text-emerald-500' : 'text-slate-500 hover:text-emerald-500'}`}><EditIcon /></button>
-                </div>
-
-                {isEditingPomo && (
-                  <div className={`flex flex-col gap-3 p-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'} animate-in fade-in zoom-in duration-200`}>
-                    <div className="flex gap-4 justify-center">
-                      {pomoMode === 'work' ? (
-                        <div className="text-center">
-                          <label className="text-[8px] font-black uppercase block mb-1 opacity-60">Work Duration (Min)</label>
-                          <input type="number" value={pomoWorkTime} 
-                            onChange={(e) => setPomoWorkTime(e.target.value === '' ? '' : parseInt(e.target.value))} 
-                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                            onBlur={() => {
-                              let v = parseInt(pomoWorkTime);
-                              if (!v || v <= 0) v = 25;
-                              setPomoWorkTime(v);
-                              localStorage.setItem('adib_pomo_work', v);
-                              if (pomoMode === 'work') setPomoTime(v * 60);
-                            }}
-                            className="w-20 bg-transparent text-center font-black focus:outline-none border-b border-emerald-500 text-sm" 
-                          />
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <label className="text-[8px] font-black uppercase block mb-1 opacity-60">Break Duration (Min)</label>
-                          <input type="number" value={pomoBreakTime} 
-                            onChange={(e) => setPomoBreakTime(e.target.value === '' ? '' : parseInt(e.target.value))} 
-                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                            onBlur={() => {
-                              let v = parseInt(pomoBreakTime);
-                              if (!v || v <= 0) v = 5;
-                              setPomoBreakTime(v);
-                              localStorage.setItem('adib_pomo_break', v);
-                              if (pomoMode === 'break') setPomoTime(v * 60);
-                            }}
-                            className="w-20 bg-transparent text-center font-black focus:outline-none border-b border-blue-500 text-sm" 
-                          />
-                        </div>
-                      )}
-                    </div>
-                    
-                  </div>
-                )}
-              </div>
-
-              <div className={`text-7xl font-black mb-8 tabular-nums tracking-tighter ${pomoActive ? 'text-emerald-500' : (theme === 'dark' ? 'text-white' : 'text-slate-800')}`}>
-                {formatPomoTime(pomoTime)}
-              </div>
-
-              <div className="flex items-center justify-center gap-4">
-                <button onClick={() => { requestNotificationPermission(); setPomoActive(!pomoActive); }} className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${pomoActive ? 'bg-amber-500 shadow-amber-500/20' : 'bg-emerald-500 shadow-emerald-500/20'} text-white shadow-xl`}>
-                  {pomoActive ? <PauseIcon /> : <PlayIcon />}
-                </button>
-                <button onClick={() => { setPomoActive(false); setPomoTime(pomoMode === 'work' ? 25*60 : 5*60); }} className={`w-12 h-12 rounded-full flex items-center justify-center border ${theme === 'dark' ? 'border-slate-700 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-800'} transition-all`}>
-                  <RefreshIcon />
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-
         {/* --- TEXT SIZE MODAL --- */}
         {showTextSizeModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowTextSizeModal(false)}>
