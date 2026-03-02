@@ -215,6 +215,7 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
 // --- LEVEL UP STATE ---
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [showLevelDetailsModal, setShowLevelDetailsModal] = useState(false);
+  const [showTrophyDetailsModal, setShowTrophyDetailsModal] = useState(false);
   const prevLevelRef = useRef(null);
   const [archivedHabits, setArchivedHabits] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1049,10 +1050,14 @@ return () => {
                     >
                       Level {xpStats.level}
                     </button>
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)] cursor-default" title="Total Full Wins">
+                    <button 
+                      onClick={() => setShowTrophyDetailsModal(true)}
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)] cursor-pointer hover:scale-105 active:scale-95 transition-all" 
+                      title="View Win Milestones"
+                    >
                       <TrophyIcon className="w-2.5 h-2.5 text-yellow-500" />
                       <span className="text-[9px] font-black text-yellow-500">{analytics.totalDone}</span>
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2449,6 +2454,99 @@ return () => {
                   );
                 })}
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* --- TROPHY DETAILS MODAL --- */}
+        {showTrophyDetailsModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowTrophyDetailsModal(false)}>
+            <motion.div 
+              initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }} 
+              className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2rem] w-full max-w-sm p-8 shadow-2xl relative overflow-hidden`} 
+              onClick={e => e.stopPropagation()}
+            >
+              <button onClick={() => setShowTrophyDetailsModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              
+              <div className="mb-8 shrink-0">
+                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Monthly Activity</p>
+                <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Win Milestones</h3>
+              </div>
+
+              <div className="flex flex-col items-center mb-8">
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-4 border-4 shadow-xl bg-yellow-500/10 border-yellow-500/40 text-yellow-500`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                </div>
+                <p className={`text-xs font-black uppercase tracking-widest ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Completed: <span className={theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'}>{analytics.totalDone}</span>
+                </p>
+              </div>
+
+              {(() => {
+                const milestones = [5, 10, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000];
+                let nextIdx = milestones.findIndex(m => analytics.totalDone < m);
+                if (nextIdx === -1) nextIdx = milestones.length - 1;
+                
+                const nextTarget = milestones[nextIdx];
+                const prevTarget = nextIdx > 0 ? milestones[nextIdx - 1] : 0;
+                
+                const progressXP = analytics.totalDone - prevTarget;
+                const requiredXP = nextTarget - prevTarget;
+                const progressPct = requiredXP > 0 ? Math.min(100, Math.max(0, Math.round((progressXP / requiredXP) * 100))) : 100;
+
+                const displayNodes = [];
+                if (nextIdx > 0) displayNodes.push({ label: `Milestone ${nextIdx}`, value: milestones[nextIdx - 1], state: 'past' });
+                displayNodes.push({ label: `Milestone ${nextIdx + 1}`, value: milestones[nextIdx], state: 'current' });
+                if (nextIdx + 1 < milestones.length) displayNodes.push({ label: `Milestone ${nextIdx + 2}`, value: milestones[nextIdx + 1], state: 'future' });
+                if (nextIdx + 2 < milestones.length) displayNodes.push({ label: `Milestone ${nextIdx + 3}`, value: milestones[nextIdx + 2], state: 'future' });
+
+                return (
+                  <>
+                    <div className="space-y-3 p-5 rounded-2xl border bg-slate-50/5 dark:bg-slate-800/30 dark:border-slate-700/50 border-slate-200/50">
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                        <span className={getTextMuted()}>Current Target</span>
+                        <span className={theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'}>{analytics.totalDone} / {nextTarget}</span>
+                      </div>
+                      <div className={`h-4 w-full rounded-full overflow-hidden ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-300'}`}>
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 1, ease: "easeOut" }} className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
+                      </div>
+                      <p className={`text-[9px] text-center font-bold ${getTextMuted()} pt-1`}>
+                        Log {nextTarget - analytics.totalDone} more habits to hit Milestone {nextIdx + 1}
+                      </p>
+                    </div>
+
+                    {/* Timeline Roadmap */}
+                    <div className="mt-8 flex flex-col gap-5 relative px-2">
+                      <div className="absolute left-[17px] top-2 bottom-2 w-[2px] bg-slate-200 dark:bg-slate-700/50" />
+                      
+                      {displayNodes.map((node, i) => (
+                        <div key={i} className={`relative flex items-center gap-5 ${node.state === 'past' ? 'opacity-50' : ''}`}>
+                          <div className={`w-5 h-5 rounded-full border-2 z-10 shrink-0 ${
+                            node.state === 'past' ? 'bg-yellow-500 border-yellow-500' : 
+                            node.state === 'current' ? 'bg-white dark:bg-slate-900 border-yellow-500 ring-4 ring-yellow-500/20' : 
+                            'bg-slate-100 border-slate-300 dark:bg-slate-800 dark:border-slate-600'
+                          } flex items-center justify-center transition-all`}>
+                            {node.state === 'past' && <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                            {node.state === 'current' && <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />}
+                          </div>
+                          
+                          <div className="flex-1 flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <span className={`text-[11px] font-black uppercase tracking-widest ${node.state === 'current' ? (theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600') : (theme === 'dark' ? 'text-slate-300' : 'text-slate-600')}`}>
+                                {node.label}
+                              </span>
+                              {node.state === 'current' && <span className={`text-[8px] font-bold ${getTextMuted()} uppercase tracking-widest mt-0.5`}>Current Goal</span>}
+                            </div>
+                            <span className={`text-[10px] font-black ${node.state === 'current' ? (theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600') : (theme === 'dark' ? 'text-slate-500' : 'text-slate-400')}`}>
+                              {node.value} WINS
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
             </motion.div>
           </motion.div>
         )}
