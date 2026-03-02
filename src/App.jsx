@@ -2106,13 +2106,8 @@ return () => {
                                 id={`bar-fill-${day.key}`} // This allows direct DOM updates
                                 initial={{ height: 0 }}
                                 animate={{ height: `${displayPct}%` }}
-                                // Snappy spring physics
-                                transition={{ 
-                                  type: "spring", 
-                                  stiffness: 350, 
-                                  damping: 25, 
-                                  mass: 0.5 
-                                }}
+                                // Matches the duration-700 ease style from v12.6
+                                transition={{ duration: 0.7, ease: "easeInOut" }}
                                 className={`absolute bottom-0 w-full ${displayPct >= 100 ? 'bg-emerald-500' : 'bg-blue-600'}`}
                               />
                             </div>
