@@ -1294,17 +1294,17 @@ return () => {
         className={`relative overflow-hidden px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
           selectedCategory === cat 
             ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-white' 
-            : (theme === 'dark' ? 'border-slate-700 hover:border-slate-500 text-slate-500' : 'border-slate-200 hover:border-slate-300 text-slate-400')
+            : (theme === 'dark' ? 'border-emerald-800/60 hover:border-emerald-600 text-emerald-200/70' : 'border-emerald-300 hover:border-emerald-400 text-emerald-700/80')
         }`}
       >
-        {/* Background Track */}
+        {/* Background Track - Given a distinct green hue so it looks like an empty bar */}
         <div className={`absolute inset-0 z-0 transition-colors duration-500 ${
           selectedCategory === cat 
-            ? 'bg-emerald-700' 
-            : (theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100')
+            ? 'bg-emerald-900/80' 
+            : (theme === 'dark' ? 'bg-emerald-950/60' : 'bg-emerald-50')
         }`} />
         
-        {/* Progress Fill */}
+        {/* Progress Fill - Made much more vibrant so the loading state is obvious */}
         <motion.div 
           initial={{ width: 0 }} 
           animate={{ width: `${categoryProgress[cat] || 0}%` }} 
@@ -1312,7 +1312,7 @@ return () => {
           className={`absolute inset-y-0 left-0 z-0 h-full ${
             selectedCategory === cat 
               ? 'bg-emerald-500' 
-              : 'bg-emerald-500/15'
+              : 'bg-emerald-500/60'
           }`}
         />
 
