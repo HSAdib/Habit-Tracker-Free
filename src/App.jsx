@@ -1345,7 +1345,10 @@ return () => {
 {habits.filter(h => !archivedHabits.includes(h) && (selectedCategory === 'all' || habitConfigs[h]?.category === selectedCategory)).map((habit, idx) => {
   const isCircle = tabLayout === 'circle';
   const pct = analytics.habitPcts[habit] ?? 0;
-  const isEditing = editingHabitName === habit;
+  
+  // THE FIX: Prevent background cards from stealing focus when the modal is open!
+  const isEditing = editingHabitName === habit && !showOrderModal; 
+  
   return (
     <motion.div 
       layout 
@@ -2168,10 +2171,10 @@ return () => {
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} border p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center`}>
               <div className="bg-rose-500/20 text-rose-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"><TrashIcon /></div>
               <h4 className="text-xl font-black mb-2">Delete Habit?</h4>
-              <p className={`text-sm ${getTextMuted()} mb-8 font-medium`}>This will permanently delete data for <span className="text-rose-500 font-bold">"{viewingHabitMap || tempHabitName}"</span>.</p>
+              <p className={`text-sm ${getTextMuted()} mb-8 font-medium`}>This will permanently delete data for <span className="text-rose-500 font-bold">"{viewingHabitMap || editingHabitName || tempHabitName}"</span>.</p>
               <div className="flex gap-4">
                 <button onClick={() => setShowDeleteConfirm(false)} className={`flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest ${theme === 'dark' ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>Cancel</button>
-                <button onClick={() => deleteHabit(viewingHabitMap || editingHabitName)} className="flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-500 text-white shadow-lg shadow-rose-500/20">Delete</button>
+                <button onClick={() => deleteHabit(viewingHabitMap || editingHabitName || tempHabitName)} className="flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-500 text-white shadow-lg shadow-rose-500/20">Delete</button>
               </div>
             </motion.div>
           </motion.div>
@@ -2194,15 +2197,19 @@ return () => {
                     <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
                       <span className={`text-xs font-black w-5 text-center shrink-0 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{index + 1}</span>
                       
-                      {/* INLINE EDITING LOGIC */}
+                      {/* INLINE EDITING LOGIC - Removed onBlur entirely to fix focus loops */}
                       {editingHabitName === habit ? (
                         <input 
                           autoFocus 
                           className={`text-sm font-black uppercase w-full bg-transparent focus:outline-none border-b border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} 
                           value={tempHabitName} 
                           onChange={(e) => setTempHabitName(e.target.value)} 
-                          onBlur={() => handleDashboardRename(habit)} 
-                          onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(habit)} 
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault(); 
+                                handleDashboardRename(habit);
+                            }
+                          }} 
                         />
                       ) : (
                         <span className={`text-sm font-black uppercase truncate ${archivedHabits.includes(habit) ? 'opacity-40 line-through' : ''} ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -2212,18 +2219,30 @@ return () => {
                     </div>
                     
                     <div className="flex items-center gap-1 shrink-0">
-                      {/* EDIT BUTTON */}
+                      {/* EDIT / SAVE BUTTON - Back to reliable onClick */}
                       <button 
-                        onClick={() => { setEditingHabitName(habit); setTempHabitName(habit); }}
+                        onClick={(e) => {
+                          e.preventDefault(); 
+                          if (editingHabitName === habit) {
+                            handleDashboardRename(habit);
+                          } else {
+                            setEditingHabitName(habit); 
+                            setTempHabitName(habit);
+                          }
+                        }}
                         className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-slate-700 hover:text-blue-400 text-slate-400' : 'hover:bg-slate-200 hover:text-blue-600 text-slate-500'}`}
-                        title="Edit Habit Name"
+                        title={editingHabitName === habit ? "Save Habit Name" : "Edit Habit Name"}
                       >
-                        <EditIcon />
+                        {editingHabitName === habit ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>
+                        ) : (
+                          <EditIcon />
+                        )}
                       </button>
 
                       {/* DELETE BUTTON */}
                       <button 
-                        onClick={() => { setEditingHabitName(habit); setTempHabitName(habit); setShowDeleteConfirm(true); }}
+                        onClick={() => { setTempHabitName(habit); setShowDeleteConfirm(true); }}
                         className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-slate-700 hover:text-rose-400 text-slate-400' : 'hover:bg-slate-200 hover:text-rose-600 text-slate-500'}`}
                         title="Delete Habit"
                       >
