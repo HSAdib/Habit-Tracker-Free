@@ -2177,25 +2177,62 @@ return () => {
           </motion.div>
         )}
 
-{/* --- ORDER MODAL --- */}
+{/* --- EDIT HABITS MODAL --- */}
         {showOrderModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[350] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowOrderModal(false)}>
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
               <button onClick={() => setShowOrderModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-emerald-500 transition-all`}><XIcon /></button>
               
               <div className="mb-6 shrink-0">
-                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Manage Display</p>
-                <h3 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Edit Order</h3>
+                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Manage List</p>
+                <h3 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Edit Habits</h3>
               </div>
 
               <div className="overflow-y-auto custom-scrollbar pr-2 space-y-2">
                 {habits.map((habit, index) => (
                   <div key={habit} className={`p-3 rounded-2xl border flex items-center justify-between transition-colors ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-xs font-black w-5 text-center ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{index + 1}</span>
-                      <span className={`text-sm font-black uppercase ${archivedHabits.includes(habit) ? 'opacity-40 line-through' : ''} ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{habit}</span>
+                    <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                      <span className={`text-xs font-black w-5 text-center shrink-0 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{index + 1}</span>
+                      
+                      {/* INLINE EDITING LOGIC */}
+                      {editingHabitName === habit ? (
+                        <input 
+                          autoFocus 
+                          className={`text-sm font-black uppercase w-full bg-transparent focus:outline-none border-b border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} 
+                          value={tempHabitName} 
+                          onChange={(e) => setTempHabitName(e.target.value)} 
+                          onBlur={() => handleDashboardRename(habit)} 
+                          onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(habit)} 
+                        />
+                      ) : (
+                        <span className={`text-sm font-black uppercase truncate ${archivedHabits.includes(habit) ? 'opacity-40 line-through' : ''} ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                          {habit}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1">
+                    
+                    <div className="flex items-center gap-1 shrink-0">
+                      {/* EDIT BUTTON */}
+                      <button 
+                        onClick={() => { setEditingHabitName(habit); setTempHabitName(habit); }}
+                        className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-slate-700 hover:text-blue-400 text-slate-400' : 'hover:bg-slate-200 hover:text-blue-600 text-slate-500'}`}
+                        title="Edit Habit Name"
+                      >
+                        <EditIcon />
+                      </button>
+
+                      {/* DELETE BUTTON */}
+                      <button 
+                        onClick={() => { setEditingHabitName(habit); setTempHabitName(habit); setShowDeleteConfirm(true); }}
+                        className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-slate-700 hover:text-rose-400 text-slate-400' : 'hover:bg-slate-200 hover:text-rose-600 text-slate-500'}`}
+                        title="Delete Habit"
+                      >
+                        <TrashIcon />
+                      </button>
+
+                      <div className={`w-px h-4 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`} />
+
+                      {/* UP BUTTON */}
                       <button 
                         onClick={() => {
                           if (index === 0) return;
@@ -2209,6 +2246,8 @@ return () => {
                       >
                         <ChevronUpIcon />
                       </button>
+
+                      {/* DOWN BUTTON */}
                       <button 
                         onClick={() => {
                           if (index === habits.length - 1) return;
