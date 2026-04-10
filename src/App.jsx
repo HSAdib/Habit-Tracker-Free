@@ -139,7 +139,6 @@ const itemVariants = {
 export default function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [trackerData, setTrackerData] = useState({});
-  const [tabLayout, setTabLayout] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_habit_layout') || 'circle' : 'circle'));
   const [habits, setHabits] = useState(DEFAULT_HABITS);
   const [habitConfigs, setHabitConfigs] = useState(DEFAULT_CONFIGS);
   const [editingHabitName, setEditingHabitName] = useState(null);
@@ -1013,22 +1012,6 @@ return () => {
                   
                   <div className="flex items-center gap-2">
                     <button 
-                      onClick={() => {
-                        const next = tabLayout === 'square' ? 'circle' : 'square';
-                        setTabLayout(next);
-                        localStorage.setItem('adib_habit_layout', next);
-                      }}
-                      className={`p-1.5 rounded-lg transition-all border active:scale-90
-                        ${theme === 'dark' 
-                          ? 'bg-slate-800 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)] hover:border-emerald-500/50' 
-                          : 'bg-white border-emerald-200 text-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.15)] hover:border-emerald-400'
-                        }`}
-                      title="Switch Habit Tabs Layout"
-                    >
-                      {tabLayout === 'square' ? <TargetIcon /> : <SquareTargetIcon />}
-                    </button>
-
-                    <button 
                       onClick={() => setShowTextSizeModal(true)}
                       className={`p-1.5 rounded-lg transition-all border active:scale-90
                         ${theme === 'dark' 
@@ -1343,7 +1326,6 @@ return () => {
           <motion.div variants={containerVariants} className="grid gap-3 mb-8" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${textSizes.tabSize || 110}px, 1fr))` }}>
             <AnimatePresence mode='popLayout'>
 {habits.filter(h => !archivedHabits.includes(h) && (selectedCategory === 'all' || habitConfigs[h]?.category === selectedCategory)).map((habit, idx) => {
-  const isCircle = tabLayout === 'circle';
   const pct = analytics.habitPcts[habit] ?? 0;
   
   // THE FIX: Prevent background cards from stealing focus when the modal is open!
@@ -1353,59 +1335,48 @@ return () => {
     <motion.div 
       layout 
       variants={itemVariants} 
-      whileHover={{ y: -5, scale: isCircle ? 1.05 : 1 }} 
+      whileHover={{ y: -5, scale: 1.05 }} 
       key={habit} 
-      className={`${getCardStyle()} cursor-pointer overflow-hidden group transition-all relative flex flex-col items-center justify-center
-        ${isCircle ? 'rounded-full aspect-square border-0' : 'p-2 rounded-2xl border aspect-square hover:shadow-lg'}`}
+      className={`${getCardStyle()} cursor-pointer overflow-hidden group transition-all relative flex flex-col items-center justify-center rounded-full aspect-square border-0`}
       onClick={() => setViewingHabitMap(habit)}
     >
       
       <svg 
-        className={`absolute transition-all duration-500 -rotate-90 ${isCircle ? 'inset-0 w-full h-full p-1' : 'bottom-2 w-20 h-20'}`} 
-        viewBox={isCircle ? "0 0 100 100" : "0 0 60 60"}
+        className={`absolute transition-all duration-500 -rotate-90 inset-0 w-full h-full p-1`} 
+        viewBox="0 0 100 100"
       >
-        <circle cx={isCircle ? "50" : "30"} cy={isCircle ? "50" : "30"} r={isCircle ? "47" : "23"} fill="none" stroke={theme === 'dark' ? '#1e293b' : '#f1f5f9'} strokeWidth={isCircle ? "4" : "4.5"} />
+        <circle cx="50" cy="50" r="47" fill="none" stroke={theme === 'dark' ? '#1e293b' : '#f1f5f9'} strokeWidth="4" />
         <motion.circle 
-          cx={isCircle ? "50" : "30"} cy={isCircle ? "50" : "30"} r={isCircle ? "47" : "23"} fill="none" stroke="#10b981" strokeWidth={isCircle ? "4" : "4.5"} 
-          strokeDasharray={isCircle ? 295.3 : 145} initial={{ strokeDashoffset: isCircle ? 295.3 : 145 }} 
-          animate={{ strokeDashoffset: (isCircle ? 295.3 : 145) - ((isCircle ? 295.3 : 145) * pct / 100) }} 
+          cx="50" cy="50" r="47" fill="none" stroke="#10b981" strokeWidth="4" 
+          strokeDasharray={295.3} initial={{ strokeDashoffset: 295.3 }} 
+          animate={{ strokeDashoffset: 295.3 - (295.3 * pct / 100) }} 
           transition={{ duration: 1, ease: "easeInOut" }} strokeLinecap="round" 
         />
       </svg>
       
-      {isCircle ? (
-        <div className="z-10 text-center flex flex-col items-center px-2 w-full relative">
-          {isEditing ? (
-            <input autoFocus className={`text-[8px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 mb-1 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(habit)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(habit)} onClick={(e) => e.stopPropagation()} />
-          ) : (
-            <div className="relative flex items-center justify-center w-full group/name min-h-[14px]">
-              <p style={{ fontSize: `${textSizes.habit}px` }} className="font-black uppercase opacity-80 leading-[1.1] line-clamp-2 text-center w-full px-1 break-words">{habit}</p>
-              <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitName(habit); setTempHabitName(habit); }}><EditIcon /></button>
-            </div>
-          )}
-          <span className={`text-[19px] font-black mt-1 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-            <AnimatedNumber value={pct} />
-          </span>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-center gap-1 mb-0.5 w-full justify-center px-1 min-h-[40px] flex-grow">
-              {isEditing ? (
-                <input autoFocus className={`text-[10px] font-bold w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleDashboardRename(habit)} onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(habit)} onClick={(e) => e.stopPropagation()} />
-              ) : (
-                <div className="relative flex items-center justify-center w-full">
-                  <p style={{ fontSize: `${textSizes.habit}px` }} className={`font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} uppercase line-clamp-2 break-words text-center leading-[1.1] px-1`}>{habit}</p>
-                  <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitName(habit); setTempHabitName(habit); }}><EditIcon /></button>
-                </div>
-              )}
+      <div className="z-10 text-center flex flex-col items-center px-2 w-full relative">
+        {isEditing ? (
+          <input 
+            autoFocus 
+            style={{ fontSize: `${textSizes.habit}px` }}
+            className={`font-black uppercase w-full text-center bg-transparent focus:outline-none border-b-2 border-emerald-500 mb-1 leading-[1.1] ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} 
+            value={tempHabitName} 
+            onChange={(e) => setTempHabitName(e.target.value)} 
+            onBlur={() => handleDashboardRename(habit)} 
+            onKeyDown={(e) => e.key === 'Enter' && handleDashboardRename(habit)} 
+            onClick={(e) => e.stopPropagation()} 
+          />
+        ) : (
+          <div className="relative flex items-center justify-center w-full group/name min-h-[14px]">
+            <p style={{ fontSize: `${textSizes.habit}px` }} className="font-black uppercase opacity-80 leading-[1.1] line-clamp-2 text-center w-full px-1 break-words">{habit}</p>
+            <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitName(habit); setTempHabitName(habit); }}><EditIcon /></button>
           </div>
-          <div className="w-20 h-20 flex items-center justify-center mt-auto relative z-10 pt-2">
-   <span className={`text-[19px] font-black leading-none ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-     <AnimatedNumber value={pct} />
-   </span>
-</div>
-        </>
-      )}
+        )}
+        <span className={`text-[19px] font-black mt-1 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+          <AnimatedNumber value={pct} />
+        </span>
+      </div>
+      
     </motion.div>
   );
 })}
@@ -1421,7 +1392,7 @@ return () => {
     setEditingHabitName(name); 
     setTempHabitName(name);
   }}
-  className={`${getCardStyle()} flex items-center justify-center border-2 border-dashed transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl aspect-square'} ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'}`}
+  className={`${getCardStyle()} flex items-center justify-center border-2 border-dashed transition-all rounded-full aspect-square ${theme === 'dark' ? 'border-slate-800 text-slate-700 hover:border-emerald-700' : 'border-slate-200 text-slate-300 hover:border-emerald-400'}`}
   title="Add New Habit"
 >
   <PlusIcon />
@@ -1429,8 +1400,8 @@ return () => {
 
 {selectedCategory === 'all' && (
   <motion.button layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowOrderModal(true)}
-    className={`${getCardStyle()} flex items-center justify-center border-2 transition-all ${tabLayout === 'circle' ? 'rounded-full aspect-square' : 'p-2 rounded-2xl aspect-square'} ${theme === 'dark' ? 'border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-700' : 'border-slate-200 text-slate-400 hover:text-emerald-500 hover:border-emerald-400'}`}
-    title="Edit Habit Order"
+    className={`${getCardStyle()} flex items-center justify-center border-2 transition-all rounded-full aspect-square ${theme === 'dark' ? 'border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-700' : 'border-slate-200 text-slate-400 hover:text-emerald-500 hover:border-emerald-400'}`}
+    title="MANAGE LIST"
   >
     <OrderIcon />
   </motion.button>
