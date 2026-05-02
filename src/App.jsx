@@ -518,12 +518,14 @@ return () => {
     reader.onload = (event) => {
       try {
         const imported = JSON.parse(event.target.result);
-        if (imported.trackerData && imported.habits) {
+        if (imported && typeof imported === 'object' && imported.trackerData && typeof imported.trackerData === 'object' && Array.isArray(imported.habits)) {
           setTrackerData(imported.trackerData);
           setHabits(imported.habits);
-          setHabitConfigs(imported.habitConfigs || {});
-          save(imported.trackerData, imported.habits, imported.habitConfigs || {});
+          setHabitConfigs(imported.habitConfigs && typeof imported.habitConfigs === 'object' ? imported.habitConfigs : {});
+          save(imported.trackerData, imported.habits, imported.habitConfigs && typeof imported.habitConfigs === 'object' ? imported.habitConfigs : {});
           alert("Data imported successfully!");
+        } else {
+          alert("Invalid backup file format.");
         }
       } catch (err) {
         alert("Invalid backup file.");
