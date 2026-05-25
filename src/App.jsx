@@ -268,14 +268,42 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
   };
   const longPressTimer = useRef(null);
   const scrollContainerRef = useRef(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileMode, setIsMobileMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('adib_mobile_mode');
+      return saved ? JSON.parse(saved) : (window.innerWidth <= 768);
+    }
+    return false;
+  });
 
-  
+  const toggleMobileMode = () => {
+    const next = !isMobileMode;
+    setIsMobileMode(next);
+    localStorage.setItem('adib_mobile_mode', JSON.stringify(next));
+    if (next) {
+      setTextSizes(prev => {
+        const updated = { ...prev, habit: 10, table1: 9, table2: 9, tabSize: 75 };
+        localStorage.setItem('adib_text_sizes', JSON.stringify(updated));
+        return updated;
+      });
+    } else {
+      setTextSizes(prev => {
+        const updated = { ...prev, habit: 14, table1: 12, table2: 11, tabSize: 110 };
+        localStorage.setItem('adib_text_sizes', JSON.stringify(updated));
+        return updated;
+      });
+    }
+  };
 
   useEffect(() => {
-    const checkMobile = () => { setIsMobile(window.innerWidth <= 768); };
-    checkMobile(); window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const handleResize = () => {
+      const saved = localStorage.getItem('adib_mobile_mode');
+      if (!saved) {
+        setIsMobileMode(window.innerWidth <= 768);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const toggleTheme = () => {
@@ -293,6 +321,11 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
   useEffect(() => {
     const root = window.document.documentElement;
     root.style.colorScheme = theme;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
   }, [theme]);
 
   useEffect(() => {
@@ -977,17 +1010,23 @@ return () => {
   const getTextMuted = () => theme === 'dark' ? 'text-slate-500' : 'text-slate-400';
   const getTableHeadStyle = () => theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200';
 
-  const CELL_SIZE = isMobile ? 9 : 11;
-  const CELL_GAP = isMobile ? 2 : 3;
+  const CELL_SIZE = isMobileMode ? 9 : 11;
+  const CELL_GAP = isMobileMode ? 2 : 3;
+
+  const outerPadding = isMobileMode ? 'px-1 pt-4' : 'px-2 md:px-4 pt-8';
+  const cardPadding = isMobileMode ? 'p-3 rounded-2xl' : 'p-6 rounded-[2.5rem]';
+  const headerPadding = isMobileMode ? 'p-4 rounded-2xl mb-4 gap-4' : 'p-6 rounded-[2.5rem] mb-6 gap-6';
+  const sectionGap = isMobileMode ? 'gap-3 mb-4' : 'gap-6 mb-8';
+  const horizontalColWidth = isMobileMode ? '70px' : 'calc((100vw - 160px) / 10)';
 
  return (
     <div className={`min-h-screen ${getContainerBg()} font-sans pb-6 md:pb-20 select-none overflow-x-hidden`}>
       <Analytics />
       
-      <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-7xl mx-auto px-2 md:px-4 pt-8 flex flex-col min-h-screen">
+      <motion.div initial="hidden" animate="visible" variants={containerVariants} className={`max-w-7xl mx-auto ${outerPadding} flex flex-col min-h-screen`}>
         <div className="flex-grow">
           {/* Dashboard Header */}
-          <motion.div variants={itemVariants} className={`flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-6 ${getCardStyle()} p-6 rounded-[2.5rem] border transition-colors relative overflow-hidden`}>
+          <motion.div variants={itemVariants} className={`flex flex-col lg:flex-row lg:items-center justify-between ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'} ${getCardStyle()} ${headerPadding} border transition-colors relative overflow-hidden`}>
             <div className="flex items-center gap-4 z-10">
               <motion.div 
                 whileHover={{ scale: 1.1, rotate: 5 }} 
@@ -1023,6 +1062,27 @@ return () => {
                       title="Adjust Display Sizes"
                     >
                       <TextSizeIcon />
+                    </button>
+
+                    {/* Mobile View Toggle */}
+                    <button 
+                      onClick={toggleMobileMode}
+                      className={`p-1.5 rounded-lg transition-all border active:scale-90 flex items-center gap-1.5
+                        ${isMobileMode 
+                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]' 
+                          : (theme === 'dark' 
+                            ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white' 
+                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                          )}`}
+                      title="Toggle Mobile Compatibility Mode"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                        <line x1="12" y1="18" x2="12.01" y2="18"/>
+                      </svg>
+                      <span className="text-[9px] font-black uppercase tracking-wider hidden sm:inline">
+                        {isMobileMode ? 'Mobile: ON' : 'Mobile View'}
+                      </span>
                     </button>
                   </div>
 
@@ -1116,8 +1176,8 @@ return () => {
           </motion.div>
 
           {/* Activity Section */}
-          <div className="grid grid-cols-3 gap-3 md:gap-6 mb-8 items-stretch">
-            <motion.div variants={itemVariants} className={`col-span-2 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border overflow-hidden flex flex-col transition-colors h-full min-w-0`}>
+          <div className={`${isMobileMode ? 'flex flex-col' : 'grid grid-cols-3'} ${sectionGap} items-stretch`}>
+            <motion.div variants={itemVariants} className={`${isMobileMode ? '' : 'col-span-2'} ${getCardStyle()} ${cardPadding} border overflow-hidden flex flex-col transition-colors h-full min-w-0`}>
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2 md:gap-4">
                 <div className="flex items-center gap-2 md:gap-4">
                   <div className="flex items-center gap-2">
@@ -1167,9 +1227,9 @@ return () => {
                 </div>
               </div>
               
-              <div className={`overflow-x-auto custom-scrollbar pb-2 ${isMobile ? 'whitespace-nowrap' : ''}`}>
+              <div className={`overflow-x-auto custom-scrollbar pb-2 ${isMobileMode ? 'whitespace-nowrap' : ''}`}>
                 <div className="inline-block min-w-full">
-                  <div className="relative h-3 mb-1" style={{ marginLeft: `${isMobile ? 16 : 24}px` }}>
+                  <div className="relative h-3 mb-1" style={{ marginLeft: `${isMobileMode ? 16 : 24}px` }}>
   {heatmapConfig.monthLabels.map((m, idx) => (
     <span key={idx} className={`absolute text-[7px] md:text-[8px] font-black ${getTextMuted()} uppercase tracking-tighter text-left`} style={{ left: `${m.weekIndex * (CELL_SIZE + CELL_GAP)}px` }}>
       {m.label}
@@ -1197,7 +1257,7 @@ return () => {
               </div>
             </motion.div>
             
-            <motion.div variants={itemVariants} className={`col-span-1 ${getCardStyle()} p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-colors h-full min-w-0`}>
+            <motion.div variants={itemVariants} className={`${isMobileMode ? '' : 'col-span-1'} ${getCardStyle()} ${cardPadding} border relative overflow-hidden flex flex-col justify-between transition-colors h-full min-w-0`}>
               <div className="flex items-start mb-2 md:mb-4 justify-between">
                 
                 {/* Left Side: Vertical Stack */}
@@ -1637,23 +1697,29 @@ return () => {
           </motion.div>
         )}
           {/* Table Log */}
-<motion.div variants={itemVariants} className={`${getCardStyle()} rounded-[2.5rem] overflow-hidden mb-8 relative transition-colors`}>
+<motion.div variants={itemVariants} className={`${getCardStyle()} ${isMobileMode ? 'rounded-2xl' : 'rounded-[2.5rem]'} overflow-hidden mb-8 relative transition-colors`}>
     
     <div 
   ref={scrollContainerRef} 
-  className={`overflow-x-auto overflow-y-auto custom-scrollbar ${isMobile ? 'whitespace-nowrap' : ''}`}
+  className={`overflow-x-auto overflow-y-auto custom-scrollbar ${isMobileMode ? 'whitespace-nowrap' : ''}`}
   style={{ 
     maxHeight: tableOrientation === 'vertical' ? `${tableHeight}px` : 'none',
     willChange: tableOrientation === 'vertical' ? 'max-height' : 'auto'
   }}
 >
-        <table className={`w-full border-separate border-spacing-0 min-w-full ${tableOrientation === 'vertical' ? 'table-fixed' : 'table-auto'}`}>
+        <table 
+          className={`border-separate border-spacing-0 ${
+            isMobileMode 
+              ? (tableOrientation === 'vertical' ? 'min-w-[850px] table-fixed' : 'min-w-[1200px] table-auto') 
+              : 'w-full min-w-full ' + (tableOrientation === 'vertical' ? 'table-fixed' : 'table-auto')
+          }`}
+        >
             {tableOrientation === 'vertical' ? (
                 /* --- Table 1: Vertical Layout --- */
                 <>
                     <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                         <tr className="h-[72px]">
-                            <th className={`p-5 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r w-[120px] min-w-[120px] z-40 text-center`}>
+                            <th className={`p-5 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky top-0 left-0 border-r border-b ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} w-[120px] min-w-[120px] z-40 text-center`}>
                               <div className="flex items-center justify-center gap-2">
                                 <button 
                                   onClick={toggleTableOrientation} 
@@ -1670,8 +1736,8 @@ return () => {
                             </th>
 
                             {/* FILTERED HABITS HEADER */}
-                            {habits.filter(h => !archivedHabits.includes(h)).map((h, i) => <th key={i} className={`p-2 border-r ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-100 text-slate-600'} uppercase text-center font-black transition-colors`} style={{ fontSize: `${textSizes.table1}px` }}><div className="px-1 leading-tight break-words" title={h}>{h}</div></th>)}
-                            <th className={`p-4 font-black text-emerald-600 text-[14px] sticky top-0 right-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-l w-[100px] z-40 text-center`}>Efficiency</th>
+                            {habits.filter(h => !archivedHabits.includes(h)).map((h, i) => <th key={i} className={`p-2 border-r border-b uppercase text-center font-black transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'}`} style={{ fontSize: `${textSizes.table1}px`, minWidth: isMobileMode ? '90px' : 'auto' }}><div className="px-1 leading-tight break-words" title={h}>{h}</div></th>)}
+                            <th className={`p-4 font-black text-emerald-600 text-[14px] sticky top-0 right-0 border-l border-b ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} w-[100px] z-40 text-center`}>Efficiency</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1694,7 +1760,7 @@ return () => {
                             
                             return (
                                 <tr key={key} id={`row-${key}`} className="h-[72px]">
-                                    <td className={`p-2 sticky left-0 z-10 border-r border-b transition-all duration-500 ${rowBgStyle} ${isToday ? 'border-l-4 border-l-emerald-500' : ''}`}>
+                                    <td className={`p-2 sticky left-0 z-10 border-r border-b transition-all duration-500 ${rowBgStyle} ${isToday ? 'border-l-4 border-l-emerald-500' : ''} ${theme === 'dark' ? 'border-r-slate-700' : 'border-r-slate-200'}`}>
                                         <div className="flex items-center justify-center gap-3">
                                             <motion.button whileTap={{ scale: 0.9 }} onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} title="Add reflection note"><NoteIcon /></motion.button>
                                             <div className="flex flex-col text-center"><span className={`text-[8px] uppercase opacity-80 leading-none ${theme === 'dark' ? 'text-slate-500' : ''}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span><span className={`text-sm font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span></div>
@@ -1719,7 +1785,7 @@ return () => {
                                             </td>
                                         );
                                     })}
-                                    <td className={`p-2 sticky right-0 z-10 border-l border-b transition-all duration-500 text-center font-black text-sm ${rowBgStyle} ${isToday ? 'border-r-4 border-r-emerald-500' : ''}`}>
+                                    <td className={`p-2 sticky right-0 z-10 border-l border-b transition-all duration-500 text-center font-black text-sm ${rowBgStyle} ${isToday ? 'border-r-4 border-r-emerald-500' : ''} ${theme === 'dark' ? 'border-l-slate-700' : 'border-l-slate-200'}`}>
                                         <span className={progress === 100 ? 'text-emerald-600 font-bold' : progress > 0 ? 'text-blue-600' : theme === 'dark' ? 'text-slate-700' : 'text-slate-300'}>
                                             <AnimatedNumber value={progress} />
                                         </span>
@@ -1735,7 +1801,7 @@ return () => {
                 <>
                     <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                         <tr className="h-[72px]">
-                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r border-b ${getTableHeadStyle()} shadow-[4px_0_8px_rgba(0,0,0,0.3)] w-[120px] min-w-[120px]`}>
+                            <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r border-b ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} shadow-[4px_0_8px_rgba(0,0,0,0.3)] w-[120px] min-w-[120px]`}>
                               <div className="flex items-center justify-center gap-2">
                                 <button 
   onClick={toggleTableOrientation} 
@@ -1757,7 +1823,7 @@ return () => {
                                   ? (theme === 'dark' ? 'bg-emerald-900/40 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-emerald-50 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]') 
                                   : (theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100');
                                 return (
-                                    <th key={key} id={`col-${key}`} className={`p-2 border-r border-b transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${cellBgStyle} ${isToday ? 'border-emerald-500/50 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]' : 'border-slate-100 dark:border-slate-800'}`}>
+                                    <th key={key} id={`col-${key}`} className={`p-2 border-r border-b transition-all duration-500 ${cellBgStyle} ${isToday ? (theme === 'dark' ? 'border-emerald-500/50 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]' : 'border-emerald-400 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]') : (theme === 'dark' ? 'border-r-slate-800 border-b-slate-700' : 'border-r-slate-100 border-b-slate-200')}`} style={{ width: horizontalColWidth, minWidth: horizontalColWidth }}>
                                     <div className="flex flex-col items-center gap-1">
                                             <motion.button 
   whileTap={{ scale: 0.9 }} 
@@ -1777,7 +1843,7 @@ return () => {
                     </thead>
                     <tbody>
                         <tr className="h-[52px]">
-                            <td className={`p-2 font-black text-[12px] uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${getTableHeadStyle()} text-emerald-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
+                            <td className={`p-2 font-black text-[12px] uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} text-emerald-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
                                 <div className="w-full px-1 font-black leading-tight break-words">Efficiency</div>
                             </td>
                             {daysInMonth.map(day => {
@@ -1790,7 +1856,7 @@ return () => {
                                 const progress = activeHabits.length > 0 ? Math.round((earned / activeHabits.length) * 100) : 0;
                                 
                                 return (
-                                    <td key={key} className={`p-2 border-x border-b text-center text-[10px] font-black transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]') : 'border-slate-100 dark:border-slate-800'}`}>
+                                    <td key={key} className={`p-2 border-r border-b text-center text-[10px] font-black transition-all duration-500 ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]') : (theme === 'dark' ? 'border-r-slate-800 border-b-slate-800' : 'border-r-slate-100 border-b-slate-100')}`} style={{ width: horizontalColWidth, minWidth: horizontalColWidth }}>
                                     <span className={progress === 100 ? 'text-emerald-500' : progress > 0 ? 'text-blue-500' : 'text-slate-300'}><AnimatedNumber value={progress} /></span>
                                     </td>
                                 );
@@ -1799,13 +1865,13 @@ return () => {
                         {/* FILTERED HABITS ROWS */}
                         {habits.filter(h => !archivedHabits.includes(h)).map((habit, hIdx) => (
                             <tr key={hIdx} className="h-[68px]">
-                                <td className={`p-1 font-black uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${getTableHeadStyle()} text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`} style={{ fontSize: `${textSizes.table2}px` }}>
+                                <td className={`p-1 font-black uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`} style={{ fontSize: `${textSizes.table2}px` }}>
                                     <div className="truncate w-full px-1 font-black leading-tight">{habit}</div>
                                 </td>
                                 {daysInMonth.map(day => {
                                     const key = getSafeKey(day); const val = typeof trackerData[key]?.[habit] === 'number' ? trackerData[key][habit] : (trackerData[key]?.[habit] ? 100 : 0);
                                     return (
-                                        <td key={key} className={`p-1.5 border-x border-b text-center transition-all duration-500 w-[calc((100vw-160px)/10)] min-w-[calc((100vw-160px)/10)] ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]') : 'border-slate-100 dark:border-slate-800'}`}>
+                                        <td key={key} className={`p-1.5 border-r border-b text-center transition-all duration-500 ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]') : (theme === 'dark' ? 'border-r-slate-800 border-b-slate-800' : 'border-r-slate-100 border-b-slate-100')}`} style={{ width: horizontalColWidth, minWidth: horizontalColWidth }}>
                                             <motion.button whileTap={{ scale: 0.9 }} onPointerDown={(e) => handleHabitPressStart(e, key, habit, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, habit, val)} className={`w-11 h-11 rounded-2xl mx-auto border-2 flex items-center justify-center font-black transition-all text-xl ${getButtonStyles(val, key)} ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 grayscale' : ''}`}>
                                                 <span>
                                                     {(() => {
