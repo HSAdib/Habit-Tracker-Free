@@ -1,9 +1,17 @@
 /* Credit: Adib | APM | RU | Bangladesh | email: hasanshahriaradib@gmail.com | updated:22-01-2026 */
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { Analytics } from "@vercel/analytics/react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
+import { useHabitStore } from './store/useHabitStore';
+import { getSafeKey, parseLocalDate, loadConfettiScript, solveFluidPath } from './utils';
+import { DayCell } from './components/DayCell';
+
+const Heatmap = React.lazy(() => import('./components/Heatmap'));
+const WeeklySummaryModal = React.lazy(() => import('./components/modals/WeeklySummaryModal'));
+const MonthlyGraph = React.lazy(() => import('./components/charts/MonthlyGraph'));
+const JournalHistoryModal = React.lazy(() => import('./components/modals/JournalHistoryModal'));
+const HabitDetailModal = React.lazy(() => import('./components/modals/HabitDetailModal'));
 // --- Icons ---
 const RefreshIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
@@ -106,13 +114,7 @@ const AnimatedNumber = ({ value }) => {
     </div>
   );
 };
-const getSafeKey = (date) => {
-  if (!date) return "";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
+
 
 const DEFAULT_HABITS = ["sleep 7h", "calisthenics", "meditation", "dept study", "coding", "vocab", "audiobook"];
 const DEFAULT_CONFIGS = {
@@ -137,39 +139,127 @@ const itemVariants = {
 };
 
 export default function App() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [trackerData, setTrackerData] = useState({});
-  const [habits, setHabits] = useState(DEFAULT_HABITS);
-  const [habitConfigs, setHabitConfigs] = useState(DEFAULT_CONFIGS);
+  const isHydrating = useHabitStore(state => state.isHydrating);
+  const trackerData = useHabitStore(state => state.trackerData);
+  const habits = useHabitStore(state => state.habits);
+  const habitConfigs = useHabitStore(state => state.habitConfigs);
+  const categories = useHabitStore(state => state.categories);
+  const archivedHabits = useHabitStore(state => state.archivedHabits);
+  const theme = useHabitStore(state => state.theme);
+  const tableOrientation = useHabitStore(state => state.tableOrientation);
+  const textSizes = useHabitStore(state => state.textSizes);
+  const isMobileMode = useHabitStore(state => state.isMobileMode);
+  
+  const currentDate = useHabitStore(state => state.currentDate);
+  const setCurrentDate = useHabitStore(state => state.setCurrentDate);
+  const viewingHabitMap = useHabitStore(state => state.viewingHabitMap);
+  const setViewingHabitMap = useHabitStore(state => state.setViewingHabitMap);
+  const heatmapFilter = useHabitStore(state => state.heatmapFilter);
+  const weeklyGraphFilter = useHabitStore(state => state.weeklyGraphFilter);
+  const setWeeklyGraphFilter = useHabitStore(state => state.setWeeklyGraphFilter);
+  const dashboardGraphFilter = useHabitStore(state => state.dashboardGraphFilter);
+  const setDashboardGraphFilter = useHabitStore(state => state.setDashboardGraphFilter);
+  const selectedCategory = useHabitStore(state => state.selectedCategory);
+  const setSelectedCategory = useHabitStore(state => state.setSelectedCategory);
+  const savedLevel = useHabitStore(state => state.savedLevel);
+  
+  const updateHabitValueStore = useHabitStore(state => state.updateHabitValue);
+  const setTheme = useHabitStore(state => state.setTheme);
+  const setStorePartial = useHabitStore(state => state.setStorePartial);
+  const savePartialToIDB = useHabitStore(state => state.savePartialToIDB);
+  const initStore = useHabitStore(state => state.init);
+
   const [editingHabitName, setEditingHabitName] = useState(null);
+  const [editingManageListHabitName, setEditingManageListHabitName] = useState(null);
   const [tempHabitName, setTempHabitName] = useState("");
-  const [viewingHabitMap, setViewingHabitMap] = useState(null);
   const [editingNoteDate, setEditingNoteDate] = useState(null);
   const [showAllNotes, setShowAllNotes] = useState(false);
-  const [theme, setTheme] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('adib_habit_theme') || 'dark' : 'dark'));
-  const [tableOrientation, setTableOrientation] = useState(() => 
-  (typeof window !== 'undefined' ? localStorage.getItem('adib_table_orientation') || 'horizontal' : 'horizontal')
-);
-const [showWeeklyModal, setShowWeeklyModal] = useState(false);
-const [showMonthlyGraphModal, setShowMonthlyGraphModal] = useState(false);
-const [heatmapFilter, setHeatmapFilter] = useState('all');
-const [weeklyGraphFilter, setWeeklyGraphFilter] = useState('all');
-const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [categories, setCategories] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adib_habit_categories');
-      return saved ? JSON.parse(saved) : ["all", "health", "academic", "dev", "lifestyle"];
+  const [showWeeklyModal, setShowWeeklyModal] = useState(false);
+  const [showMonthlyGraphModal, setShowMonthlyGraphModal] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [showTextSizeModal, setShowTextSizeModal] = useState(false);
+  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  const [showLevelDetailsModal, setShowLevelDetailsModal] = useState(false);
+  const [showTrophyDetailsModal, setShowTrophyDetailsModal] = useState(false);
+  const [editingCat, setEditingCat] = useState(null);
+  const [newCatInput, setNewCatInput] = useState("");
+  const [activeSlider, setActiveSlider] = useState(null); 
+  const [isEditingTabName, setIsEditingTabName] = useState(false);
+  const [tableHeight, setTableHeight] = useState(484);
+  const [tempGoalVal, setTempGoalVal] = useState("");
+
+  const prevLevelRef = useRef(savedLevel);
+  const pointerCaptureRef = useRef(null);
+  const longPressTimer = useRef(null);
+  const scrollContainerRef = useRef(null);
+
+  useEffect(() => {
+    initStore();
+  }, [initStore]);
+
+  const save = (newTrackerData, newHabits, newConfigs) => {
+    savePartialToIDB({
+      trackerData: newTrackerData,
+      habits: newHabits,
+      habitConfigs: newConfigs
+    });
+  };
+
+  const updateHabitValue = (dateKey, habit, val) => {
+    updateHabitValueStore(dateKey, habit, val);
+  };
+  
+  const setHabits = (newHabits) => setStorePartial({ habits: newHabits });
+  const setHabitConfigs = (newConfigs) => setStorePartial({ habitConfigs: newConfigs });
+  const setTrackerData = (newData) => setStorePartial({ trackerData: newData });
+  const setCategories = (newCategories) => {
+    setStorePartial({ categories: newCategories });
+    savePartialToIDB({ categories: newCategories });
+  };
+  const setArchivedHabits = (newArchived) => {
+    setStorePartial({ archivedHabits: newArchived });
+    savePartialToIDB({ archivedHabits: newArchived });
+  };
+  const setTextSizes = (newSizes) => {
+    setStorePartial({ textSizes: newSizes });
+    savePartialToIDB({ textSizes: newSizes });
+  };
+  
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+  };
+  
+  const toggleTableOrientation = () => {
+    const newOrientation = tableOrientation === 'horizontal' ? 'vertical' : 'horizontal';
+    setStorePartial({ tableOrientation: newOrientation });
+    savePartialToIDB({ tableOrientation: newOrientation });
+  };
+
+  const toggleMobileMode = () => {
+    const newMode = !isMobileMode;
+    setStorePartial({ isMobileMode: newMode });
+    savePartialToIDB({ isMobileMode: newMode });
+    if (newMode) {
+      setTextSizes({ ...textSizes, habit: 10, table1: 9, table2: 9, tabSize: 75 });
+    } else {
+      setTextSizes({ ...textSizes, habit: 14, table1: 12, table2: 11, tabSize: 110 });
     }
-    return ["all", "health", "academic", "dev", "lifestyle"];
-  });
+  };
+
+  const updateTextSize = (key, value) => {
+    const newSizes = { ...textSizes, [key]: parseInt(value) };
+    setTextSizes(newSizes);
+  };
 
   const addCategory = () => {
     const name = prompt("Enter new category name:").toLowerCase().trim();
     if (name && !categories.includes(name)) {
       const newCats = [...categories, name];
       setCategories(newCats);
-      localStorage.setItem('adib_habit_categories', JSON.stringify(newCats));
     }
   };
 
@@ -178,7 +268,6 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
     if (window.confirm(`Delete category "${catToDelete}"?`)) {
       const newCats = categories.filter(c => c !== catToDelete);
       setCategories(newCats);
-      localStorage.setItem('adib_habit_categories', JSON.stringify(newCats));
       
       const newConfigs = { ...habitConfigs };
       Object.keys(newConfigs).forEach(h => {
@@ -191,56 +280,14 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
       save(trackerData, habits, newConfigs);
     }
   };
-  const [activeSlider, setActiveSlider] = useState(null); 
-  const [isEditingTabName, setIsEditingTabName] = useState(false);
-  const [tableHeight, setTableHeight] = useState(484);
-  const [tempGoalVal, setTempGoalVal] = useState("");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showTextSizeModal, setShowTextSizeModal] = useState(false);
-  const [textSizes, setTextSizes] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adib_text_sizes');
-      const parsed = saved ? JSON.parse(saved) : {};
-      return { habit: 14, table1: 12, table2: 11, tabSize: 110, ...parsed };
-    }
-    return { habit: 14, table1: 12, table2: 11, tabSize: 110 };
-  });
 
-  const updateTextSize = (key, value) => {
-    const newSizes = { ...textSizes, [key]: parseInt(value) };
-    setTextSizes(newSizes);
-    localStorage.setItem('adib_text_sizes', JSON.stringify(newSizes));
-  };
-// --- LEVEL UP STATE ---
-  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
-  const [showLevelDetailsModal, setShowLevelDetailsModal] = useState(false);
-  const [showTrophyDetailsModal, setShowTrophyDetailsModal] = useState(false);
-  const prevLevelRef = useRef(null);
-  const [archivedHabits, setArchivedHabits] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adib_habit_archived');
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
-  const [showArchiveModal, setShowArchiveModal] = useState(false);
-  const [showOrderModal, setShowOrderModal] = useState(false);
-// --- CATEGORY MANAGER STATE ---
-  const [showCategoryManager, setShowCategoryManager] = useState(false);
-  const [newCatInput, setNewCatInput] = useState("");
-  const [editingCat, setEditingCat] = useState(null); // { name: 'health', temp: 'Health' }
-
-  // Rename Category Logic
   const handleCategoryRename = (oldName, newName) => {
     const formattedName = newName.toLowerCase().trim();
     if (!formattedName || formattedName === oldName || categories.includes(formattedName)) return;
 
-    // 1. Update Categories List
     const newCats = categories.map(c => c === oldName ? formattedName : c);
     setCategories(newCats);
-    localStorage.setItem('adib_habit_categories', JSON.stringify(newCats));
 
-    // 2. Update Habit Configs
     const newConfigs = { ...habitConfigs };
     Object.keys(newConfigs).forEach(h => {
       if (newConfigs[h].category === oldName) {
@@ -249,10 +296,8 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
     });
     setHabitConfigs(newConfigs);
 
-    // 3. Update Selected Category if active
     if (selectedCategory === oldName) setSelectedCategory(formattedName);
 
-    // 4. Save Data
     save(trackerData, habits, newConfigs);
     setEditingCat(null);
   };
@@ -262,36 +307,7 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
     if (name && !categories.includes(name)) {
       const newCats = [...categories, name];
       setCategories(newCats);
-      localStorage.setItem('adib_habit_categories', JSON.stringify(newCats));
       setNewCatInput("");
-    }
-  };
-  const longPressTimer = useRef(null);
-  const scrollContainerRef = useRef(null);
-  const [isMobileMode, setIsMobileMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adib_mobile_mode');
-      return saved ? JSON.parse(saved) : (window.innerWidth <= 768);
-    }
-    return false;
-  });
-
-  const toggleMobileMode = () => {
-    const next = !isMobileMode;
-    setIsMobileMode(next);
-    localStorage.setItem('adib_mobile_mode', JSON.stringify(next));
-    if (next) {
-      setTextSizes(prev => {
-        const updated = { ...prev, habit: 10, table1: 9, table2: 9, tabSize: 75 };
-        localStorage.setItem('adib_text_sizes', JSON.stringify(updated));
-        return updated;
-      });
-    } else {
-      setTextSizes(prev => {
-        const updated = { ...prev, habit: 14, table1: 12, table2: 11, tabSize: 110 };
-        localStorage.setItem('adib_text_sizes', JSON.stringify(updated));
-        return updated;
-      });
     }
   };
 
@@ -299,40 +315,18 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
     const handleResize = () => {
       const saved = localStorage.getItem('adib_mobile_mode');
       if (!saved) {
-        setIsMobileMode(window.innerWidth <= 768);
+        setStorePartial({ isMobileMode: window.innerWidth <= 768 });
       }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('adib_habit_theme', newTheme);
-  };
-
-  const toggleTableOrientation = () => {
-    const next = tableOrientation === 'vertical' ? 'horizontal' : 'vertical';
-    setTableOrientation(next);
-    localStorage.setItem('adib_table_orientation', next);
-  };
+  }, [setStorePartial]);
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.style.colorScheme = theme;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    if (viewingHabitMap) {
+      setTempGoalVal(habitConfigs[viewingHabitMap]?.steps || 1);
     }
-  }, [theme]);
-
-  useEffect(() => {
-  if (viewingHabitMap) {
-    setTempGoalVal(habitConfigs[viewingHabitMap]?.steps || 1);
-  }
-}, [viewingHabitMap, habitConfigs]);
+  }, [viewingHabitMap, habitConfigs]);
 
   // Auto-scroll to today
   useEffect(() => {
@@ -357,64 +351,26 @@ const [dashboardGraphFilter, setDashboardGraphFilter] = useState('all');
         }
       }
     };
-    const timer = setTimeout(scrollToToday, 600);
+
+    const timer = setTimeout(scrollToToday, 500);
+
     const handleTableScroll = () => {
-      if (scrollContainerRef.current && tableOrientation === 'vertical') {
-        const { scrollTop, scrollHeight } = scrollContainerRef.current;
-        const container = scrollContainerRef.current;
-        
-        const headerHeight = 72;
-        const rowHeight = 72;
-        const spacerHeight = 216;
-        const dataContentHeight = scrollHeight - spacerHeight;
-        
-        // --- NEW: THE STOP LOGIC ---
-        // to stop scrolling when the 31st row (the end of dataContentHeight)
-        // is at the bottom of a 3-row view (header + 3 rows).
-        const minHeightLimit = (3 * rowHeight) + headerHeight; // 268px
-        const stopScrollAt = dataContentHeight - minHeightLimit;
-
-        if (scrollTop > stopScrollAt) {
-          container.scrollTop = stopScrollAt;
-          setTableHeight(minHeightLimit);
-          return;
-        }
-        
-
-        const remainingDataHeight = dataContentHeight - scrollTop;
-        const maxHeightLimit = (6 * rowHeight) + headerHeight; // 484px
-
-        let targetHeight = remainingDataHeight;
-        if (targetHeight > maxHeightLimit) targetHeight = maxHeightLimit;
+      if (!isMobileMode) {
+        let minHeightLimit = 350;
+        let diffOffset = window.innerHeight - 350;
+        let targetHeight = diffOffset - 120;
         if (targetHeight < minHeightLimit) targetHeight = minHeightLimit;
 
         setTableHeight(targetHeight);
       }
     };
-const container = scrollContainerRef.current;
-if (container) container.addEventListener('scroll', handleTableScroll);
-return () => {
-  clearTimeout(timer);
-  if (container) container.removeEventListener('scroll', handleTableScroll);
-};
-    return () => clearTimeout(timer);
-  }, [currentDate, habits, tableOrientation]);
-
-  // Persistence
-  useEffect(() => {
-    const savedData = localStorage.getItem('habit_tracker_master_v9_data');
-    const savedHabits = localStorage.getItem('habit_tracker_master_v9_names');
-    const savedConfigs = localStorage.getItem('habit_tracker_master_v9_configs');
-    if (savedData) try { setTrackerData(JSON.parse(savedData)); } catch(e) {}
-    if (savedHabits) try { setHabits(JSON.parse(savedHabits)); } catch(e) {}
-    if (savedConfigs) try { setHabitConfigs(JSON.parse(savedConfigs)); } catch(e) {}
-  }, []);
-
-  const save = (data, names, configs) => {
-    localStorage.setItem('habit_tracker_master_v9_data', JSON.stringify(data));
-    localStorage.setItem('habit_tracker_master_v9_names', JSON.stringify(names));
-    localStorage.setItem('habit_tracker_master_v9_configs', JSON.stringify(configs));
-  };
+    const container = scrollContainerRef.current;
+    if (container) container.addEventListener('scroll', handleTableScroll);
+    return () => {
+      clearTimeout(timer);
+      if (container) container.removeEventListener('scroll', handleTableScroll);
+    };
+  }, [currentDate, habits, tableOrientation, isMobileMode]);
 
   // Logic Handlers
   const handleDashboardRename = (oldName) => {
@@ -502,31 +458,7 @@ return () => {
     save(newTrackerData, habits, habitConfigs);
   };
 
-  const updateHabitValue = (dateKey, habit, val) => {
-    const updatedDay = { ...(trackerData[dateKey] || {}), [habit]: val };
-    const newTrackerData = { ...trackerData, [dateKey]: updatedDay };
-    
-    let earned = 0;
-    habits.forEach(h => {
-      const v = typeof updatedDay[h] === 'number' ? updatedDay[h] : (updatedDay[h] ? 100 : 0);
-      earned += (v / 100);
-    });
-    
-    if (Math.round((earned / habits.length) * 100) === 100) {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
-      s.onload = () => window.confetti({ 
-        particleCount: 150, 
-        spread: 80, 
-        origin: { y: 0.6 }, 
-        colors: ['#10b981', '#3b82f6', '#10b981', '#ffffff'] 
-      });
-      document.head.appendChild(s);
-    }
 
-    setTrackerData(newTrackerData);
-    save(newTrackerData, habits, habitConfigs);
-  };
   const handleExport = () => {
     const data = {
       trackerData,
