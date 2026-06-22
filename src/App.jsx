@@ -1013,7 +1013,7 @@ export default function App() {
                         <line x1="12" y1="18" x2="12.01" y2="18"/>
                       </svg>
                       <span className="text-[9px] font-black uppercase tracking-wider hidden sm:inline">
-                        {isMobileMode ? 'Mobile: ON' : 'Mobile View'}
+                        {isMobileMode ? 'Mobile View On' : 'Mobile View Off'}
                       </span>
                     </button>
                   </div>

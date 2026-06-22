@@ -80,12 +80,15 @@ export const useHabitStore = create((setStore, getStore) => ({
         }
       }
 
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(window.navigator.userAgent) || window.innerWidth <= 768;
+
       if (data) {
         data.currentDate = data.currentDate ? new Date(data.currentDate) : new Date();
       }
 
       setStore({
         ...data,
+        isMobileMode: isMobileDevice,
         isHydrating: false
       });
       
