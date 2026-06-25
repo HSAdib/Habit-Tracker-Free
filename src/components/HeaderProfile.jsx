@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useHabitStore } from '../store/useHabitStore';
 
 import { updateProfile } from 'firebase/auth';
@@ -34,6 +35,10 @@ const UserAvatarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 );
 
+const AdminIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+);
+
 export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handleLogout, handleExport }) {
   const [isOpen, setIsOpen] = useState(false);
   const [importPayload, setImportPayload] = useState(null);
@@ -43,6 +48,7 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
   
   const user = useHabitStore(state => state.user);
   const isAuthenticated = useHabitStore(state => state.isAuthenticated);
+  const isAdmin = isAuthenticated && user?.email === 'hasanshahriaradib@gmail.com';
   const theme = useHabitStore(state => state.theme);
   const syncToCloud = useHabitStore(state => state.syncToCloud);
   const importData = useHabitStore(state => state.importData);
@@ -197,6 +203,15 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-2">
+              {isAdmin && (
+                <Link 
+                  to="/admin-panel"
+                  className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs transition-transform active:scale-95 ${theme === 'dark' ? 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 border border-purple-500/30' : 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200'}`}
+                >
+                  <AdminIcon />
+                  Admin Dashboard
+                </Link>
+              )}
               <button 
                 onClick={handleSyncClick}
                 className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs transition-transform active:scale-95 ${isAuthenticated ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/20'}`}
