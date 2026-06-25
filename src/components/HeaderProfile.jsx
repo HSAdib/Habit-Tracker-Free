@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useHabitStore } from '../store/useHabitStore';
 
-import { updateProfile } from 'firebase/auth';
-import { auth } from '../firebase.config';
+import { updateProfile, deleteUser } from 'firebase/auth';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase.config';
 
 const EditIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -31,6 +32,10 @@ const LogoutIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
 );
 
+const TrashIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+);
+
 const UserAvatarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 );
@@ -42,6 +47,8 @@ const AdminIcon = () => (
 export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handleLogout, handleExport }) {
   const [isOpen, setIsOpen] = useState(false);
   const [importPayload, setImportPayload] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState('');
   const dropdownRef = useRef(null);
@@ -115,6 +122,34 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
       console.error("Failed to update name:", err);
     }
     setIsEditingName(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!isAuthenticated || !auth.currentUser) return;
+    setIsDeleting(true);
+    try {
+      // 1. Delete from Firestore
+      await deleteDoc(doc(db, 'users', auth.currentUser.uid));
+      // 2. Delete from Auth
+      await deleteUser(auth.currentUser);
+      
+      // 3. Clear local state
+      setStorePartial({ user: null, isAuthenticated: false, guestName: 'Guest User' });
+      setIsDeleteModalOpen(false);
+      setIsOpen(false);
+      
+      // 4. Redirect home
+      window.location.href = '/';
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+      if (err.code === 'auth/requires-recent-login') {
+        alert("This operation is sensitive and requires a recent login. Please log out, log back in, and try again.");
+      } else {
+        alert("An error occurred while deleting your account. Please try again.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const displayName = user?.displayName || guestName || "Guest User";
@@ -237,13 +272,22 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
               </label>
 
               {isAuthenticated && (
-                <button 
-                  onClick={() => { handleLogout(); setIsOpen(false); }}
-                  className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs border transition-colors active:scale-95 mt-2 ${theme === 'dark' ? 'border-red-900/30 text-red-400 hover:bg-red-900/20' : 'border-red-100 text-red-600 hover:bg-red-50'}`}
-                >
-                  <LogoutIcon />
-                  Sign Out
-                </button>
+                <>
+                  <button 
+                    onClick={() => { handleLogout(); setIsOpen(false); }}
+                    className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs border transition-colors active:scale-95 mt-2 ${theme === 'dark' ? 'border-orange-900/30 text-orange-400 hover:bg-orange-900/20' : 'border-orange-100 text-orange-600 hover:bg-orange-50'}`}
+                  >
+                    <LogoutIcon />
+                    Sign Out
+                  </button>
+                  <button 
+                    onClick={() => { setIsDeleteModalOpen(true); setIsOpen(false); }}
+                    className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs border transition-colors active:scale-95 ${theme === 'dark' ? 'border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/30' : 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'}`}
+                  >
+                    <TrashIcon />
+                    Delete Account
+                  </button>
+                </>
               )}
             </div>
           </motion.div>
@@ -297,6 +341,51 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
           </motion.div>
         )}
       </AnimatePresence>,
+        document.body
+      )}
+
+      {/* Delete Account Modal */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+        {isDeleteModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[500] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className={`bg-slate-900 z-[101] border ${theme === 'dark' ? 'border-red-900/50' : 'border-red-200'} shadow-2xl rounded-2xl w-full max-w-md p-6 relative`}
+            >
+              <h2 className={`text-xl font-black mb-2 text-red-500`}>Delete Account?</h2>
+              <p className={`text-sm mb-6 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                This action is <strong>permanent</strong> and cannot be undone. All your habits, progress, and data will be wiped from the server completely. Are you sure you want to proceed?
+              </p>
+              
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className={`w-full py-3 px-4 rounded-xl text-center font-black text-sm bg-red-500 text-white hover:bg-red-600 transition-colors ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isDeleting ? "Deleting..." : "Yes, delete my account"}
+                </button>
+
+                <button 
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={isDeleting}
+                  className={`w-full py-3 px-4 rounded-xl font-black text-sm border transition-colors ${theme === 'dark' ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+        </AnimatePresence>,
         document.body
       )}
     </div>
