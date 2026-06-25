@@ -247,13 +247,15 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
                   Admin Dashboard
                 </Link>
               )}
-              <button 
-                onClick={handleSyncClick}
-                className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs transition-transform active:scale-95 ${isAuthenticated ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/20'}`}
-              >
-                <SyncIcon />
-                {isAuthenticated ? "Sync to Cloud" : "Sign in to Sync"}
-              </button>
+              {!isAuthenticated && (
+                <button 
+                  onClick={handleSyncClick}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs transition-transform active:scale-95 bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                >
+                  <SyncIcon />
+                  Sign in to Sync
+                </button>
+              )}
               
               <button 
                 onClick={() => { handleExport(); setIsOpen(false); }}

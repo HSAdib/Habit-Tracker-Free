@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 
 // Credentials are loaded from .env (VITE_ prefix is required by Vite)
@@ -34,6 +34,16 @@ const app = initializeApp(firebaseConfig);
 // Export services
 export const auth = getAuth(app);
 export const db   = getFirestore(app);
+
+// Enable offline persistence
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code == 'failed-precondition') {
+    console.warn("Firebase persistence: Multiple tabs open, persistence can only be enabled in one tab at a time.");
+  } else if (err.code == 'unimplemented') {
+    console.warn("Firebase persistence: The current browser does not support all of the features required to enable persistence");
+  }
+});
+
 export const analytics = getAnalytics(app);
 export const googleProvider = new GoogleAuthProvider();
 

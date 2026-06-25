@@ -7,8 +7,10 @@ import { signOut } from 'firebase/auth';
 import { auth, googleProvider } from './firebase.config';
 import { useHabitStore } from './store/useHabitStore';
 import { getSafeKey, parseLocalDate, loadConfettiScript, solveFluidPath } from './utils';
+import { useNavigate } from 'react-router-dom';
 import HeaderProfile from './components/HeaderProfile';
 import AuthModal from './components/AuthModal';
+import NamePromptModal from './components/NamePromptModal';
 import {
   ResponsiveContainer, AreaChart, BarChart, CartesianGrid,
   XAxis, YAxis, Area, Bar, Tooltip as RechartsTooltip, Cell
@@ -178,6 +180,15 @@ export default function App() {
   const initStore = useHabitStore(state => state.init);
   const user = useHabitStore(state => state.user);
   const isAuthenticated = useHabitStore(state => state.isAuthenticated);
+  const authInitialized = useHabitStore(state => state.authInitialized);
+  const guestName = useHabitStore(state => state.guestName);
+  const manualXPOffset = useHabitStore(state => state.manualXPOffset);
+  const manualStreakOffset = useHabitStore(state => state.manualStreakOffset);
+  const isImpersonating = useHabitStore(state => state.isImpersonating);
+  const impersonatedUserName = useHabitStore(state => state.impersonatedUserName);
+  const stopImpersonation = useHabitStore(state => state.stopImpersonation);
+
+  const navigate = useNavigate();
 
   const handleLogin = () => {
     setShowAuthModal(true);
@@ -218,10 +229,6 @@ export default function App() {
   const prevLevelRef = useRef(savedLevel);
   const longPressTimer = useRef(null);
   const scrollContainerRef = useRef(null);
-
-  useEffect(() => {
-    initStore();
-  }, [initStore]);
 
   const save = (newTrackerData, newHabits, newConfigs) => {
     savePartialToIDB({
@@ -596,7 +603,7 @@ export default function App() {
   }, [viewingHabitMap, currentDate, daysInMonth]);
 
   const xpStats = useMemo(() => {
-    let totalXP = 0;
+    let totalXP = manualXPOffset || 0;
     Object.keys(trackerData).forEach(dateKey => {
       habits.forEach(habit => {
         const val = trackerData[dateKey]?.[habit] ?? 0;
@@ -621,7 +628,7 @@ export default function App() {
       requiredXP: Math.round(requiredXP), 
       progressXP: Math.round(progressXP) 
     };
-  }, [trackerData, habits, habitConfigs]);
+  }, [trackerData, habits, habitConfigs, manualXPOffset]);
 
   // --- LEVEL UP EFFECT ---
   useEffect(() => {
@@ -685,7 +692,7 @@ export default function App() {
   }, [xpStats.level]);
 
   const analytics = useMemo(() => {
-    let totalEarnedWeight = 0; let totalPossibleWeight = 0; let noteCount = 0; const stats = {};
+    let totalEarnedWeight = 0; let totalPossibleWeight = 0; let totalDone = manualStreakOffset || 0; let noteCount = 0; const stats = {};
     daysInMonth.forEach(day => {
       const key = getSafeKey(day); const dayData = trackerData[key] || {};
       if (dayData.note && dayData.note.trim() !== "") noteCount++;
@@ -699,8 +706,10 @@ export default function App() {
     const monthlyPct = totalPossibleWeight > 0 ? Math.round((totalEarnedWeight / totalPossibleWeight) * 100) : 0;
     const habitPcts = {};
     habits.forEach(h => { habitPcts[h] = Math.round(((stats[h] || 0) / (daysInMonth.length * 100)) * 100) || 0; });
-    return { habitPcts, monthlyPct, totalDone: Math.round(totalEarnedWeight), noteCount };
-  }, [daysInMonth, trackerData, habits, habitConfigs]);
+    const computedTotalDone = (manualStreakOffset || 0) + Math.round(totalEarnedWeight);
+    return { habitPcts, monthlyPct, totalDone: computedTotalDone, noteCount };
+  }, [daysInMonth, trackerData, habits, habitConfigs, manualStreakOffset]);
+
   // --- CATEGORY PROGRESS CALCULATION ---
   const categoryProgress = useMemo(() => {
     const stats = {};
@@ -1011,8 +1020,24 @@ export default function App() {
   const horizontalColWidth = isMobileMode ? '70px' : 'calc((100vw - 160px) / 10)';
 
  return (
-    <div className={`min-h-screen ${getContainerBg()} font-sans pb-6 md:pb-20 select-none overflow-x-hidden`}>
+    <div className={`min-h-screen ${getContainerBg()} font-sans pb-6 md:pb-20 select-none overflow-x-hidden ${isImpersonating ? 'pt-12' : ''}`}>
       <Analytics />
+
+      {isImpersonating && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white font-black text-sm px-4 py-2 flex items-center justify-center gap-4 shadow-xl border-b border-red-800">
+          <span className="animate-pulse">⚠️</span>
+          <span>IMPERSONATING: {impersonatedUserName}</span>
+          <button 
+            onClick={() => {
+              stopImpersonation();
+              navigate('/admin-panel');
+            }}
+            className="bg-black/20 hover:bg-black/40 text-white px-3 py-1 rounded-full text-xs font-bold transition-colors border border-white/10"
+          >
+            EXIT IMPERSONATION
+          </button>
+        </div>
+      )}
       
       <motion.div initial="hidden" animate="visible" variants={containerVariants} className={`max-w-7xl mx-auto ${outerPadding} flex flex-col min-h-screen`}>
         <div className="flex-grow">
@@ -2823,6 +2848,10 @@ export default function App() {
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 
       />
+
+      {!isHydrating && authInitialized && !isAuthenticated && !guestName && (
+        <NamePromptModal />
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes glow { 0% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } 50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); } 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } }

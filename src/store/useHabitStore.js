@@ -19,6 +19,7 @@ export const useHabitStore = create((setStore, getStore) => ({
   isHydrating: true,
   user: null,
   isAuthenticated: false,
+  authInitialized: false,
   lastUpdated: 0,
   
   // Data State
@@ -34,9 +35,14 @@ export const useHabitStore = create((setStore, getStore) => ({
   textSizes: { habit: 14, table1: 12, table2: 11, tabSize: 110 },
   isMobileMode: false,
   savedLevel: 1,
-  guestName: "Guest User",
+  guestName: "",
+  manualXPOffset: 0,
+  manualStreakOffset: 0,
 
   // UI State
+  isImpersonating: null,
+  impersonatedUserName: "",
+  adminSavedState: null,
   currentDate: new Date(),
   viewingHabitMap: null,
   heatmapFilter: 'all',
@@ -73,18 +79,37 @@ export const useHabitStore = create((setStore, getStore) => ({
           await set('adib_habit_data', data);
         } else {
           // New user defaults
+          let dynamicHabits = DEFAULT_HABITS;
+          let dynamicConfigs = DEFAULT_CONFIGS;
+          let dynamicCategories = ["all", "health", "academic", "dev", "lifestyle"];
+          
+          try {
+            const globalRef = doc(db, 'settings', 'globalDefaults');
+            const globalSnap = await getDoc(globalRef);
+            if (globalSnap.exists()) {
+              const globalData = globalSnap.data();
+              if (globalData.habits) dynamicHabits = globalData.habits;
+              if (globalData.habitConfigs) dynamicConfigs = globalData.habitConfigs;
+              if (globalData.categories) dynamicCategories = globalData.categories;
+            }
+          } catch (e) {
+            console.warn("Failed to fetch global defaults, using hardcoded.", e);
+          }
+
           data = {
             trackerData: {},
-            habits: DEFAULT_HABITS,
-            habitConfigs: DEFAULT_CONFIGS,
-            categories: ["all", "health", "academic", "dev", "lifestyle"],
+            habits: dynamicHabits,
+            habitConfigs: dynamicConfigs,
+            categories: dynamicCategories,
             archivedHabits: [],
             theme: 'dark',
             tableOrientation: 'horizontal',
             textSizes: { habit: 14, table1: 12, table2: 11, tabSize: 110 },
             isMobileMode: window.innerWidth <= 768,
             savedLevel: 1,
-            guestName: "Guest User",
+            guestName: "",
+            manualXPOffset: 0,
+            manualStreakOffset: 0,
             lastUpdated: Date.now()
           };
         }
@@ -94,6 +119,10 @@ export const useHabitStore = create((setStore, getStore) => ({
 
       if (data) {
         data.currentDate = data.currentDate ? new Date(data.currentDate) : new Date();
+        // Clear default 'Guest User' to enforce new name picking
+        if (data.guestName === "Guest User") {
+          data.guestName = "";
+        }
       }
 
       setStore({
@@ -114,7 +143,7 @@ export const useHabitStore = create((setStore, getStore) => ({
       // Firebase Sync
       onAuthStateChanged(auth, async (user) => {
         if (user) {
-          setStore({ user, isAuthenticated: true });
+          setStore({ user, isAuthenticated: true, authInitialized: true });
           try {
             const userDocRef = doc(db, 'users', user.uid);
             const docSnap = await getDoc(userDocRef);
@@ -144,7 +173,7 @@ export const useHabitStore = create((setStore, getStore) => ({
             console.error("Firebase sync failed, degrading to local only:", syncErr);
           }
         } else {
-          setStore({ user: null, isAuthenticated: false });
+          setStore({ user: null, isAuthenticated: false, authInitialized: true });
         }
       });
       
@@ -155,16 +184,17 @@ export const useHabitStore = create((setStore, getStore) => ({
   },
 
 
-  // Background Cloud Push
   syncToCloud: async () => {
     const state = getStore();
-    const { user, isAuthenticated, trackerData, habits, habitConfigs, categories, archivedHabits, theme, tableOrientation, textSizes, isMobileMode, savedLevel, lastUpdated } = state;
+    const { user, isAuthenticated, trackerData, habits, habitConfigs, categories, archivedHabits, theme, tableOrientation, textSizes, isMobileMode, savedLevel, lastUpdated, guestName, manualXPOffset, manualStreakOffset, isImpersonating, impersonatedUserName } = state;
     if (!isAuthenticated || !user) return;
 
     try {
-      const userDocRef = doc(db, 'users', user.uid);
+      const targetUid = isImpersonating || user.uid;
+      const targetDisplayName = isImpersonating ? impersonatedUserName : (user.displayName || "");
+      const userDocRef = doc(db, 'users', targetUid);
       await setDoc(userDocRef, {
-        trackerData, habits, habitConfigs, categories, archivedHabits, theme, tableOrientation, textSizes, isMobileMode, savedLevel, lastUpdated
+        trackerData, habits, habitConfigs, categories, archivedHabits, theme, tableOrientation, textSizes, isMobileMode, savedLevel, lastUpdated, guestName, manualXPOffset, manualStreakOffset, displayName: targetDisplayName
       }, { merge: true });
     } catch (err) {
       console.warn("Background cloud sync deferred:", err);
@@ -229,14 +259,28 @@ export const useHabitStore = create((setStore, getStore) => ({
       isMobileMode: state.isMobileMode,
       savedLevel: state.savedLevel,
       guestName: state.guestName,
+      manualXPOffset: state.manualXPOffset,
+      manualStreakOffset: state.manualStreakOffset,
       lastUpdated: now
     };
+
+    if (state.isImpersonating) {
+      if (state.isAuthenticated && state.user) {
+        try {
+          await setDoc(doc(db, 'users', state.isImpersonating), { ...dataToSave, displayName: state.impersonatedUserName }, { merge: true });
+        } catch (err) {
+          console.error("Impersonated background sync failed:", err);
+        }
+      }
+      return;
+    }
+
     await set('adib_habit_data', dataToSave);
     
     // Background Firebase Sync
     if (state.isAuthenticated && state.user) {
       try {
-        await setDoc(doc(db, 'users', state.user.uid), dataToSave, { merge: true });
+        await setDoc(doc(db, 'users', state.user.uid), { ...dataToSave, displayName: state.user.displayName || "" }, { merge: true });
       } catch (err) {
         console.error("Background sync failed:", err);
       }
@@ -289,7 +333,64 @@ export const useHabitStore = create((setStore, getStore) => ({
   setWeeklyGraphFilter: (filter) => setStore({ weeklyGraphFilter: filter }),
   setSelectedCategory: (cat) => setStore({ selectedCategory: cat }),
   
+  startImpersonation: (targetUser) => {
+    const state = getStore();
+    const adminStateBackup = {
+      trackerData: state.trackerData,
+      habits: state.habits,
+      habitConfigs: state.habitConfigs,
+      categories: state.categories,
+      archivedHabits: state.archivedHabits,
+      theme: state.theme,
+      tableOrientation: state.tableOrientation,
+      textSizes: state.textSizes,
+      isMobileMode: state.isMobileMode,
+      savedLevel: state.savedLevel,
+      guestName: state.guestName,
+      manualXPOffset: state.manualXPOffset,
+      manualStreakOffset: state.manualStreakOffset,
+    };
+    
+    setStore({
+      isImpersonating: targetUser.id,
+      impersonatedUserName: targetUser.displayName || targetUser.guestName || "Unknown User",
+      adminSavedState: adminStateBackup,
+      trackerData: targetUser.trackerData || {},
+      habits: targetUser.habits || [],
+      habitConfigs: targetUser.habitConfigs || {},
+      categories: targetUser.categories || ["all", "health", "academic", "dev", "lifestyle"],
+      archivedHabits: targetUser.archivedHabits || [],
+      theme: targetUser.theme || 'dark',
+      tableOrientation: targetUser.tableOrientation || 'horizontal',
+      textSizes: targetUser.textSizes || { habit: 14, table1: 12, table2: 11, tabSize: 110 },
+      savedLevel: targetUser.savedLevel || 1,
+      guestName: targetUser.guestName || "",
+      manualXPOffset: targetUser.manualXPOffset || 0,
+      manualStreakOffset: targetUser.manualStreakOffset || 0,
+    });
+  },
+
+  stopImpersonation: () => {
+    const state = getStore();
+    if (state.adminSavedState) {
+      setStore({
+        ...state.adminSavedState,
+        isImpersonating: null,
+        impersonatedUserName: "",
+        adminSavedState: null
+      });
+    } else {
+      setStore({
+        isImpersonating: null,
+        impersonatedUserName: "",
+      });
+    }
+  },
+
   // Other setters
   setStorePartial: (partial) => setStore(partial),
   savePartialToIDB: async (partial) => await getStore().saveToIDB(partial)
 }));
+
+// Initialize the store and auth listener immediately so it acts globally across all routes
+useHabitStore.getState().init();
