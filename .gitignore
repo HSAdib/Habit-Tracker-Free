@@ -8,7 +8,11 @@ pnpm-debug.log*
 lerna-debug.log*
 node_modules
 dist
+# Environment variables — NEVER commit .env (contains Firebase secrets)
 .env
+.env.local
+.env.*.local
+# .env.example IS safe to commit (contains only placeholder values)
 
 node_modules
 dist

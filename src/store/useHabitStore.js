@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { get, set } from 'idb-keyval';
+import { auth, db } from '../firebase.config';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const DEFAULT_HABITS = ["sleep 7h", "calisthenics", "meditation", "dept study", "coding", "vocab", "audiobook"];
 const DEFAULT_CONFIGS = {
@@ -14,6 +17,9 @@ const DEFAULT_CONFIGS = {
 
 export const useHabitStore = create((setStore, getStore) => ({
   isHydrating: true,
+  user: null,
+  isAuthenticated: false,
+  lastUpdated: 0,
   
   // Data State
   trackerData: {},
@@ -59,7 +65,8 @@ export const useHabitStore = create((setStore, getStore) => ({
             tableOrientation: localStorage.getItem('adib_table_orientation') || 'horizontal',
             textSizes: JSON.parse(localStorage.getItem('adib_text_sizes') || 'null') || { habit: 14, table1: 12, table2: 11, tabSize: 110 },
             isMobileMode: JSON.parse(localStorage.getItem('adib_mobile_mode') || 'null') || (window.innerWidth <= 768),
-            savedLevel: parseInt(localStorage.getItem('adib_habit_saved_level')) || 1
+            savedLevel: parseInt(localStorage.getItem('adib_habit_saved_level')) || 1,
+            lastUpdated: Date.now()
           };
           // Save to IDB for future
           await set('adib_habit_data', data);
@@ -75,7 +82,8 @@ export const useHabitStore = create((setStore, getStore) => ({
             tableOrientation: 'horizontal',
             textSizes: { habit: 14, table1: 12, table2: 11, tabSize: 110 },
             isMobileMode: window.innerWidth <= 768,
-            savedLevel: 1
+            savedLevel: 1,
+            lastUpdated: Date.now()
           };
         }
       }
@@ -100,15 +108,113 @@ export const useHabitStore = create((setStore, getStore) => ({
       } else {
         root.classList.remove('dark');
       }
+
+      // Firebase Sync
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          setStore({ user, isAuthenticated: true });
+          try {
+            const userDocRef = doc(db, 'users', user.uid);
+            const docSnap = await getDoc(userDocRef);
+            const localLastUpdated = getStore().lastUpdated || 0;
+            
+            if (docSnap.exists()) {
+              const remoteData = docSnap.data();
+              const remoteLastUpdated = remoteData.lastUpdated || 0;
+              
+              if (remoteLastUpdated > localLastUpdated) {
+                // Remote is newer, update local store and IDB
+                const mergedData = { ...getStore(), ...remoteData };
+                if (mergedData.currentDate) {
+                  mergedData.currentDate = new Date(mergedData.currentDate);
+                }
+                setStore(mergedData);
+                await set('adib_habit_data', mergedData);
+              } else if (localLastUpdated > remoteLastUpdated) {
+                // Local is newer, push to remote
+                await setDoc(userDocRef, { ...getStore(), isHydrating: undefined, user: undefined, isAuthenticated: undefined, lastUpdated: localLastUpdated }, { merge: true });
+              }
+            } else {
+              // No remote data, push local data
+              await setDoc(userDocRef, { ...getStore(), isHydrating: undefined, user: undefined, isAuthenticated: undefined, lastUpdated: localLastUpdated }, { merge: true });
+            }
+          } catch (syncErr) {
+            console.error("Firebase sync failed, degrading to local only:", syncErr);
+          }
+        } else {
+          setStore({ user: null, isAuthenticated: false });
+        }
+      });
+      
     } catch (e) {
       console.error("Failed to hydrate store:", e);
       setStore({ isHydrating: false });
     }
   },
 
+
+  // Background Cloud Push
+  syncToCloud: async () => {
+    const state = getStore();
+    const { user, isAuthenticated, trackerData, habits, habitConfigs, categories, archivedHabits, theme, tableOrientation, textSizes, isMobileMode, savedLevel, lastUpdated } = state;
+    if (!isAuthenticated || !user) return;
+
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, {
+        trackerData, habits, habitConfigs, categories, archivedHabits, theme, tableOrientation, textSizes, isMobileMode, savedLevel, lastUpdated
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Background cloud sync deferred:", err);
+    }
+  },
+
+  importData: async (incomingPayload, strategy) => {
+    const state = getStore();
+    const timestamp = Date.now();
+    let newTrackerData = { ...state.trackerData };
+    let newHabits = [...state.habits];
+    let newHabitConfigs = { ...state.habitConfigs };
+
+    if (strategy === 'overwrite') {
+      newTrackerData = incomingPayload.trackerData || {};
+      newHabits = incomingPayload.habits || [];
+      newHabitConfigs = incomingPayload.habitConfigs || {};
+    } else if (strategy === 'merge') {
+      const incomingHabits = incomingPayload.habits || [];
+      incomingHabits.forEach(h => {
+        if (!newHabits.includes(h)) newHabits.push(h);
+      });
+
+      const incomingConfigs = incomingPayload.habitConfigs || {};
+      newHabitConfigs = { ...incomingConfigs, ...newHabitConfigs };
+
+      const incomingTracker = incomingPayload.trackerData || {};
+      Object.keys(incomingTracker).forEach(dateKey => {
+        if (!newTrackerData[dateKey]) {
+          newTrackerData[dateKey] = incomingTracker[dateKey];
+        } else {
+          newTrackerData[dateKey] = { ...incomingTracker[dateKey], ...newTrackerData[dateKey] };
+        }
+      });
+    }
+
+    const updatedPayload = {
+      trackerData: newTrackerData,
+      habits: newHabits,
+      habitConfigs: newHabitConfigs,
+      lastUpdated: timestamp,
+    };
+
+    await state.saveToIDB(updatedPayload);
+  },
+
   saveToIDB: async (updates) => {
     setStore(updates);
     const state = getStore();
+    const now = Date.now();
+    setStore({ lastUpdated: now });
+    
     const dataToSave = {
       trackerData: state.trackerData,
       habits: state.habits,
@@ -119,9 +225,19 @@ export const useHabitStore = create((setStore, getStore) => ({
       tableOrientation: state.tableOrientation,
       textSizes: state.textSizes,
       isMobileMode: state.isMobileMode,
-      savedLevel: state.savedLevel
+      savedLevel: state.savedLevel,
+      lastUpdated: now
     };
     await set('adib_habit_data', dataToSave);
+    
+    // Background Firebase Sync
+    if (state.isAuthenticated && state.user) {
+      try {
+        await setDoc(doc(db, 'users', state.user.uid), dataToSave, { merge: true });
+      } catch (err) {
+        console.error("Background sync failed:", err);
+      }
+    }
   },
 
   updateHabitValue: async (dateKey, habit, val) => {
@@ -149,6 +265,7 @@ export const useHabitStore = create((setStore, getStore) => ({
     }
 
     await state.saveToIDB({ trackerData: newTrackerData });
+    if (state.isAuthenticated) state.syncToCloud();
   },
 
   setTheme: async (theme) => {

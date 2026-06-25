@@ -1,17 +1,17 @@
 /* Credit: Adib | APM | RU | Bangladesh | email: hasanshahriaradib@gmail.com | updated:22-01-2026 */
 
-import React, { useState, useMemo, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Analytics } from "@vercel/analytics/react";
 import { motion, AnimatePresence } from 'framer-motion';
+import { signInWithPopup, signOut } from 'firebase/auth';
+import { auth, googleProvider } from './firebase.config';
 import { useHabitStore } from './store/useHabitStore';
 import { getSafeKey, parseLocalDate, loadConfettiScript, solveFluidPath } from './utils';
-import { DayCell } from './components/DayCell';
-
-const Heatmap = React.lazy(() => import('./components/Heatmap'));
-const WeeklySummaryModal = React.lazy(() => import('./components/modals/WeeklySummaryModal'));
-const MonthlyGraph = React.lazy(() => import('./components/charts/MonthlyGraph'));
-const JournalHistoryModal = React.lazy(() => import('./components/modals/JournalHistoryModal'));
-const HabitDetailModal = React.lazy(() => import('./components/modals/HabitDetailModal'));
+import HeaderProfile from './components/HeaderProfile';
+import {
+  ResponsiveContainer, AreaChart, BarChart, CartesianGrid,
+  XAxis, YAxis, Area, Bar, Tooltip as RechartsTooltip, Cell
+} from 'recharts';
 // --- Icons ---
 const RefreshIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
@@ -80,6 +80,12 @@ const TableRotateIcon = () => (
 );
 const TextSizeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>
+);
+const UserIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+);
+const LogoutIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
 );
 const ImportIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
@@ -155,6 +161,7 @@ export default function App() {
   const viewingHabitMap = useHabitStore(state => state.viewingHabitMap);
   const setViewingHabitMap = useHabitStore(state => state.setViewingHabitMap);
   const heatmapFilter = useHabitStore(state => state.heatmapFilter);
+  const setHeatmapFilter = useHabitStore(state => state.setHeatmapFilter);
   const weeklyGraphFilter = useHabitStore(state => state.weeklyGraphFilter);
   const setWeeklyGraphFilter = useHabitStore(state => state.setWeeklyGraphFilter);
   const dashboardGraphFilter = useHabitStore(state => state.dashboardGraphFilter);
@@ -168,6 +175,24 @@ export default function App() {
   const setStorePartial = useHabitStore(state => state.setStorePartial);
   const savePartialToIDB = useHabitStore(state => state.savePartialToIDB);
   const initStore = useHabitStore(state => state.init);
+  const user = useHabitStore(state => state.user);
+  const isAuthenticated = useHabitStore(state => state.isAuthenticated);
+
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error('Login Failed', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Logout Failed', error);
+    }
+  };
 
   const [editingHabitName, setEditingHabitName] = useState(null);
   const [editingManageListHabitName, setEditingManageListHabitName] = useState(null);
@@ -190,9 +215,9 @@ export default function App() {
   const [isEditingTabName, setIsEditingTabName] = useState(false);
   const [tableHeight, setTableHeight] = useState(484);
   const [tempGoalVal, setTempGoalVal] = useState("");
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   const prevLevelRef = useRef(savedLevel);
-  const pointerCaptureRef = useRef(null);
   const longPressTimer = useRef(null);
   const scrollContainerRef = useRef(null);
 
@@ -255,30 +280,25 @@ export default function App() {
     setTextSizes(newSizes);
   };
 
-  const addCategory = () => {
-    const name = prompt("Enter new category name:").toLowerCase().trim();
-    if (name && !categories.includes(name)) {
-      const newCats = [...categories, name];
-      setCategories(newCats);
-    }
-  };
-
   const deleteCategory = (catToDelete) => {
     if (catToDelete === 'all') return;
-    if (window.confirm(`Delete category "${catToDelete}"?`)) {
-      const newCats = categories.filter(c => c !== catToDelete);
-      setCategories(newCats);
-      
-      const newConfigs = { ...habitConfigs };
-      Object.keys(newConfigs).forEach(h => {
-        if (newConfigs[h].category === catToDelete) {
-          newConfigs[h].category = 'all';
-        }
-      });
-      setHabitConfigs(newConfigs);
-      if (selectedCategory === catToDelete) setSelectedCategory('all');
-      save(trackerData, habits, newConfigs);
-    }
+    setCategoryToDelete(catToDelete);
+  };
+
+  const confirmDeleteCategory = () => {
+    if (!categoryToDelete) return;
+    const newCats = categories.filter(c => c !== categoryToDelete);
+    setCategories(newCats);
+    const newConfigs = { ...habitConfigs };
+    Object.keys(newConfigs).forEach(h => {
+      if (newConfigs[h].category === categoryToDelete) {
+        newConfigs[h].category = 'all';
+      }
+    });
+    setHabitConfigs(newConfigs);
+    if (selectedCategory === categoryToDelete) setSelectedCategory('all');
+    save(trackerData, habits, newConfigs);
+    setCategoryToDelete(null);
   };
 
   const handleCategoryRename = (oldName, newName) => {
@@ -371,6 +391,29 @@ export default function App() {
       if (container) container.removeEventListener('scroll', handleTableScroll);
     };
   }, [currentDate, habits, tableOrientation, isMobileMode]);
+
+  // Global ESC key handler — closes any open modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      if (viewingHabitMap) { setViewingHabitMap(null); setIsEditingTabName(false); return; }
+      if (editingNoteDate) { setEditingNoteDate(null); return; }
+      if (showDeleteConfirm) { setShowDeleteConfirm(false); return; }
+      if (showWeeklyModal) { setShowWeeklyModal(false); return; }
+      if (showMonthlyGraphModal) { setShowMonthlyGraphModal(false); return; }
+      if (showAllNotes) { setShowAllNotes(false); return; }
+      if (showOrderModal) { setShowOrderModal(false); return; }
+      if (showCategoryManager) { setShowCategoryManager(false); return; }
+      if (showTextSizeModal) { setShowTextSizeModal(false); return; }
+      if (showArchiveModal) { setShowArchiveModal(false); return; }
+      if (showLevelDetailsModal) { setShowLevelDetailsModal(false); return; }
+      if (showTrophyDetailsModal) { setShowTrophyDetailsModal(false); return; }
+      if (showLevelUpModal) { setShowLevelUpModal(false); return; }
+      if (categoryToDelete) { setCategoryToDelete(null); return; }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [viewingHabitMap, editingNoteDate, showDeleteConfirm, showWeeklyModal, showMonthlyGraphModal, showAllNotes, showOrderModal, showCategoryManager, showTextSizeModal, showArchiveModal, showLevelDetailsModal, showTrophyDetailsModal, showLevelUpModal, categoryToDelete]);
 
   // Logic Handlers
   const handleDashboardRename = (oldName) => {
@@ -580,7 +623,7 @@ export default function App() {
       requiredXP: Math.round(requiredXP), 
       progressXP: Math.round(progressXP) 
     };
-  }, [trackerData, habits, habitConfigs]);;
+  }, [trackerData, habits, habitConfigs]);
 
   // --- LEVEL UP EFFECT ---
   useEffect(() => {
@@ -619,10 +662,8 @@ export default function App() {
         playNote(1046.50, 0.4, 0.8);
       } catch (e) { console.error("Audio play failed", e); }
 
-      // Confetti Effect
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
-      s.onload = () => {
+      // Confetti Effect — using the utility to avoid raw <script> injection
+      loadConfettiScript(() => {
         const duration = 3000;
         const end = Date.now() + duration;
         (function frame() {
@@ -632,8 +673,7 @@ export default function App() {
           }
           if (Date.now() < end) requestAnimationFrame(frame);
         }());
-      };
-      document.head.appendChild(s);
+      });
     }
 
     // ৪. আপডেট লজিক: লেভেল বাড়ুক বা কমুক, বর্তমান অবস্থা সেভ করে রাখো।
@@ -722,6 +762,36 @@ export default function App() {
     }
     return days;
   }, [weeklyGraphFilter, weeklySummary, trackerData]);
+
+  // Per-habit current streak — powers the streak badge on habit cards
+  const allHabitStreaks = useMemo(() => {
+    const streaks = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    habits.forEach(habit => {
+      let streak = 0;
+      let checkDate = new Date(today);
+      const todayKey = getSafeKey(checkDate);
+      const todayValRaw = trackerData[todayKey]?.[habit] ?? 0;
+      const todayVal = typeof todayValRaw === 'number' ? todayValRaw : (todayValRaw ? 100 : 0);
+      if (Math.round(todayVal) < 100) checkDate.setDate(checkDate.getDate() - 1);
+      while (true) {
+        const key = getSafeKey(checkDate);
+        const valRaw = trackerData[key]?.[habit] ?? 0;
+        const val = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
+        if (Math.round(val) >= 100) { streak++; checkDate.setDate(checkDate.getDate() - 1); }
+        else break;
+      }
+      streaks[habit] = streak;
+    });
+    return streaks;
+  }, [habits, trackerData]);
+
+  // True if ANY habit has been logged at any point — used for empty state
+  const hasAnyData = useMemo(() =>
+    Object.values(trackerData).some(day =>
+      habits.some(h => { const v = day[h]; return typeof v === 'number' ? v > 0 : !!v; })
+    ), [trackerData, habits]);
 
   const habitInsights = useMemo(() => {
     if (!viewingHabitMap) return null;
@@ -895,16 +965,7 @@ export default function App() {
     }).filter(p => !isNaN(p.x));
   }, [daysInMonth, trackerData, habits, dashboardGraphFilter]);
 
-  const solveFluidPath = (points) => {
-    if (!points || points.length < 2) return "";
-    let d = `M ${points[0].x},${points[0].y}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const curr = points[i]; const next = points[i + 1];
-      const cp1x = curr.x + (next.x - curr.x) / 2; const cp2x = curr.x + (next.x - curr.x) / 2;
-      d += ` C ${cp1x},${curr.y} ${cp2x},${next.y} ${next.x},${next.y}`;
-    }
-    return d;
-  };
+  // (solveFluidPath is imported from ./utils — local duplicate removed)
 
   const currentMonthNotes = useMemo(() => {
     return daysInMonth.map(d => ({ date: d, key: getSafeKey(d), note: trackerData[getSafeKey(d)]?.note })).filter(e => e.note && e.note.trim() !== "");
@@ -958,7 +1019,7 @@ export default function App() {
       <motion.div initial="hidden" animate="visible" variants={containerVariants} className={`max-w-7xl mx-auto ${outerPadding} flex flex-col min-h-screen`}>
         <div className="flex-grow">
           {/* Dashboard Header */}
-          <motion.div variants={itemVariants} className={`flex flex-col lg:flex-row lg:items-center justify-between ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'} ${getCardStyle()} ${headerPadding} border transition-colors relative overflow-hidden`}>
+          <motion.div variants={itemVariants} className={`flex flex-col lg:flex-row lg:items-center justify-between ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'} ${getCardStyle()} ${headerPadding} border transition-colors relative overflow-visible z-[100]`}>
             <div className="flex items-center gap-4 z-10">
               <motion.div 
                 whileHover={{ scale: 1.1, rotate: 5 }} 
@@ -1072,37 +1133,37 @@ export default function App() {
                 <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-1 md:p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronLeftIcon /></motion.button>
                 <span className={`px-1 md:px-4 font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'} min-w-[85px] md:min-w-[140px] text-center text-[10px] md:text-sm`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
                 <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className={`p-1 md:p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
+                {/* Today quick-jump — only visible when not on the current month */}
+                {(currentDate.getMonth() !== new Date().getMonth() || currentDate.getFullYear() !== new Date().getFullYear()) && (
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setCurrentDate(new Date())}
+                    className={`ml-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border ${
+                      theme === 'dark'
+                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30'
+                        : 'bg-emerald-100 border-emerald-300 text-emerald-600 hover:bg-emerald-200'
+                    }`}
+                    title="Jump to current month"
+                  >
+                    Today
+                  </motion.button>
+                )}
                 </div>
 
-              {/* Right Side: Data Safety Group with CSS Tooltips */}
-              <div className="flex items-center gap-1 ml-auto">
+                            {/* Right Side: Profile & Sync UI */}
+              <div className="flex items-center gap-3 ml-auto">
                 
                 <div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
                 
-                {/* Archive List Button */}
-                <div className="tooltip-trigger">
-                  <button onClick={() => setShowArchiveModal(true)} className={`p-2 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-amber-400' : 'text-slate-500 hover:bg-white hover:text-amber-600'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
-                  </button>
-                  <span className="tooltip-content">Archive List</span>
-                </div>
-
-                {/* Export Button with Tooltip */}
-                <div className="tooltip-trigger">
-                  <button onClick={handleExport} className={`p-2 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-emerald-400' : 'text-slate-500 hover:bg-white hover:text-emerald-600'}`}>
-                    <ExportIcon />
-                  </button>
-                  <span className="tooltip-content">Export JSON</span>
-                </div>
-
-                {/* Import Button with Tooltip */}
-                <div className="tooltip-trigger">
-                  <label className={`p-2 rounded-lg transition-all cursor-pointer ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-blue-400' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`}>
-                    <ImportIcon />
-                    <input type="file" accept=".json" onChange={handleImport} className="hidden" />
-                  </label>
-                  <span className="tooltip-content">Import JSON</span>
-                </div>
+                {/* Header Profile Dropdown */}
+                <HeaderProfile 
+                  totalXP={xpStats.totalXP} 
+                  bestStreak={analytics.totalDone} // Using total done as a fallback proxy for streak for the global profile, or we can use analytics
+                  handleLogin={handleLogin} 
+                  handleLogout={handleLogout} 
+                  handleExport={handleExport} 
+                  handleImport={handleImport} 
+                />
               </div>
             </div>
           </motion.div>
@@ -1333,6 +1394,7 @@ export default function App() {
       key={habit} 
       className={`${getCardStyle()} cursor-pointer overflow-hidden group transition-all relative flex flex-col items-center justify-center rounded-full aspect-square border-0`}
       onClick={() => setViewingHabitMap(habit)}
+      title={`${pct}% this month${allHabitStreaks[habit] > 0 ? ` · 🔥 ${allHabitStreaks[habit]} day streak` : ''}`}
     >
       
       <svg 
@@ -1369,6 +1431,13 @@ export default function App() {
         <span className={`text-[19px] font-black mt-1 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
           <AnimatedNumber value={pct} />
         </span>
+        {/* Streak badge */}
+        {allHabitStreaks[habit] > 0 && (
+          <div className="flex items-center gap-0.5 mt-0.5">
+            <span className="text-[11px] leading-none">🔥</span>
+            <span className={`text-[8px] font-black leading-none ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`}>{allHabitStreaks[habit]}d</span>
+          </div>
+        )}
       </div>
       
     </motion.div>
@@ -1405,7 +1474,7 @@ export default function App() {
         {showMonthlyGraphModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowMonthlyGraphModal(false)}>
             <motion.div initial={{ scale: 0.9, opacity: 0, y: 50 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 50 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[1.2rem] md:rounded-[2rem] w-full max-w-4xl p-6 md:p-8 shadow-2xl relative flex flex-col`} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowMonthlyGraphModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              <button onClick={() => setShowMonthlyGraphModal(false)} className={`absolute top-6 right-6 flex flex-col items-center gap-0.5 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`} title="Close (ESC)"><XIcon /><span className="text-[6px] font-mono opacity-50">ESC</span></button>
               
               <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
@@ -1499,7 +1568,7 @@ export default function App() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowWeeklyModal(false)}>
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative`} onClick={e => e.stopPropagation()}>
               
-              <button onClick={() => setShowWeeklyModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              <button onClick={() => setShowWeeklyModal(false)} className={`absolute top-6 right-6 flex flex-col items-center gap-0.5 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`} title="Close (ESC)"><XIcon /><span className="text-[6px] font-mono opacity-50">ESC</span></button>
               
               <div className="mb-8">
                 <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Performance Overview</p>
@@ -1593,7 +1662,7 @@ export default function App() {
         {showAllNotes && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[180] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowAllNotes(false)}>
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl relative flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowAllNotes(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              <button onClick={() => setShowAllNotes(false)} className={`absolute top-6 right-6 flex flex-col items-center gap-0.5 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`} title="Close (ESC)"><XIcon /><span className="text-[6px] font-mono opacity-50">ESC</span></button>
               
               <div className="mb-6 shrink-0">
                 <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Reflection Log</p>
@@ -1604,7 +1673,7 @@ export default function App() {
                 {Object.keys(trackerData).filter(k => trackerData[k]?.note).length > 0 ? (
                   Object.entries(trackerData)
                     .filter(([k, v]) => v.note && v.note.trim())
-                    .sort((a, b) => new Date(b[0]) - new Date(a[0])) // Sort by newest first
+                    .sort((a, b) => parseLocalDate(b[0]) - parseLocalDate(a[0])) // Sort by newest first (parseLocalDate avoids UTC timezone offset bugs)
                     .map(([dateKey, data]) => (
                       <div key={dateKey} className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <div className="flex items-center justify-between mb-3">
@@ -1628,6 +1697,46 @@ export default function App() {
             </motion.div>
           </motion.div>
         )}
+          {/* Empty State Onboarding — only shown when no habit data exists */}
+          {!hasAnyData && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`${getCardStyle()} border rounded-[2.5rem] mb-8 relative overflow-hidden transition-colors`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5 pointer-events-none" />
+              <div className="relative z-10 py-12 px-8 text-center">
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border-2 ${
+                  theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'
+                }`}>
+                  <span className="text-3xl">🌱</span>
+                </div>
+                <h3 className={`text-2xl font-black mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                  Welcome to Habit Mastery!
+                </h3>
+                <p className={`text-sm font-medium mb-8 max-w-sm mx-auto leading-relaxed ${getTextMuted()}`}>
+                  Start tracking your habits by clicking the cells in the table below.
+                  Long-press for partial completion, tap for full completion.
+                </p>
+                <div className={`flex items-center justify-center gap-6 text-[10px] font-black uppercase tracking-widest ${getTextMuted()}`}>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-base shadow-lg shadow-emerald-500/30">✔</div>
+                    <span>Complete</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xs font-black shadow-lg shadow-blue-500/30">50%</div>
+                    <span>Partial</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center text-red-500 ${
+                      theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                    }`}>✘</div>
+                    <span>Missed</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
           {/* Table Log */}
 <motion.div variants={itemVariants} className={`${getCardStyle()} ${isMobileMode ? 'rounded-2xl' : 'rounded-[2.5rem]'} overflow-hidden mb-8 relative transition-colors`}>
     
@@ -1694,7 +1803,12 @@ export default function App() {
                                 <tr key={key} id={`row-${key}`} className="h-[72px]">
                                     <td className={`p-2 sticky left-0 z-10 border-r border-b transition-all duration-500 ${rowBgStyle} ${isToday ? 'border-l-4 border-l-emerald-500' : ''} ${theme === 'dark' ? 'border-r-slate-700' : 'border-r-slate-200'}`}>
                                         <div className="flex items-center justify-center gap-3">
-                                            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} title="Add reflection note"><NoteIcon /></motion.button>
+                                            <div className="tooltip-trigger">
+                                              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`}><NoteIcon /></motion.button>
+                                              <span className="tooltip-content" style={{ whiteSpace: 'nowrap', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {dayData.note ? `“${dayData.note.split('\n')[0].substring(0, 45)}${dayData.note.split('\n')[0].length > 45 ? '…' : ''}”` : 'Add reflection'}
+                                              </span>
+                                            </div>
                                             <div className="flex flex-col text-center"><span className={`text-[8px] uppercase opacity-80 leading-none ${theme === 'dark' ? 'text-slate-500' : ''}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span><span className={`text-sm font-black mt-0.5 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span></div>
                                         </div>
                                     </td>
@@ -1757,14 +1871,18 @@ export default function App() {
                                 return (
                                     <th key={key} id={`col-${key}`} className={`p-2 border-r border-b transition-all duration-500 ${cellBgStyle} ${isToday ? (theme === 'dark' ? 'border-emerald-500/50 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]' : 'border-emerald-400 shadow-[inset_0_0_15px_rgba(16,185,129,0.2)]') : (theme === 'dark' ? 'border-r-slate-800 border-b-slate-700' : 'border-r-slate-100 border-b-slate-200')}`} style={{ width: horizontalColWidth, minWidth: horizontalColWidth }}>
                                     <div className="flex flex-col items-center gap-1">
-                                            <motion.button 
+                                            <div className="tooltip-trigger flex items-center justify-center">
+                                              <motion.button 
   whileTap={{ scale: 0.9 }} 
   onClick={() => setEditingNoteDate(key)} 
-  className={`p-2 rounded-xl transition-all ${trackerData[key]?.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`} 
-  title="Add reflection note"
+  className={`p-2 rounded-xl transition-all ${trackerData[key]?.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`}
 >
   <NoteIcon />
 </motion.button>
+                                              <span className="tooltip-content" style={{ whiteSpace: 'nowrap', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {trackerData[key]?.note ? `“${trackerData[key].note.split('\n')[0].substring(0, 45)}${trackerData[key].note.split('\n')[0].length > 45 ? '…' : ''}”` : 'Add reflection'}
+                                              </span>
+                                            </div>
                                             <span className={`text-[7px] uppercase font-black ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
                                             <span className={`text-xs font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{day.getDate()}</span>
                                         </div>
@@ -1972,7 +2090,7 @@ export default function App() {
                         <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
                         </div>
                     </div>
-                    <button onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }} className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`}><XIcon /></button>
+                    <button onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }} className={`flex flex-col items-center gap-0.5 p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`} title="Close (ESC)"><XIcon /><span className="text-[6px] font-mono opacity-50">ESC</span></button>
                   </div>
 
                   {/* Relocated Super Compact Priority Slider */}
@@ -2657,6 +2775,49 @@ export default function App() {
               <button onClick={() => setEditingNoteDate(null)} className={`w-full mt-4 ${theme === 'dark' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-900 hover:bg-slate-800'} text-white p-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl`}>Save Reflection</button>
             </motion.div>
           </div>
+        )}
+        {/* Category Delete Confirmation Modal */}
+        {categoryToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[600] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4"
+            onClick={() => setCategoryToDelete(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.85, y: 20 }}
+              className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} border p-8 rounded-[2rem] max-w-sm w-full shadow-2xl text-center`}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl">🗑️</span>
+              </div>
+              <h4 className={`text-xl font-black mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Delete Category?</h4>
+              <p className={`text-sm mb-8 font-medium leading-relaxed ${getTextMuted()}`}>
+                All habits in <span className="text-rose-400 font-black">"{categoryToDelete}"</span> will be moved to <span className="font-black">All</span>. This cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setCategoryToDelete(null)}
+                  className={`flex-1 py-3 rounded-2xl text-sm font-black uppercase tracking-wider transition-all border ${
+                    theme === 'dark' ? 'border-slate-700 text-slate-400 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteCategory}
+                  className="flex-1 py-3 rounded-2xl text-sm font-black uppercase tracking-wider bg-rose-500 text-white hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/30"
+                >
+                  Delete
+                </button>
+              </div>
+              <p className={`text-[8px] font-mono mt-4 opacity-30 ${getTextMuted()}`}>Press ESC to cancel</p>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
