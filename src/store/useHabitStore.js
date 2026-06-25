@@ -34,6 +34,7 @@ export const useHabitStore = create((setStore, getStore) => ({
   textSizes: { habit: 14, table1: 12, table2: 11, tabSize: 110 },
   isMobileMode: false,
   savedLevel: 1,
+  guestName: "Guest User",
 
   // UI State
   currentDate: new Date(),
@@ -83,6 +84,7 @@ export const useHabitStore = create((setStore, getStore) => ({
             textSizes: { habit: 14, table1: 12, table2: 11, tabSize: 110 },
             isMobileMode: window.innerWidth <= 768,
             savedLevel: 1,
+            guestName: "Guest User",
             lastUpdated: Date.now()
           };
         }
@@ -226,6 +228,7 @@ export const useHabitStore = create((setStore, getStore) => ({
       textSizes: state.textSizes,
       isMobileMode: state.isMobileMode,
       savedLevel: state.savedLevel,
+      guestName: state.guestName,
       lastUpdated: now
     };
     await set('adib_habit_data', dataToSave);

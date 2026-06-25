@@ -3,6 +3,17 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHabitStore } from '../store/useHabitStore';
 
+import { updateProfile } from 'firebase/auth';
+import { auth } from '../firebase.config';
+
+const EditIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+);
+
+const CheckIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+);
+
 const SyncIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
 );
@@ -26,6 +37,8 @@ const UserAvatarIcon = () => (
 export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handleLogout, handleExport }) {
   const [isOpen, setIsOpen] = useState(false);
   const [importPayload, setImportPayload] = useState(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState('');
   const dropdownRef = useRef(null);
   
   const user = useHabitStore(state => state.user);
@@ -33,6 +46,9 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
   const theme = useHabitStore(state => state.theme);
   const syncToCloud = useHabitStore(state => state.syncToCloud);
   const importData = useHabitStore(state => state.importData);
+  const guestName = useHabitStore(state => state.guestName);
+  const savePartialToIDB = useHabitStore(state => state.savePartialToIDB);
+  const setStorePartial = useHabitStore(state => state.setStorePartial);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -75,7 +91,27 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
     setIsOpen(false);
   };
 
-  const displayName = user?.displayName || "Guest User";
+  const handleNameSave = async () => {
+    if (!tempName.trim()) {
+      setIsEditingName(false);
+      return;
+    }
+    const newName = tempName.trim();
+    try {
+      if (isAuthenticated && auth.currentUser) {
+        await updateProfile(auth.currentUser, { displayName: newName });
+        setStorePartial({ user: { ...auth.currentUser, displayName: newName } });
+      } else {
+        savePartialToIDB({ guestName: newName });
+        setStorePartial({ guestName: newName });
+      }
+    } catch (err) {
+      console.error("Failed to update name:", err);
+    }
+    setIsEditingName(false);
+  };
+
+  const displayName = user?.displayName || guestName || "Guest User";
   const email = user?.email || "Not signed in";
   const initial = displayName.charAt(0).toUpperCase();
 
@@ -115,8 +151,35 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
                   <UserAvatarIcon />
                 )}
               </div>
-              <h3 className={`font-black text-lg leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{displayName}</h3>
-              <p className={`text-xs font-semibold mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{email}</p>
+              <div className="flex items-center gap-2 h-7 mb-1">
+                {isEditingName ? (
+                  <div className={`flex items-center rounded-lg overflow-hidden border ${theme === 'dark' ? 'bg-slate-800/50 border-emerald-500/30' : 'bg-white border-emerald-500/30 shadow-sm'}`}>
+                    <input
+                      type="text"
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleNameSave()}
+                      className={`w-32 px-2 py-1 bg-transparent text-sm font-black focus:outline-none text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}
+                      autoFocus
+                    />
+                    <button onClick={handleNameSave} className="p-1 text-emerald-500 hover:bg-emerald-500/20 transition-colors">
+                      <CheckIcon />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h3 className={`font-black text-lg leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{displayName}</h3>
+                    <button 
+                      onClick={() => { setTempName(displayName); setIsEditingName(true); }}
+                      className={`p-1 rounded-md transition-colors opacity-50 hover:opacity-100 ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
+                      title="Edit Name"
+                    >
+                      <EditIcon />
+                    </button>
+                  </>
+                )}
+              </div>
+              <p className={`text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{email}</p>
             </div>
 
             {/* Stats Row */}

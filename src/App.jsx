@@ -3,11 +3,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Analytics } from "@vercel/analytics/react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { signInWithPopup, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { auth, googleProvider } from './firebase.config';
 import { useHabitStore } from './store/useHabitStore';
 import { getSafeKey, parseLocalDate, loadConfettiScript, solveFluidPath } from './utils';
 import HeaderProfile from './components/HeaderProfile';
+import AuthModal from './components/AuthModal';
 import {
   ResponsiveContainer, AreaChart, BarChart, CartesianGrid,
   XAxis, YAxis, Area, Bar, Tooltip as RechartsTooltip, Cell
@@ -178,12 +179,8 @@ export default function App() {
   const user = useHabitStore(state => state.user);
   const isAuthenticated = useHabitStore(state => state.isAuthenticated);
 
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error('Login Failed', error);
-    }
+  const handleLogin = () => {
+    setShowAuthModal(true);
   };
 
   const handleLogout = async () => {
@@ -208,6 +205,7 @@ export default function App() {
   const [showTextSizeModal, setShowTextSizeModal] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [showLevelDetailsModal, setShowLevelDetailsModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showTrophyDetailsModal, setShowTrophyDetailsModal] = useState(false);
   const [editingCat, setEditingCat] = useState(null);
   const [newCatInput, setNewCatInput] = useState("");
@@ -2820,6 +2818,11 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes glow { 0% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } 50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); } 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } }
