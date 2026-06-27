@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { get, set } from 'idb-keyval';
 import { auth, db } from '../firebase.config';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 const DEFAULT_HABITS = ["sleep 7h", "calisthenics", "meditation", "dept study", "coding", "vocab", "audiobook"];
 const DEFAULT_CONFIGS = {
@@ -141,39 +141,47 @@ export const useHabitStore = create((setStore, getStore) => ({
       }
 
       // Firebase Sync
+      let unsubSnapshot = null;
       onAuthStateChanged(auth, async (user) => {
         if (user) {
           setStore({ user, isAuthenticated: true, authInitialized: true });
           try {
             const userDocRef = doc(db, 'users', user.uid);
-            const docSnap = await getDoc(userDocRef);
-            const localLastUpdated = getStore().lastUpdated || 0;
-            
-            if (docSnap.exists()) {
-              const remoteData = docSnap.data();
-              const remoteLastUpdated = remoteData.lastUpdated || 0;
+            unsubSnapshot = onSnapshot(userDocRef, async (docSnap) => {
+              const localLastUpdated = getStore().lastUpdated || 0;
               
-              if (remoteLastUpdated > localLastUpdated) {
-                // Remote is newer, update local store and IDB
-                const mergedData = { ...getStore(), ...remoteData };
-                if (mergedData.currentDate) {
-                  mergedData.currentDate = new Date(mergedData.currentDate);
+              if (docSnap.exists()) {
+                const remoteData = docSnap.data();
+                const remoteLastUpdated = remoteData.lastUpdated || 0;
+                
+                if (remoteLastUpdated > localLastUpdated) {
+                  // Remote is newer, update local store and IDB
+                  const mergedData = { ...getStore(), ...remoteData };
+                  if (mergedData.currentDate) {
+                    mergedData.currentDate = new Date(mergedData.currentDate);
+                  }
+                  setStore(mergedData);
+                  await set('adib_habit_data', mergedData);
+                } else if (localLastUpdated > remoteLastUpdated) {
+                  // Local is newer, push to remote
+                  await setDoc(userDocRef, { ...getStore(), isHydrating: undefined, user: undefined, isAuthenticated: undefined, lastUpdated: localLastUpdated }, { merge: true });
                 }
-                setStore(mergedData);
-                await set('adib_habit_data', mergedData);
-              } else if (localLastUpdated > remoteLastUpdated) {
-                // Local is newer, push to remote
+              } else {
+                // No remote data, push local data
                 await setDoc(userDocRef, { ...getStore(), isHydrating: undefined, user: undefined, isAuthenticated: undefined, lastUpdated: localLastUpdated }, { merge: true });
               }
-            } else {
-              // No remote data, push local data
-              await setDoc(userDocRef, { ...getStore(), isHydrating: undefined, user: undefined, isAuthenticated: undefined, lastUpdated: localLastUpdated }, { merge: true });
-            }
+            }, (syncErr) => {
+              console.error("Firebase sync failed, degrading to local only:", syncErr);
+            });
           } catch (syncErr) {
-            console.error("Firebase sync failed, degrading to local only:", syncErr);
+            console.error("Firebase setup failed:", syncErr);
           }
         } else {
           setStore({ user: null, isAuthenticated: false, authInitialized: true });
+          if (unsubSnapshot) {
+            unsubSnapshot();
+            unsubSnapshot = null;
+          }
         }
       });
       
