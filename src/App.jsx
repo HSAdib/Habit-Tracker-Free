@@ -40,6 +40,14 @@ const ChevronRightIcon = () => (
     <path d="m9 18 6-6-6-6"/> 
   </svg>
 );
+
+const ArrowUpIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 15 7-7 7 7"/></svg>
+);
+
+const ArrowDownIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 9-7 7-7-7"/></svg>
+);
     
 const XIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -211,8 +219,8 @@ export default function App() {
   const [showMonthlyGraphModal, setShowMonthlyGraphModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
+  const [manageModalTab, setManageModalTab] = useState('categories');
   const [showTextSizeModal, setShowTextSizeModal] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [showLevelDetailsModal, setShowLevelDetailsModal] = useState(false);
@@ -220,6 +228,7 @@ export default function App() {
   const [showTrophyDetailsModal, setShowTrophyDetailsModal] = useState(false);
   const [editingCat, setEditingCat] = useState(null);
   const [newCatInput, setNewCatInput] = useState("");
+  const [newHabitInput, setNewHabitInput] = useState("");
   const [activeSlider, setActiveSlider] = useState(null); 
   const [isEditingTabName, setIsEditingTabName] = useState(false);
   const [tableHeight, setTableHeight] = useState(484);
@@ -285,6 +294,20 @@ export default function App() {
     setTextSizes(newSizes);
   };
 
+  const moveCategoryUp = (index) => {
+    if (index <= 1) return;
+    const newCats = [...categories];
+    [newCats[index - 1], newCats[index]] = [newCats[index], newCats[index - 1]];
+    setCategories(newCats);
+  };
+
+  const moveCategoryDown = (index) => {
+    if (index === 0 || index >= categories.length - 1) return;
+    const newCats = [...categories];
+    [newCats[index + 1], newCats[index]] = [newCats[index], newCats[index + 1]];
+    setCategories(newCats);
+  };
+
   const deleteCategory = (catToDelete) => {
     if (catToDelete === 'all') return;
     setCategoryToDelete(catToDelete);
@@ -333,6 +356,19 @@ export default function App() {
       const newCats = [...categories, name];
       setCategories(newCats);
       setNewCatInput("");
+    }
+  };
+
+  const handleAddHabitFromInput = () => {
+    const name = newHabitInput.trim();
+    if (name && !habits.includes(name) && !archivedHabits.includes(name)) {
+      const categoryToAssign = selectedCategory === 'all' ? 'all' : selectedCategory; 
+      const newHabits = [...habits, name]; 
+      const newConfigs = {...habitConfigs, [name]: { steps: 1, category: categoryToAssign }};
+      setHabits(newHabits); 
+      setHabitConfigs(newConfigs); 
+      save(trackerData, newHabits, newConfigs); 
+      setNewHabitInput("");
     }
   };
 
@@ -407,8 +443,7 @@ export default function App() {
       if (showWeeklyModal) { setShowWeeklyModal(false); return; }
       if (showMonthlyGraphModal) { setShowMonthlyGraphModal(false); return; }
       if (showAllNotes) { setShowAllNotes(false); return; }
-      if (showOrderModal) { setShowOrderModal(false); return; }
-      if (showCategoryManager) { setShowCategoryManager(false); return; }
+      if (showManageModal) { setShowManageModal(false); return; }
       if (showTextSizeModal) { setShowTextSizeModal(false); return; }
       if (showArchiveModal) { setShowArchiveModal(false); return; }
       if (showLevelDetailsModal) { setShowLevelDetailsModal(false); return; }
@@ -418,7 +453,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [viewingHabitMap, editingNoteDate, showDeleteConfirm, showWeeklyModal, showMonthlyGraphModal, showAllNotes, showOrderModal, showCategoryManager, showTextSizeModal, showArchiveModal, showLevelDetailsModal, showTrophyDetailsModal, showLevelUpModal, categoryToDelete]);
+  }, [viewingHabitMap, editingNoteDate, showDeleteConfirm, showWeeklyModal, showMonthlyGraphModal, showAllNotes, showManageModal, showTextSizeModal, showArchiveModal, showLevelDetailsModal, showTrophyDetailsModal, showLevelUpModal, categoryToDelete]);
 
   // Logic Handlers
   const handleDashboardRename = (oldName) => {
@@ -1354,7 +1389,7 @@ export default function App() {
 <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
   {/* NEW: EDIT TAB (Manager Trigger) */}
   <button 
-    onClick={() => setShowCategoryManager(true)}
+    onClick={() => setShowManageModal(true)}
     className={`shrink-0 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:border-slate-500' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300'}`}
   >
     <EditIcon /> <span>Edit</span>
@@ -1402,12 +1437,13 @@ export default function App() {
 </div>
           {/* Updated Habit Cards Grid */}
           <motion.div variants={containerVariants} className="grid gap-3 mb-8" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${textSizes.tabSize || 110}px, 1fr))` }}>
+
             <AnimatePresence mode='popLayout'>
 {habits.filter(h => !archivedHabits.includes(h) && (selectedCategory === 'all' || habitConfigs[h]?.category === selectedCategory)).map((habit, idx) => {
   const pct = analytics.habitPcts[habit] ?? 0;
   
   // THE FIX: Prevent background cards from stealing focus when the modal is open!
-  const isEditing = editingHabitName === habit && !showOrderModal; 
+  const isEditing = editingHabitName === habit && !showManageModal; 
   
   return (
     <motion.div 
@@ -1483,15 +1519,6 @@ export default function App() {
 >
   <PlusIcon />
 </motion.button>
-
-{selectedCategory === 'all' && (
-  <motion.button layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowOrderModal(true)}
-    className={`${getCardStyle()} flex items-center justify-center border-2 transition-all rounded-full aspect-square ${theme === 'dark' ? 'border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-700' : 'border-slate-200 text-slate-400 hover:text-emerald-500 hover:border-emerald-400'}`}
-    title="MANAGE LIST"
-  >
-    <OrderIcon />
-  </motion.button>
-)}
           </motion.div>
 {/* Monthly Graph Detailed Modal */}
         {showMonthlyGraphModal && (
@@ -2292,110 +2319,219 @@ export default function App() {
           </motion.div>
         )}
 
-{/* --- EDIT HABITS MODAL --- */}
-        {showOrderModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[350] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowOrderModal(false)}>
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowOrderModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-emerald-500 transition-all`}><XIcon /></button>
+{/* --- MANAGE HYBRID MODAL --- */}
+        {showManageModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowManageModal(false)}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative flex flex-col h-[560px]`} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setShowManageModal(false)} className="absolute -top-4 -right-4 z-10 p-2 rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:text-rose-500 hover:border-rose-500/50 hover:shadow-[0_0_16px_4px_rgba(239,68,68,0.5)] transition-all duration-200">
+                <XIcon />
+              </button>
               
-              <div className="mb-6 shrink-0">
-                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Manage List</p>
-                <h3 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Edit Habits</h3>
+              <div className="flex flex-col gap-4 mb-6 shrink-0 mt-2">
+                <div className="flex bg-slate-800/20 p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
+                  <button 
+                    onClick={() => setManageModalTab('categories')}
+                    className={`flex-1 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all ${manageModalTab === 'categories' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+                  >
+                    Categories
+                  </button>
+                  <button 
+                    onClick={() => setManageModalTab('habits')}
+                    className={`flex-1 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all ${manageModalTab === 'habits' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+                  >
+                    Habits
+                  </button>
+                </div>
               </div>
 
-              <div className="overflow-y-auto custom-scrollbar pr-2 space-y-2">
-                {habits.map((habit, index) => (
-                  <div key={habit} className={`p-3 rounded-2xl border flex items-center justify-between transition-colors ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                    <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
-                      <span className={`text-xs font-black w-5 text-center shrink-0 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{index + 1}</span>
-                      
-                      {/* INLINE EDITING LOGIC - Removed onBlur entirely to fix focus loops */}
-                      {editingHabitName === habit ? (
-                        <input 
-                          autoFocus 
-                          className={`text-sm font-black uppercase w-full bg-transparent focus:outline-none border-b border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} 
-                          value={tempHabitName} 
-                          onChange={(e) => setTempHabitName(e.target.value)} 
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault(); 
-                                handleDashboardRename(habit);
-                            }
-                          }} 
-                        />
-                      ) : (
-                        <span className={`text-sm font-black uppercase truncate ${archivedHabits.includes(habit) ? 'opacity-40 line-through' : ''} ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                          {habit}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-1 shrink-0">
-                      {/* EDIT / SAVE BUTTON - Back to reliable onClick */}
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault(); 
-                          if (editingHabitName === habit) {
-                            handleDashboardRename(habit);
-                          } else {
-                            setEditingHabitName(habit); 
-                            setTempHabitName(habit);
-                          }
-                        }}
-                        className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-slate-700 hover:text-blue-400 text-slate-400' : 'hover:bg-slate-200 hover:text-blue-600 text-slate-500'}`}
-                        title={editingHabitName === habit ? "Save Habit Name" : "Edit Habit Name"}
-                      >
-                        {editingHabitName === habit ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>
-                        ) : (
-                          <EditIcon />
-                        )}
-                      </button>
-
-                      {/* DELETE BUTTON */}
-                      <button 
-                        onClick={() => { setTempHabitName(habit); setShowDeleteConfirm(true); }}
-                        className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-slate-700 hover:text-rose-400 text-slate-400' : 'hover:bg-slate-200 hover:text-rose-600 text-slate-500'}`}
-                        title="Delete Habit"
-                      >
-                        <TrashIcon />
-                      </button>
-
-                      <div className={`w-px h-4 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`} />
-
-                      {/* UP BUTTON */}
-                      <button 
-                        onClick={() => {
-                          if (index === 0) return;
-                          const newHabits = [...habits];
-                          [newHabits[index - 1], newHabits[index]] = [newHabits[index], newHabits[index - 1]];
-                          setHabits(newHabits);
-                          save(trackerData, newHabits, habitConfigs);
-                        }}
-                        disabled={index === 0}
-                        className={`p-1.5 rounded-lg transition-all ${index === 0 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'hover:bg-slate-700 hover:text-emerald-400' : 'hover:bg-slate-200 hover:text-emerald-600')} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
-                      >
-                        <ChevronUpIcon />
-                      </button>
-
-                      {/* DOWN BUTTON */}
-                      <button 
-                        onClick={() => {
-                          if (index === habits.length - 1) return;
-                          const newHabits = [...habits];
-                          [newHabits[index + 1], newHabits[index]] = [newHabits[index], newHabits[index + 1]];
-                          setHabits(newHabits);
-                          save(trackerData, newHabits, habitConfigs);
-                        }}
-                        disabled={index === habits.length - 1}
-                        className={`p-1.5 rounded-lg transition-all ${index === habits.length - 1 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'hover:bg-slate-700 hover:text-emerald-400' : 'hover:bg-slate-200 hover:text-emerald-600')} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
-                      >
-                        <ChevronDownIcon />
-                      </button>
-                    </div>
+              {manageModalTab === 'habits' ? (
+                <div className="flex flex-col flex-1 min-h-0">
+                  <div className="flex gap-2 mb-4 shrink-0">
+                    <input 
+                      type="text" 
+                      placeholder="New habit..." 
+                      value={newHabitInput}
+                      onChange={(e) => setNewHabitInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddHabitFromInput()}
+                      className={`flex-1 px-4 py-3 rounded-xl text-xs font-bold focus:outline-none border-2 transition-all ${theme === 'dark' ? 'bg-slate-800 border-slate-700 focus:border-emerald-500 text-white placeholder:text-slate-600' : 'bg-slate-50 border-slate-200 focus:border-emerald-500 text-slate-800'}`}
+                    />
+                    <button 
+                      onClick={handleAddHabitFromInput}
+                      disabled={!newHabitInput.trim()}
+                      className="px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      <PlusIcon />
+                    </button>
                   </div>
-                ))}
-              </div>
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
+                    {habits.map((habit, index) => (
+                      <div key={habit} className={`p-3 rounded-2xl border flex items-center justify-between transition-colors ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                          <span className={`text-xs font-black w-5 text-center shrink-0 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{index + 1}</span>
+                          
+                          {/* INLINE EDITING LOGIC - Removed onBlur entirely to fix focus loops */}
+                          {editingHabitName === habit ? (
+                            <input 
+                              autoFocus 
+                              className={`text-sm font-black uppercase w-full bg-transparent focus:outline-none border-b border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} 
+                              value={tempHabitName} 
+                              onChange={(e) => setTempHabitName(e.target.value)} 
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault(); 
+                                    handleDashboardRename(habit);
+                                }
+                              }} 
+                            />
+                          ) : (
+                            <span className={`text-sm font-black uppercase truncate ${archivedHabits.includes(habit) ? 'opacity-40 line-through' : ''} ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                              {habit}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1 shrink-0">
+                          {/* EDIT / SAVE BUTTON - Back to reliable onClick */}
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault(); 
+                              if (editingHabitName === habit) {
+                                handleDashboardRename(habit);
+                              } else {
+                                setEditingHabitName(habit); 
+                                setTempHabitName(habit);
+                              }
+                            }}
+                            className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-slate-700 hover:text-blue-400 text-slate-400' : 'hover:bg-slate-200 hover:text-blue-600 text-slate-500'}`}
+                            title={editingHabitName === habit ? "Save Habit Name" : "Edit Habit Name"}
+                          >
+                            {editingHabitName === habit ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>
+                            ) : (
+                              <EditIcon />
+                            )}
+                          </button>
+
+                          {/* DELETE BUTTON */}
+                          <button 
+                            onClick={() => { setTempHabitName(habit); setShowDeleteConfirm(true); }}
+                            className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-slate-700 hover:text-rose-400 text-slate-400' : 'hover:bg-slate-200 hover:text-rose-600 text-slate-500'}`}
+                            title="Delete Habit"
+                          >
+                            <TrashIcon />
+                          </button>
+
+                          <div className={`w-px h-4 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`} />
+
+                          {/* UP BUTTON */}
+                          <button 
+                            onClick={() => {
+                              if (index === 0) return;
+                              const newHabits = [...habits];
+                              [newHabits[index - 1], newHabits[index]] = [newHabits[index], newHabits[index - 1]];
+                              setHabits(newHabits);
+                              save(trackerData, newHabits, habitConfigs);
+                            }}
+                            disabled={index === 0}
+                            className={`p-1.5 rounded-lg transition-all ${index === 0 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'hover:bg-slate-700 hover:text-emerald-400' : 'hover:bg-slate-200 hover:text-emerald-600')} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
+                          >
+                            <ChevronUpIcon />
+                          </button>
+
+                          {/* DOWN BUTTON */}
+                          <button 
+                            onClick={() => {
+                              if (index === habits.length - 1) return;
+                              const newHabits = [...habits];
+                              [newHabits[index + 1], newHabits[index]] = [newHabits[index], newHabits[index + 1]];
+                              setHabits(newHabits);
+                              save(trackerData, newHabits, habitConfigs);
+                            }}
+                            disabled={index === habits.length - 1}
+                            className={`p-1.5 rounded-lg transition-all ${index === habits.length - 1 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'hover:bg-slate-700 hover:text-emerald-400' : 'hover:bg-slate-200 hover:text-emerald-600')} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
+                          >
+                            <ChevronDownIcon />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col flex-1 min-h-0">
+                  <div className="flex gap-2 mb-4 shrink-0">
+                    <input 
+                      type="text" 
+                      placeholder="New category..." 
+                      value={newCatInput}
+                      onChange={(e) => setNewCatInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleManualAddCategory()}
+                      className={`flex-1 px-4 py-3 rounded-xl text-xs font-bold focus:outline-none border-2 transition-all ${theme === 'dark' ? 'bg-slate-800 border-slate-700 focus:border-emerald-500 text-white placeholder:text-slate-600' : 'bg-slate-50 border-slate-200 focus:border-emerald-500 text-slate-800'}`}
+                    />
+                    <button 
+                      onClick={handleManualAddCategory}
+                      disabled={!newCatInput.trim()}
+                      className="px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      <PlusIcon />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-2">
+                    {categories.map((cat, index) => (
+                      <div key={cat} className={`flex items-center justify-between p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                        
+                        {editingCat?.name === cat ? (
+                          <input 
+                            autoFocus
+                            type="text" 
+                            value={editingCat.temp}
+                            onChange={(e) => setEditingCat({ ...editingCat, temp: e.target.value })}
+                            onBlur={() => handleCategoryRename(cat, editingCat.temp)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleCategoryRename(cat, editingCat.temp)}
+                            className={`w-full bg-transparent font-black uppercase text-[10px] focus:outline-none border-b border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}
+                          />
+                        ) : (
+                          <span className={`text-[10px] font-black uppercase ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{cat}</span>
+                        )}
+
+                        <div className="flex items-center gap-1">
+                          {cat !== 'all' && (
+                            <>
+                              <button 
+                                onClick={() => moveCategoryUp(index)}
+                                disabled={index === 1}
+                                className={`p-1.5 rounded-lg transition-all ${index === 1 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50')}`}
+                              >
+                                <ArrowUpIcon />
+                              </button>
+                              <button 
+                                onClick={() => moveCategoryDown(index)}
+                                disabled={index === categories.length - 1}
+                                className={`p-1.5 rounded-lg transition-all ${index === categories.length - 1 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50')}`}
+                              >
+                                <ArrowDownIcon />
+                              </button>
+                              <button 
+                                onClick={() => setEditingCat({ name: cat, temp: cat })}
+                                className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                              >
+                                <EditIcon />
+                              </button>
+                              <button 
+                                onClick={() => deleteCategory(cat)}
+                                className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-500 hover:text-rose-400 hover:bg-rose-500/10' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'}`}
+                              >
+                                <TrashIcon />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -2434,79 +2570,7 @@ export default function App() {
             </motion.div>
           </motion.div>
         )}
-{/* --- CATEGORY MANAGER MODAL --- */}
-        {showCategoryManager && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowCategoryManager(false)}>
-            <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2rem] w-full max-w-sm p-6 shadow-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
-              
-              <div className="flex items-center justify-between mb-6">
-                <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Manage Categories</h3>
-                <button onClick={() => setShowCategoryManager(false)} className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><XIcon /></button>
-              </div>
 
-              {/* Add New Category Input */}
-              <div className="flex gap-2 mb-6">
-                <input 
-                  type="text" 
-                  placeholder="New category..." 
-                  value={newCatInput}
-                  onChange={(e) => setNewCatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleManualAddCategory()}
-                  className={`flex-1 px-4 py-3 rounded-xl text-xs font-bold focus:outline-none border-2 transition-all ${theme === 'dark' ? 'bg-slate-800 border-slate-700 focus:border-emerald-500 text-white placeholder:text-slate-600' : 'bg-slate-50 border-slate-200 focus:border-emerald-500 text-slate-800'}`}
-                />
-                <button 
-                  onClick={handleManualAddCategory}
-                  disabled={!newCatInput.trim()}
-                  className="px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 transition-all"
-                >
-                  <PlusIcon />
-                </button>
-              </div>
-
-              {/* Category List */}
-              <div className="space-y-2 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1">
-                {categories.map(cat => (
-                  <div key={cat} className={`flex items-center justify-between p-3 rounded-xl border ${theme === 'dark' ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                    
-                    {editingCat?.name === cat ? (
-                      <input 
-                        autoFocus
-                        type="text" 
-                        value={editingCat.temp}
-                        onChange={(e) => setEditingCat({ ...editingCat, temp: e.target.value })}
-                        onBlur={() => handleCategoryRename(cat, editingCat.temp)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleCategoryRename(cat, editingCat.temp)}
-                        className={`w-full bg-transparent font-black uppercase text-[10px] focus:outline-none border-b border-emerald-500 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}
-                      />
-                    ) : (
-                      <span className={`text-[10px] font-black uppercase ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{cat}</span>
-                    )}
-
-                    <div className="flex items-center gap-1">
-                      {cat !== 'all' && (
-                        <>
-                          <button 
-                            onClick={() => setEditingCat({ name: cat, temp: cat })}
-                            className={`p-2 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
-                          >
-                            <EditIcon />
-                          </button>
-                          <button 
-                            onClick={() => deleteCategory(cat)}
-                            className={`p-2 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-500 hover:text-rose-400 hover:bg-rose-500/10' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'}`}
-                          >
-                            <TrashIcon />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-            </motion.div>
-          </motion.div>
-        )}
 
         {/* --- LEVEL UP MODAL --- */}
         {showLevelUpModal && (
