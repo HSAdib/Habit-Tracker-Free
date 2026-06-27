@@ -238,6 +238,8 @@ export default function App() {
   const prevLevelRef = useRef(savedLevel);
   const longPressTimer = useRef(null);
   const scrollContainerRef = useRef(null);
+  const isDraggingTable = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
 
   const save = (newTrackerData, newHabits, newConfigs) => {
     savePartialToIDB({
@@ -432,6 +434,55 @@ export default function App() {
       if (container) container.removeEventListener('scroll', handleTableScroll);
     };
   }, [currentDate, habits, tableOrientation, isMobileMode]);
+
+  // Grab-to-scroll on the table container
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const onMouseDown = (e) => {
+      // Only trigger on the container itself or tbody cells, not thead
+      if (e.target.closest('thead')) return;
+      isDraggingTable.current = true;
+      dragStart.current = { x: e.clientX, y: e.clientY, scrollLeft: el.scrollLeft, scrollTop: el.scrollTop };
+      el.style.cursor = 'grabbing';
+      el.style.userSelect = 'none';
+    };
+    const onMouseMove = (e) => {
+      if (!isDraggingTable.current) return;
+      const dx = e.clientX - dragStart.current.x;
+      const dy = e.clientY - dragStart.current.y;
+      el.scrollLeft = dragStart.current.scrollLeft - dx;
+      el.scrollTop = dragStart.current.scrollTop - dy;
+    };
+    const onMouseUp = () => {
+      isDraggingTable.current = false;
+      el.style.cursor = 'grab';
+      el.style.userSelect = '';
+    };
+
+    // Block wheel scroll when hovering the header row or sticky name column — must use native listener with passive:false
+    const onWheel = (e) => {
+      const overHeader = e.target.closest('thead');
+      const overNameCol = e.target.closest('[data-no-scroll]');
+      if (overHeader || overNameCol) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    };
+
+    el.style.cursor = 'grab';
+    el.addEventListener('mousedown', onMouseDown);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      el.removeEventListener('mousedown', onMouseDown);
+      el.removeEventListener('wheel', onWheel);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [tableOrientation]);
 
   // Global ESC key handler — closes any open modal
   useEffect(() => {
@@ -1895,7 +1946,7 @@ export default function App() {
             ) : (
                 /* --- Table 2: Horizontal Layout (8 Columns visible) --- */
                 <>
-                    <thead className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
+                    <thead onWheel={(e) => e.stopPropagation()} className={`sticky top-0 z-30 shadow-sm ${getTableHeadStyle()} border-b transition-colors`}>
                         <tr className="h-[72px]">
                             <th className={`p-4 font-black ${getTextMuted()} text-[9px] uppercase tracking-widest sticky left-0 z-40 text-center border-r border-b ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} shadow-[4px_0_8px_rgba(0,0,0,0.3)] w-[120px] min-w-[120px]`}>
                               <div className="flex items-center justify-center gap-2">
@@ -1943,7 +1994,7 @@ export default function App() {
                     </thead>
                     <tbody>
                         <tr className="h-[52px]">
-                            <td className={`p-2 font-black text-[12px] uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} text-emerald-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
+                            <td data-no-scroll className={`p-2 font-black text-[12px] uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} text-emerald-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`}>
                                 <div className="w-full px-1 font-black leading-tight break-words">Efficiency</div>
                             </td>
                             {daysInMonth.map(day => {
@@ -1965,7 +2016,7 @@ export default function App() {
                         {/* FILTERED HABITS ROWS */}
                         {habits.filter(h => !archivedHabits.includes(h)).map((habit, hIdx) => (
                             <tr key={hIdx} className="h-[68px]">
-                                <td className={`p-1 font-black uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`} style={{ fontSize: `${textSizes.table2}px` }}>
+                                <td data-no-scroll className={`p-1 font-black uppercase sticky left-0 z-20 border-r border-b text-center transition-colors ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} text-slate-400 shadow-[4px_0_8px_rgba(0,0,0,0.3)]`} style={{ fontSize: `${textSizes.table2}px` }}>
                                     <div className="truncate w-full px-1 font-black leading-tight">{habit}</div>
                                 </td>
                                 {daysInMonth.map(day => {
