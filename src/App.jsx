@@ -220,6 +220,7 @@ export default function App() {
   const [editingNoteDate, setEditingNoteDate] = useState(null);
   const [confirmDeleteNoteDate, setConfirmDeleteNoteDate] = useState(null);
   const [showAllNotes, setShowAllNotes] = useState(false);
+  const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [showWeeklyModal, setShowWeeklyModal] = useState(false);
   const [showMonthlyGraphModal, setShowMonthlyGraphModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
@@ -501,6 +502,7 @@ export default function App() {
       if (showWeeklyModal) { setShowWeeklyModal(false); return; }
       if (showMonthlyGraphModal) { setShowMonthlyGraphModal(false); return; }
       if (showAllNotes) { setShowAllNotes(false); return; }
+      if (showInsightsModal) { setShowInsightsModal(false); return; }
       if (showManageModal) { setShowManageModal(false); return; }
       if (showTextSizeModal) { setShowTextSizeModal(false); return; }
       if (showArchiveModal) { setShowArchiveModal(false); return; }
@@ -511,7 +513,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [viewingHabitMap, editingNoteDate, showDeleteConfirm, showWeeklyModal, showMonthlyGraphModal, showAllNotes, showManageModal, showTextSizeModal, showArchiveModal, showLevelDetailsModal, showTrophyDetailsModal, showLevelUpModal, categoryToDelete]);
+  }, [viewingHabitMap, editingNoteDate, showDeleteConfirm, showWeeklyModal, showMonthlyGraphModal, showAllNotes, showInsightsModal, showManageModal, showTextSizeModal, showArchiveModal, showLevelDetailsModal, showTrophyDetailsModal, showLevelUpModal, categoryToDelete]);
 
   // Logic Handlers
   const handleDashboardRename = (oldName) => {
@@ -919,6 +921,69 @@ export default function App() {
     });
     return streaks;
   }, [habits, trackerData]);
+
+  const insightsData = useMemo(() => {
+    const streaks = {};
+    const currentStreaks = {};
+    let perfectDaysCount = 0;
+    let totalWins = 0;
+    
+    habits.forEach(h => { streaks[h] = 0; currentStreaks[h] = 0; });
+    const dayStats = [0,1,2,3,4,5,6].map(() => ({ earned: 0, total: 0 }));
+    
+    // Convert keys to dates, handle invalid keys, sort chronologically
+    const sortedDates = Object.keys(trackerData)
+      .map(k => new Date(k))
+      .filter(d => !isNaN(d.getTime()))
+      .sort((a,b) => a.getTime() - b.getTime());
+      
+    sortedDates.forEach(d => {
+      const dateStr = getSafeKey(d);
+      const dayOfWeek = d.getDay();
+      
+      let dayScore = 0;
+      let activeHabitsForDay = 0;
+      
+      habits.forEach(h => {
+        const valRaw = trackerData[dateStr]?.[h] ?? 0;
+        const score = typeof valRaw === 'number' ? valRaw : (valRaw ? 100 : 0);
+        
+        if (!archivedHabits.includes(h)) {
+           activeHabitsForDay++;
+           dayScore += score;
+        }
+        
+        dayStats[dayOfWeek].total += 100;
+        dayStats[dayOfWeek].earned += score;
+        
+        if (score >= 100) {
+          totalWins++;
+          currentStreaks[h]++;
+          if (currentStreaks[h] > streaks[h]) streaks[h] = currentStreaks[h];
+        } else {
+          currentStreaks[h] = 0;
+        }
+      });
+      
+      if (activeHabitsForDay > 0 && dayScore === activeHabitsForDay * 100) {
+         perfectDaysCount++;
+      }
+    });
+
+    const dayAverages = dayStats.map(d => d.total > 0 ? Math.round((d.earned / d.total) * 100) : 0);
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const bestDayIdx = dayAverages.indexOf(Math.max(...dayAverages, -1));
+    const bestDay = bestDayIdx >= 0 && dayAverages[bestDayIdx] > 0 ? days[bestDayIdx] : 'None yet';
+    const bestDayScore = bestDayIdx >= 0 ? dayAverages[bestDayIdx] : 0;
+
+    const sortedStreaks = Object.entries(streaks)
+      .filter(([h, s]) => s > 0 && !archivedHabits.includes(h))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([h, s]) => ({ habit: h, max: s, current: currentStreaks[h] }));
+
+    return { bestDay, bestDayScore, topStreaks: sortedStreaks, perfectDaysCount, totalWins };
+  }, [trackerData, habits, archivedHabits]);
 
   // True if ANY habit has been logged at any point — used for empty state
   const hasAnyData = useMemo(() =>
@@ -1397,7 +1462,25 @@ export default function App() {
       </span>
     )}
   </motion.button>
-</div>
+  
+  </div>
+                </div>
+                
+                {/* Right Side: Insights Button */}
+                <div className="flex items-center justify-end">
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowInsightsModal(true)} 
+                    title="Year in Review Insights"
+                    className={`flex items-center gap-1.5 transition-all px-3 py-1.5 rounded-xl border relative
+                      ${theme === 'dark' 
+                        ? 'bg-purple-900/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/20' 
+                        : 'bg-purple-50 text-purple-600 border-purple-200 shadow-sm hover:bg-purple-100'}`}
+                  >
+                    <span className="text-[11px] font-black uppercase tracking-widest hidden sm:block">Insights</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                  </motion.button>
                 </div>
               </div>
               
@@ -1903,6 +1986,82 @@ export default function App() {
                     <p className="font-black uppercase text-xs mt-4">No entries yet</p>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* --- INSIGHTS MODAL --- */}
+        {showInsightsModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[180] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowInsightsModal(false)}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setShowInsightsModal(false)} className={`absolute top-6 right-6 flex flex-col items-center gap-0.5 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`} title="Close (ESC)"><XIcon /><span className="text-[6px] font-mono opacity-50">ESC</span></button>
+              
+              <div className="mb-6 shrink-0">
+                <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Year in Review</p>
+                <h3 className={`text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Insights</h3>
+              </div>
+
+              <div className="overflow-y-auto custom-scrollbar pr-2 space-y-4">
+                
+                {/* Grid for small stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${getTextMuted()} mb-1`}>Perfect Days</span>
+                    <span className={`text-2xl font-black ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                      {insightsData.perfectDaysCount} <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Days</span>
+                    </span>
+                  </div>
+                  <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${getTextMuted()} mb-1`}>Total Wins</span>
+                    <span className={`text-2xl font-black ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
+                      {insightsData.totalWins} <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Habits</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Best Day */}
+                <div className={`p-5 rounded-2xl border flex items-center justify-between ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex flex-col">
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${getTextMuted()}`}>Best Day</span>
+                    <span className={`text-xl font-black mt-1 ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{insightsData.bestDay}</span>
+                  </div>
+                  <div className={`w-14 h-14 rounded-full flex flex-col items-center justify-center border-4 ${theme === 'dark' ? 'border-purple-500/20 text-purple-400 bg-purple-500/10' : 'border-purple-200 text-purple-600 bg-purple-50'}`}>
+                    <span className="text-sm font-black">{insightsData.bestDayScore}%</span>
+                  </div>
+                </div>
+
+                {/* Longest Streaks */}
+                <div className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${getTextMuted()}`}>Top All-Time Streaks</span>
+                  <div className="mt-4 space-y-3">
+                    {insightsData.topStreaks.length > 0 ? (
+                      insightsData.topStreaks.map((streakData, i) => (
+                        <div key={streakData.habit} className="flex items-center justify-between">
+                          <span className={`text-sm font-bold uppercase truncate pr-4 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{i + 1}. {streakData.habit}</span>
+                          <div className="flex gap-2 shrink-0">
+                            {streakData.current > 0 && (
+                              <div className={`flex flex-col items-center px-2 py-1 rounded-lg ${theme === 'dark' ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-200'}`} title="Active streak going on right now">
+                                <span className={`text-[8px] font-black uppercase opacity-70 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>Current</span>
+                                <span className={`text-[11px] font-black ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                  🔥 {streakData.current} {streakData.current === 1 ? 'Day' : 'Days'}
+                                </span>
+                              </div>
+                            )}
+                            <div className={`flex flex-col items-center px-2 py-1 rounded-lg ${theme === 'dark' ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-amber-50 border border-amber-200'}`} title="Longest streak you've ever had">
+                              <span className={`text-[8px] font-black uppercase opacity-70 ${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'}`}>Best</span>
+                              <span className={`text-[11px] font-black ${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'}`}>
+                                🏆 {streakData.max} {streakData.max === 1 ? 'Day' : 'Days'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <span className={`text-xs font-bold ${getTextMuted()}`}>No streaks yet. Keep going!</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
