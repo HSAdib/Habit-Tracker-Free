@@ -106,6 +106,7 @@ export default function AuthModal({ isOpen, onClose }) {
         >
           <button
             onClick={onClose}
+            title="Close"
             className={`absolute top-4 right-4 p-1 rounded-full transition-colors ${
               theme === 'dark' ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-900'
             }`}
@@ -175,6 +176,7 @@ export default function AuthModal({ isOpen, onClose }) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  title={showPassword ? "Hide password" : "Show password"}
                   className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors ${
                     theme === 'dark' ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200'
                   }`}
@@ -205,6 +207,7 @@ export default function AuthModal({ isOpen, onClose }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    title={showPassword ? "Hide password" : "Show password"}
                     className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors ${
                       theme === 'dark' ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200'
                     }`}
@@ -247,6 +250,7 @@ export default function AuthModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={handleGoogleSignIn}
+              title="Sign in with Google"
               className={`mt-4 w-full flex items-center justify-center gap-3 py-3 rounded-xl font-bold text-sm border transition-colors active:scale-95 ${
                 theme === 'dark' 
                   ? 'bg-slate-800 border-slate-700 text-white hover:bg-slate-700' 

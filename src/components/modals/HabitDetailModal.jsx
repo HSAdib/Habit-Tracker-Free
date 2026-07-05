@@ -360,11 +360,11 @@ export default function HabitDetailModal({ handleTabRename, setShowDeleteConfirm
             </div>
 
             <div className="flex flex-col gap-1.5 w-full mt-4 md:mt-8">
-              <motion.button whileTap={{ scale: 0.95 }} onClick={() => toggleArchiveHabit(viewingHabitMap)} className={`w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white border border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-500 hover:text-white'}`}>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={() => toggleArchiveHabit(viewingHabitMap)} title="Archive this habit (hides it from the tracker)" className={`w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white border border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-500 hover:text-white'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7"/><path d="M9 13v-3"/><path d="M15 13v-3"/></svg>
                 Archive
               </motion.button>
-              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} className="w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete</motion.button>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} title="Permanently delete this habit and all its data" className="w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete</motion.button>
             </div>
           </div>
 
@@ -375,7 +375,7 @@ export default function HabitDetailModal({ handleTabRename, setShowDeleteConfirm
                   {isEditingTabName ? (
                     <input autoFocus className={`text-xl font-black bg-transparent focus:outline-none border-b-2 border-emerald-500 text-center w-full max-w-[200px] ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`} value={tempHabitName} onChange={(e) => setTempHabitName(e.target.value)} onBlur={() => handleTabRename(tempHabitName)} onKeyDown={(e) => { if(e.key === 'Enter') handleTabRename(tempHabitName); }} />
                   ) : (
-                    <h3 className={`text-lg md:text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight cursor-pointer hover:text-emerald-500 transition-colors flex items-center justify-center gap-2 group w-full`} onClick={() => { setIsEditingTabName(true); setTempHabitName(viewingHabitMap); }}>
+                    <h3 title="Click to rename this habit" className={`text-lg md:text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} leading-tight cursor-pointer hover:text-emerald-500 transition-colors flex items-center justify-center gap-2 group w-full`} onClick={() => { setIsEditingTabName(true); setTempHabitName(viewingHabitMap); }}>
                       {viewingHabitMap}
                       <span className="opacity-0 group-hover:opacity-100 transition-opacity"><EditIcon /></span>
                     </h3>
@@ -402,12 +402,12 @@ export default function HabitDetailModal({ handleTabRename, setShowDeleteConfirm
                 </div>
                 
                 <div className={`flex items-center justify-center gap-1 mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
+                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} title="Previous month" className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
                   <span className="text-[10px] font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
-                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
+                  <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} title="Next month" className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
                   </div>
               </div>
-              <button onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }} className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`}><XIcon /></button>
+              <button onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }} title="Close (ESC)" className={`p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`}><XIcon /></button>
             </div>
 
             <div className={`mb-6 p-2 px-4 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200'} flex items-center gap-4`}>

@@ -1196,6 +1196,7 @@ export default function App() {
                 whileHover={{ scale: 1.1, rotate: 5 }} 
                 whileTap={{ scale: 0.9 }}
                 onClick={() => window.location.reload()}
+                title="Refresh the app"
                 className="bg-emerald-600 p-3 rounded-2xl text-white shadow-lg animate-glow cursor-pointer"
               >
                 <ZapIcon />
@@ -1204,7 +1205,7 @@ export default function App() {
               <div>
                 <h1 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} tracking-tight leading-none`}>Habit Mastery</h1>
                 <div className="flex items-center gap-3 mt-2">
-                  <div onClick={toggleTheme} className={`group relative w-12 h-6 flex items-center rounded-full cursor-pointer transition-all duration-500 shadow-inner ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                  <div onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} className={`group relative w-12 h-6 flex items-center rounded-full cursor-pointer transition-all duration-500 shadow-inner ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-200'}`}>
                     <motion.div 
                       layout 
                       className="absolute w-4 h-4 rounded-full shadow-md z-10 flex items-center justify-center bg-white" 
@@ -1289,6 +1290,7 @@ export default function App() {
   whileHover={{ scale: 1.05 }}
   whileTap={{ scale: 0.95 }}
   onClick={() => setShowWeeklyModal(true)}
+  title="View this week's habit summary"
   className={`mr-2 px-3 py-1.5 rounded-xl border flex items-center gap-2 transition-all ${theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm'}`}
 >
   <div className="flex flex-col items-start leading-none">
@@ -1302,7 +1304,7 @@ export default function App() {
   whileHover={{ scale: 1.05, boxShadow: '0 0 14px 3px rgba(245,158,11,0.45)' }}
   whileTap={{ scale: 0.95 }}
   onClick={() => setShowArchiveModal(true)}
-  title="Archived Habits"
+  title="View archived habits (hidden from tracker)"
   className={`mr-2 p-2 rounded-xl border flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100'}`}
 >
   <ArchiveIcon />
@@ -1310,9 +1312,9 @@ export default function App() {
 <div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
               {/* Left Side: Date Navigation Group */}
               <div className="flex items-center">
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-1 md:p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronLeftIcon /></motion.button>
+                <motion.button whileTap={{ scale: 0.9 }} title="Previous month" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-1 md:p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronLeftIcon /></motion.button>
                 <span className={`px-1 md:px-4 font-black ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'} min-w-[85px] md:min-w-[140px] text-center text-[10px] md:text-sm`}>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className={`p-1 md:p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
+                <motion.button whileTap={{ scale: 0.9 }} title="Next month" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className={`p-1 md:p-2 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-white text-slate-600'} rounded-lg transition-all`}><ChevronRightIcon /></motion.button>
                 {/* Today quick-jump — only visible when not on the current month */}
                 {(currentDate.getMonth() !== new Date().getMonth() || currentDate.getFullYear() !== new Date().getFullYear()) && (
                   <motion.button
@@ -1378,6 +1380,7 @@ export default function App() {
     whileHover={{ scale: 1.05 }}
     whileTap={{ scale: 0.95 }}
     onClick={() => setShowAllNotes(true)} 
+    title="View all journal entries"
     className={`flex items-center gap-1.5 transition-all px-2.5 py-1.5 rounded-xl border relative
       ${analytics.noteCount > 0 ? 'animate-glow-blue' : ''} 
       ${theme === 'dark' 
@@ -1510,6 +1513,7 @@ export default function App() {
   {/* NEW: EDIT TAB (Manager Trigger) */}
   <button 
     onClick={() => setShowManageModal(true)}
+    title="Manage habits and categories"
     className={`shrink-0 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:border-slate-500' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300'}`}
   >
     <EditIcon /> <span>Edit</span>
@@ -1524,6 +1528,7 @@ export default function App() {
     <div key={cat} className="relative group shrink-0">
       <button
         onClick={() => setSelectedCategory(cat)}
+        title={`Filter by ${cat} (${categoryProgress[cat] || 0}% complete)`}
         className={`relative overflow-hidden px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
           selectedCategory === cat 
             ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-white' 
@@ -1604,7 +1609,7 @@ export default function App() {
         ) : (
           <div className="relative flex items-center justify-center w-full group/name min-h-[14px]">
             <p style={{ fontSize: `${textSizes.habit}px` }} className="font-black uppercase opacity-80 leading-[1.1] line-clamp-2 text-center w-full px-1 break-words">{habit}</p>
-            <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" onClick={(e) => { e.stopPropagation(); setEditingHabitName(habit); setTempHabitName(habit); }}><EditIcon /></button>
+            <button className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-emerald-500 transition-all absolute right-0" title="Edit habit name" onClick={(e) => { e.stopPropagation(); setEditingHabitName(habit); setTempHabitName(habit); }}><EditIcon /></button>
           </div>
         )}
         <span className={`text-[19px] font-black mt-1 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
@@ -1650,13 +1655,13 @@ export default function App() {
                 <div>
                   <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-2`}>Monthly Trends</p>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:text-emerald-400' : 'bg-slate-100 text-slate-500 hover:text-emerald-600'}`}>
+                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} title="Previous month" className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:text-emerald-400' : 'bg-slate-100 text-slate-500 hover:text-emerald-600'}`}>
                       <ChevronLeftIcon />
                     </button>
                     <h3 className={`text-2xl md:text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} min-w-[160px] md:min-w-[200px] text-center`}>
                       {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                     </h3>
-                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:text-emerald-400' : 'bg-slate-100 text-slate-500 hover:text-emerald-600'}`}>
+                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} title="Next month" className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'bg-slate-800 text-slate-400 hover:text-emerald-400' : 'bg-slate-100 text-slate-500 hover:text-emerald-600'}`}>
                       <ChevronRightIcon />
                     </button>
                   </div>
@@ -2009,7 +2014,7 @@ export default function App() {
                                     <td className={`p-2 sticky left-0 z-10 border-r border-b transition-all duration-500 ${rowBgStyle} ${isToday ? 'border-l-4 border-l-emerald-500' : ''} ${theme === 'dark' ? 'border-r-slate-700' : 'border-r-slate-200'}`}>
                                         <div className="flex items-center justify-center gap-3">
                                             <div className="tooltip-trigger">
-                                              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setEditingNoteDate(key)} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`}><NoteIcon /></motion.button>
+                                              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setEditingNoteDate(key)} title={dayData.note ? "View/Edit Reflection" : "Add Reflection"} className={`p-2 rounded-xl transition-all ${dayData.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`}><NoteIcon /></motion.button>
                                               <span className="tooltip-content" style={{ whiteSpace: 'nowrap', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                 {dayData.note ? `“${dayData.note.split('\n')[0].substring(0, 45)}${dayData.note.split('\n')[0].length > 45 ? '…' : ''}”` : 'Add reflection'}
                                               </span>
@@ -2023,7 +2028,7 @@ export default function App() {
                                         const rawVal = dayData[h] ?? 0; const val = typeof rawVal === 'number' ? rawVal : (rawVal ? 100 : 0);
                                         return (
                                             <td key={i} className={`p-2 border-r border-b transition-all duration-500 text-center ${rowBgStyle} ${isToday ? 'border-y-2 border-emerald-500/20' : ''}`}>
-                                                <motion.button whileTap={{ scale: 0.9 }} className={`w-11 h-11 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val, key)} touch-none select-none ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 cursor-not-allowed grayscale' : ''}`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)}>
+                                                <motion.button whileTap={{ scale: 0.9 }} title="Mark habit completion" className={`w-11 h-11 rounded-2xl transition-all flex flex-col items-center justify-center mx-auto border-2 text-xl font-black ${getButtonStyles(val, key)} touch-none select-none ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 cursor-not-allowed grayscale' : ''}`} onPointerDown={(e) => handleHabitPressStart(e, key, h, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, h, val)}>
                                                     <span className={`text-[7px] font-black leading-none mb-0.5 pointer-events-none ${val > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-300')}`}>{day.getDate()}</span>
                                                     <span className="pointer-events-none font-bold">
                                                       {(() => {
@@ -2080,6 +2085,7 @@ export default function App() {
                                               <motion.button 
   whileTap={{ scale: 0.9 }} 
   onClick={() => setEditingNoteDate(key)} 
+  title={trackerData[key]?.note ? "View/Edit Reflection" : "Add Reflection"}
   className={`p-2 rounded-xl transition-all ${trackerData[key]?.note ? 'bg-blue-600 text-white shadow-md' : (theme === 'dark' ? 'bg-slate-800 text-slate-600 hover:bg-slate-700' : 'bg-slate-100 text-slate-300 hover:bg-slate-200')}`}
 >
   <NoteIcon />
@@ -2127,7 +2133,7 @@ export default function App() {
                                     const key = getSafeKey(day); const val = typeof trackerData[key]?.[habit] === 'number' ? trackerData[key][habit] : (trackerData[key]?.[habit] ? 100 : 0);
                                     return (
                                         <td key={key} className={`p-1.5 border-r border-b text-center transition-all duration-500 ${new Date().toDateString() === day.toDateString() ? (theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]' : 'bg-emerald-50/50 border-emerald-400/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.08)]') : (theme === 'dark' ? 'border-r-slate-800 border-b-slate-800' : 'border-r-slate-100 border-b-slate-100')}`} style={{ width: horizontalColWidth, minWidth: horizontalColWidth }}>
-                                            <motion.button whileTap={{ scale: 0.9 }} onPointerDown={(e) => handleHabitPressStart(e, key, habit, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, habit, val)} className={`w-11 h-11 rounded-2xl mx-auto border-2 flex items-center justify-center font-black transition-all text-xl ${getButtonStyles(val, key)} ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 grayscale' : ''}`}>
+                                            <motion.button whileTap={{ scale: 0.9 }} title="Mark habit completion" onPointerDown={(e) => handleHabitPressStart(e, key, habit, val)} onPointerUp={(e) => handleHabitPressEnd(e, key, habit, val)} className={`w-11 h-11 rounded-2xl mx-auto border-2 flex items-center justify-center font-black transition-all text-xl ${getButtonStyles(val, key)} ${new Date(key).setHours(0,0,0,0) > new Date().setHours(0,0,0,0) ? 'opacity-20 grayscale' : ''}`}>
                                                 <span>
                                                     {(() => {
                                                     const config = habitConfigs[habit];
@@ -2247,11 +2253,11 @@ export default function App() {
 
                   {/* Buttons Fix - Reduced Padding & Margin */}
                   <div className="flex flex-col gap-1.5 w-full mt-4 md:mt-8">
-                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => toggleArchiveHabit(viewingHabitMap)} className={`w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white border border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-500 hover:text-white'}`}>
+                    <motion.button whileTap={{ scale: 0.95 }} title="Archive habit" onClick={() => toggleArchiveHabit(viewingHabitMap)} className={`w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white border border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-500 hover:text-white'}`}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7"/><path d="M9 13v-3"/><path d="M15 13v-3"/></svg>
                       Archive
                     </motion.button>
-                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowDeleteConfirm(true)} className="w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete</motion.button>
+                    <motion.button whileTap={{ scale: 0.95 }} title="Delete habit" onClick={() => setShowDeleteConfirm(true)} className="w-full md:flex-1 flex items-center justify-center gap-2 py-2.5 md:py-3 px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/20"><TrashIcon /> Delete</motion.button>
                   </div>
                 </div>
 
@@ -2290,9 +2296,9 @@ export default function App() {
                       </div>
                       
                       <div className={`flex items-center justify-center gap-1 mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
+                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} title="Previous month" className="p-1 hover:text-emerald-500 transition-colors"><ChevronLeftIcon /></button>
                         <span className="text-[10px] font-black uppercase tracking-widest min-w-[80px] text-center">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
-                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
+                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} title="Next month" className="p-1 hover:text-emerald-500 transition-colors"><ChevronRightIcon /></button>
                         </div>
                     </div>
                     <button onClick={() => { setViewingHabitMap(null); setIsEditingTabName(false); }} className={`flex flex-col items-center gap-0.5 p-3 transition-all ${getTextMuted()} hover:text-rose-500 shrink-0`} title="Close (ESC)"><XIcon /><span className="text-[6px] font-mono opacity-50">ESC</span></button>
@@ -2467,8 +2473,8 @@ export default function App() {
               <h4 className="text-xl font-black mb-2">Delete Habit?</h4>
               <p className={`text-sm ${getTextMuted()} mb-8 font-medium`}>This will permanently delete data for <span className="text-rose-500 font-bold">"{viewingHabitMap || editingHabitName || tempHabitName}"</span>.</p>
               <div className="flex gap-4">
-                <button onClick={() => setShowDeleteConfirm(false)} className={`flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest ${theme === 'dark' ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>Cancel</button>
-                <button onClick={() => deleteHabit(viewingHabitMap || editingHabitName || tempHabitName)} className="flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-500 text-white shadow-lg shadow-rose-500/20">Delete</button>
+                <button onClick={() => setShowDeleteConfirm(false)} title="Cancel delete" className={`flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest ${theme === 'dark' ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>Cancel</button>
+                <button onClick={() => deleteHabit(viewingHabitMap || editingHabitName || tempHabitName)} title="Confirm delete" className="flex-1 py-4 rounded-2xl font-black uppercase text-xs tracking-widest bg-rose-500 text-white shadow-lg shadow-rose-500/20">Delete</button>
               </div>
             </motion.div>
           </motion.div>
@@ -2478,7 +2484,7 @@ export default function App() {
         {showManageModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={() => setShowManageModal(false)}>
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative flex flex-col h-[560px]`} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowManageModal(false)} className="absolute -top-4 -right-4 z-10 p-2 rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:text-rose-500 hover:border-rose-500/50 hover:shadow-[0_0_16px_4px_rgba(239,68,68,0.5)] transition-all duration-200">
+              <button onClick={() => setShowManageModal(false)} title="Close (ESC)" className="absolute -top-4 -right-4 z-10 p-2 rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:text-rose-500 hover:border-rose-500/50 hover:shadow-[0_0_16px_4px_rgba(239,68,68,0.5)] transition-all duration-200">
                 <XIcon />
               </button>
               
@@ -2486,12 +2492,14 @@ export default function App() {
                 <div className="flex bg-slate-800/20 p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
                   <button 
                     onClick={() => setManageModalTab('categories')}
+                    title="Switch to Categories tab"
                     className={`flex-1 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all ${manageModalTab === 'categories' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
                   >
                     Categories
                   </button>
                   <button 
                     onClick={() => setManageModalTab('habits')}
+                    title="Switch to Habits tab"
                     className={`flex-1 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all ${manageModalTab === 'habits' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
                   >
                     Habits
@@ -2513,6 +2521,7 @@ export default function App() {
                     <button 
                       onClick={handleAddHabitFromInput}
                       disabled={!newHabitInput.trim()}
+                      title="Add new habit"
                       className="px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20"
                     >
                       <PlusIcon />
@@ -2588,6 +2597,7 @@ export default function App() {
                               save(trackerData, newHabits, habitConfigs);
                             }}
                             disabled={index === 0}
+                            title="Move habit up"
                             className={`p-1.5 rounded-lg transition-all ${index === 0 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'hover:bg-slate-700 hover:text-emerald-400' : 'hover:bg-slate-200 hover:text-emerald-600')} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
                           >
                             <ChevronUpIcon />
@@ -2603,6 +2613,7 @@ export default function App() {
                               save(trackerData, newHabits, habitConfigs);
                             }}
                             disabled={index === habits.length - 1}
+                            title="Move habit down"
                             className={`p-1.5 rounded-lg transition-all ${index === habits.length - 1 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'hover:bg-slate-700 hover:text-emerald-400' : 'hover:bg-slate-200 hover:text-emerald-600')} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}
                           >
                             <ChevronDownIcon />
@@ -2626,6 +2637,7 @@ export default function App() {
                     <button 
                       onClick={handleManualAddCategory}
                       disabled={!newCatInput.trim()}
+                      title="Add new category"
                       className="px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20"
                     >
                       <PlusIcon />
@@ -2656,6 +2668,7 @@ export default function App() {
                               <button 
                                 onClick={() => moveCategoryUp(index)}
                                 disabled={index === 1}
+                                title="Move category up"
                                 className={`p-1.5 rounded-lg transition-all ${index === 1 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50')}`}
                               >
                                 <ArrowUpIcon />
@@ -2663,18 +2676,21 @@ export default function App() {
                               <button 
                                 onClick={() => moveCategoryDown(index)}
                                 disabled={index === categories.length - 1}
+                                title="Move category down"
                                 className={`p-1.5 rounded-lg transition-all ${index === categories.length - 1 ? 'opacity-30 cursor-not-allowed' : (theme === 'dark' ? 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50')}`}
                               >
                                 <ArrowDownIcon />
                               </button>
                               <button 
                                 onClick={() => setEditingCat({ name: cat, temp: cat })}
+                                title="Edit category name"
                                 className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
                               >
                                 <EditIcon />
                               </button>
                               <button 
                                 onClick={() => deleteCategory(cat)}
+                                title="Delete category"
                                 className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-500 hover:text-rose-400 hover:bg-rose-500/10' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'}`}
                               >
                                 <TrashIcon />
@@ -2695,7 +2711,7 @@ export default function App() {
         {showArchiveModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[350] flex items-center justify-center bg-black/70 backdrop-blur-md p-4" onClick={() => setShowArchiveModal(false)}>
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl relative flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShowArchiveModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              <button onClick={() => setShowArchiveModal(false)} title="Close (ESC)" className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
               
               <div className="mb-6 shrink-0">
                 <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Hidden Habits</p>
@@ -2709,6 +2725,7 @@ export default function App() {
                       <span className={`text-sm font-black uppercase ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{habit}</span>
                       <button 
                         onClick={() => toggleArchiveHabit(habit)}
+                        title="Unarchive habit"
                         className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200'}`}
                       >
                         Restore
@@ -2778,7 +2795,7 @@ export default function App() {
               className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2rem] w-full max-w-sm p-8 shadow-2xl relative overflow-hidden`} 
               onClick={e => e.stopPropagation()}
             >
-              <button onClick={() => setShowLevelDetailsModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              <button onClick={() => setShowLevelDetailsModal(false)} title="Close (ESC)" className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
               
               <div className="mb-8 shrink-0">
                 <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Mastery Engine</p>
@@ -2855,7 +2872,7 @@ export default function App() {
               className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} border rounded-[2rem] w-full max-w-sm p-8 shadow-2xl relative overflow-hidden`} 
               onClick={e => e.stopPropagation()}
             >
-              <button onClick={() => setShowTrophyDetailsModal(false)} className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
+              <button onClick={() => setShowTrophyDetailsModal(false)} title="Close (ESC)" className={`absolute top-6 right-6 p-2 ${getTextMuted()} hover:text-rose-500 transition-all`}><XIcon /></button>
               
               <div className="mb-8 shrink-0">
                 <p className={`text-[10px] font-black ${getTextMuted()} uppercase tracking-[0.2em] mb-1`}>Monthly Activity</p>
@@ -2950,7 +2967,7 @@ export default function App() {
                   <div className={`p-2 rounded-xl ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><TextSizeIcon /></div>
                   <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Display Settings</h3>
                 </div>
-                <button onClick={() => setShowTextSizeModal(false)} className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><XIcon /></button>
+                <button onClick={() => setShowTextSizeModal(false)} title="Close (ESC)" className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}><XIcon /></button>
               </div>
 
               <div className="space-y-6">
@@ -2999,6 +3016,7 @@ export default function App() {
                     setTextSizes(defaults);
                     localStorage.setItem('adib_text_sizes', JSON.stringify(defaults));
                   }} 
+                  title="Reset text sizes to default"
                   className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
                 >
                   <RefreshIcon /> Restore Defaults
@@ -3014,7 +3032,7 @@ export default function App() {
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`${theme === 'dark' ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl`} onClick={e => e.stopPropagation()}>
               <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} mb-2`}>Daily Reflection</h3>
               <textarea className={`w-full h-40 p-4 ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'} rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm`} placeholder="Add notes here..." value={trackerData[editingNoteDate]?.note || ""} onChange={(e) => handleNoteChange(editingNoteDate, e.target.value)} />
-              <button onClick={() => setEditingNoteDate(null)} className={`w-full mt-4 ${theme === 'dark' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-900 hover:bg-slate-800'} text-white p-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl`}>Save Reflection</button>
+              <button onClick={() => setEditingNoteDate(null)} title="Save Reflection" className={`w-full mt-4 ${theme === 'dark' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-900 hover:bg-slate-800'} text-white p-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl`}>Save Reflection</button>
             </motion.div>
           </div>
         )}

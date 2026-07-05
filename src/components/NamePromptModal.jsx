@@ -76,6 +76,7 @@ export default function NamePromptModal() {
             <button 
               type="submit"
               disabled={!name.trim()}
+              title="Save name and continue"
               className={`flex items-center justify-center gap-2 w-full py-4 rounded-xl font-black text-white transition-all active:scale-95 shadow-lg ${!name.trim() ? 'bg-emerald-500/50 opacity-50 cursor-not-allowed shadow-none' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20'}`}
             >
               Continue

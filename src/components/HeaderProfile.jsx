@@ -161,6 +161,7 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
       {/* Trigger Avatar */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
+        title="Open profile & settings"
         className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-transform active:scale-95 ${theme === 'dark' ? 'bg-slate-800 border-2 border-slate-700' : 'bg-slate-200 border-2 border-slate-300'}`}
       >
         {user?.photoURL ? (
@@ -203,7 +204,7 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
                       className={`w-32 px-2 py-1 bg-transparent text-sm font-black focus:outline-none text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}
                       autoFocus
                     />
-                    <button onClick={handleNameSave} className="p-1 text-emerald-500 hover:bg-emerald-500/20 transition-colors">
+                    <button onClick={handleNameSave} title="Save name" className="p-1 text-emerald-500 hover:bg-emerald-500/20 transition-colors">
                       <CheckIcon />
                     </button>
                   </div>
@@ -250,6 +251,7 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
               {!isAuthenticated && (
                 <button 
                   onClick={handleSyncClick}
+                  title="Sign in to sync your data across devices"
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs transition-transform active:scale-95 bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/20"
                 >
                   <SyncIcon />
@@ -259,6 +261,7 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
               
               <button 
                 onClick={() => { handleExport(); setIsOpen(false); }}
+                title="Download a JSON backup of all your habit data"
                 className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs border transition-colors active:scale-95 ${theme === 'dark' ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
               >
                 <ExportIcon />
@@ -266,6 +269,7 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
               </button>
 
               <label 
+                title="Load habit data from a previously exported backup file"
                 className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs border transition-colors cursor-pointer active:scale-95 ${theme === 'dark' ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
               >
                 <ImportIcon />
@@ -277,6 +281,7 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
                 <>
                   <button 
                     onClick={() => { handleLogout(); setIsOpen(false); }}
+                    title="Sign out of your account"
                     className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs border transition-colors active:scale-95 mt-2 ${theme === 'dark' ? 'border-orange-900/30 text-orange-400 hover:bg-orange-900/20' : 'border-orange-100 text-orange-600 hover:bg-orange-50'}`}
                   >
                     <LogoutIcon />
@@ -284,6 +289,7 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
                   </button>
                   <button 
                     onClick={() => { setIsDeleteModalOpen(true); setIsOpen(false); }}
+                    title="Permanently delete your account and all data"
                     className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-black text-xs border transition-colors active:scale-95 ${theme === 'dark' ? 'border-red-900/50 bg-red-900/10 text-red-500 hover:bg-red-900/30' : 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'}`}
                   >
                     <TrashIcon />
