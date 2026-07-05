@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes glow { 0% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } 50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); } 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } }
+.animate-glow { animation: glow 2s infinite ease-in-out; filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.6)); }
+
+@keyframes glow-blue { 0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); } 50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); } 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); } }
+.animate-glow-blue { animation: glow-blue 2s infinite ease-in-out; filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.6)); }
+
+.rolling-digit-container { perspective: 1000px; transform-style: preserve-3d; }
+
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+tr[id^="row-"] { scroll-margin-top: 150px; scroll-margin-bottom: 150px; }
+
+.tooltip-trigger { position: relative; display: flex; align-items: center; }
+.tooltip-content {
+  position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+  padding: 6px 10px; background: #000; color: #fff; font-size: 10px; font-weight: 900;
+  border-radius: 8px; white-space: nowrap; pointer-events: none; opacity: 0;
+  transition: all 0.2s ease; z-index: 100; text-transform: uppercase; letter-spacing: 0.05em;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.tooltip-trigger:hover .tooltip-content, .tooltip-trigger:active .tooltip-content {
+  opacity: 1; bottom: 140%;
+}
+
+/* Left positioned tooltip for top-right icons */
+.tooltip-left .tooltip-content {
+  bottom: auto; left: auto; right: 125%; top: 50%; transform: translateY(-50%);
+}
+.tooltip-left:hover .tooltip-content, .tooltip-left:active .tooltip-content {
+  opacity: 1; right: 145%; bottom: auto;
+}

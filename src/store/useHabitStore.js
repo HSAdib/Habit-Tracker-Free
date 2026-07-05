@@ -251,7 +251,7 @@ export const useHabitStore = create((setStore, getStore) => ({
 
   saveToIDB: async (updates) => {
     setStore(updates);
-    const state = getStore();
+    const state = { ...getStore(), ...updates };
     const now = Date.now();
     setStore({ lastUpdated: now });
     
@@ -320,7 +320,6 @@ export const useHabitStore = create((setStore, getStore) => ({
     }
 
     await state.saveToIDB({ trackerData: newTrackerData });
-    if (state.isAuthenticated) state.syncToCloud();
   },
 
   setTheme: async (theme) => {

@@ -107,11 +107,15 @@ const OrderIcon = () => (
 const ChevronUpIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
 );
+const ArchiveIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+);
 const ChevronDownIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
 );
 const AnimatedNumber = ({ value }) => {
-  const digits = String(value).split('');
+  const safe = (isNaN(value) || value === undefined || value === null) ? 0 : Math.round(value);
+  const digits = String(safe).split('');
   return (
     <div className="inline-flex items-center overflow-hidden h-[1.2em] leading-[1.2em]">
       {digits.map((digit, idx) => (
@@ -214,6 +218,7 @@ export default function App() {
   const [editingManageListHabitName, setEditingManageListHabitName] = useState(null);
   const [tempHabitName, setTempHabitName] = useState("");
   const [editingNoteDate, setEditingNoteDate] = useState(null);
+  const [confirmDeleteNoteDate, setConfirmDeleteNoteDate] = useState(null);
   const [showAllNotes, setShowAllNotes] = useState(false);
   const [showWeeklyModal, setShowWeeklyModal] = useState(false);
   const [showMonthlyGraphModal, setShowMonthlyGraphModal] = useState(false);
@@ -234,6 +239,8 @@ export default function App() {
   const [tableHeight, setTableHeight] = useState(484);
   const [tempGoalVal, setTempGoalVal] = useState("");
   const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [importStatus, setImportStatus] = useState(null); // Fix #5
+  const noteSaveTimer = useRef(null); // Fix #15
 
   const prevLevelRef = useRef(savedLevel);
   const longPressTimer = useRef(null);
@@ -559,7 +566,6 @@ export default function App() {
     setHabitConfigs(newConfigs);
     setTrackerData(newData);
     setArchivedHabits(newArchived);
-    localStorage.setItem('adib_habit_archived', JSON.stringify(newArchived));
     save(newData, newHabits, newConfigs);
     setViewingHabitMap(null);
     setEditingHabitName(null);
@@ -575,7 +581,6 @@ export default function App() {
       setViewingHabitMap(null);
     }
     setArchivedHabits(newArchived);
-    localStorage.setItem('adib_habit_archived', JSON.stringify(newArchived));
   };
 
   const saveNote = (dateKey, noteText) => {
@@ -592,7 +597,35 @@ export default function App() {
     save(newTrackerData, habits, habitConfigs);
   };
 
+  const deleteNote = (dateKey) => {
+    const newTrackerData = {
+      ...trackerData,
+      [dateKey]: {
+        ...(trackerData[dateKey] || {}),
+        note: '',
+        noteTime: null,
+      },
+    };
+    setTrackerData(newTrackerData);
+    save(newTrackerData, habits, habitConfigs);
+  };
 
+  const handleNoteChange = (dateKey, value) => {
+    // Instant local state update
+    const newTrackerData = { 
+      ...trackerData, 
+      [dateKey]: { 
+        ...(trackerData[dateKey] || {}), 
+        note: value,
+        noteTime: value.trim() ? (trackerData[dateKey]?.noteTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) : null 
+      } 
+    };
+    setTrackerData(newTrackerData);
+
+    // Debounced IDB/Firebase save
+    clearTimeout(noteSaveTimer.current);
+    noteSaveTimer.current = setTimeout(() => saveNote(dateKey, value), 500);
+  };
   const handleExport = () => {
     const data = {
       trackerData,
@@ -621,13 +654,19 @@ export default function App() {
           setTrackerData(imported.trackerData);
           setHabits(imported.habits);
           setHabitConfigs(imported.habitConfigs && typeof imported.habitConfigs === 'object' ? imported.habitConfigs : {});
+          if (Array.isArray(imported.categories)) setCategories(imported.categories);
+          if (Array.isArray(imported.archivedHabits)) setArchivedHabits(imported.archivedHabits);
           save(imported.trackerData, imported.habits, imported.habitConfigs && typeof imported.habitConfigs === 'object' ? imported.habitConfigs : {});
-          alert("Data imported successfully!");
+          
+          setImportStatus('success');
+          setTimeout(() => setImportStatus(null), 3000);
         } else {
-          alert("Invalid backup file format.");
+          setImportStatus('error');
+          setTimeout(() => setImportStatus(null), 3000);
         }
       } catch (err) {
-        alert("Invalid backup file.");
+        setImportStatus('error');
+        setTimeout(() => setImportStatus(null), 3000);
       }
     };
     reader.readAsText(file);
@@ -635,7 +674,7 @@ export default function App() {
 
   // Slider Interaction
   const handleHabitPressStart = (e, dateKey, habit, currentVal) => {
-    if (new Date(dateKey).setHours(0,0,0,0) > new Date().setHours(0,0,0,0)) return;
+    if (parseLocalDate(dateKey).setHours(0,0,0,0) > new Date().setHours(0,0,0,0)) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     
     
@@ -655,7 +694,7 @@ export default function App() {
   };
 
   const handleHabitPressEnd = (e, dateKey, habit, currentVal) => {
-    if (new Date(dateKey).setHours(0,0,0,0) > new Date().setHours(0,0,0,0)) return;
+    if (parseLocalDate(dateKey).setHours(0,0,0,0) > new Date().setHours(0,0,0,0)) return;
     if (longPressTimer.current) {
         clearTimeout(longPressTimer.current); 
         longPressTimer.current = null;
@@ -794,7 +833,7 @@ export default function App() {
     habits.forEach(h => { habitPcts[h] = Math.round(((stats[h] || 0) / (daysInMonth.length * 100)) * 100) || 0; });
     const computedTotalDone = (manualStreakOffset || 0) + Math.round(totalEarnedWeight);
     return { habitPcts, monthlyPct, totalDone: computedTotalDone, noteCount };
-  }, [daysInMonth, trackerData, habits, habitConfigs, manualStreakOffset]);
+  }, [daysInMonth, trackerData, habits, manualStreakOffset]);
 
   // --- CATEGORY PROGRESS CALCULATION ---
   const categoryProgress = useMemo(() => {
@@ -814,7 +853,8 @@ export default function App() {
     });
     return stats;
   }, [categories, analytics, habits, habitConfigs, archivedHabits]);
-      const weeklySummary = useMemo(() => {
+
+  const weeklySummary = useMemo(() => {
     const last7Days = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date();
@@ -1066,8 +1106,8 @@ export default function App() {
 
   // Styling Helpers
   const getButtonStyles = (val, dateKey) => {
-    const isToday = new Date().toDateString() === new Date(dateKey).toDateString();
-    const isPast = new Date(dateKey).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+    const isToday = new Date().toDateString() === parseLocalDate(dateKey).toDateString();
+    const isPast = parseLocalDate(dateKey).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
     
     if (!val) {
       const textCol = isToday ? (theme === 'dark' ? 'text-white' : 'text-slate-400') : (isPast ? 'text-red-500' : (theme === 'dark' ? 'text-slate-700' : 'text-slate-300'));
@@ -1105,9 +1145,31 @@ export default function App() {
   const sectionGap = isMobileMode ? 'gap-3 mb-4' : 'gap-6 mb-8';
   const horizontalColWidth = isMobileMode ? '70px' : 'calc((100vw - 160px) / 10)';
 
- return (
+  return (
     <div className={`min-h-screen ${getContainerBg()} font-sans pb-6 md:pb-20 select-none overflow-x-hidden ${isImpersonating ? 'pt-12' : ''}`}>
       <Analytics />
+      
+      {/* Import Status Toast */}
+      <AnimatePresence>
+        {importStatus && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] px-6 py-3 rounded-full shadow-2xl border font-black uppercase text-xs tracking-widest flex items-center gap-2 ${
+              importStatus === 'success' 
+                ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-500/30' 
+                : 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-500/30'
+            }`}
+          >
+            {importStatus === 'success' ? (
+              <><CheckIcon /> Data Imported Successfully</>
+            ) : (
+              <><XIcon /> Invalid Backup File</>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {isImpersonating && (
         <div className="fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white font-black text-sm px-4 py-2 flex items-center justify-center gap-4 shadow-xl border-b border-red-800">
@@ -1236,6 +1298,15 @@ export default function App() {
   <TrophyIcon className={weeklySummary.avgScore >= 80 ? "animate-bounce" : ""} />
 </motion.button>
 
+<motion.button
+  whileHover={{ scale: 1.05, boxShadow: '0 0 14px 3px rgba(245,158,11,0.45)' }}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => setShowArchiveModal(true)}
+  title="Archived Habits"
+  className={`mr-2 p-2 rounded-xl border flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100'}`}
+>
+  <ArchiveIcon />
+</motion.button>
 <div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
               {/* Left Side: Date Navigation Group */}
               <div className="flex items-center">
@@ -1264,14 +1335,12 @@ export default function App() {
                 
                 <div className={`w-px h-6 mx-1 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
                 
-                {/* Header Profile Dropdown */}
                 <HeaderProfile 
                   totalXP={xpStats.totalXP} 
                   bestStreak={analytics.totalDone} // Using total done as a fallback proxy for streak for the global profile, or we can use analytics
                   handleLogin={handleLogin} 
                   handleLogout={handleLogout} 
                   handleExport={handleExport} 
-                  handleImport={handleImport} 
                 />
               </div>
             </div>
@@ -1299,7 +1368,7 @@ export default function App() {
         : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300 shadow-sm'}`}
   >
     <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
-    {habits.map(h => (
+    {habits.filter(h => !archivedHabits.includes(h)).map(h => (
       <option key={h} value={h} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{h}</option>
     ))}
   </select>
@@ -1375,7 +1444,7 @@ export default function App() {
                           : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300 shadow-sm'}`}
                     >
                       <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
-                      {habits.map(h => (
+                      {habits.filter(h => !archivedHabits.includes(h)).map(h => (
                         <option key={h} value={h} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{h}</option>
                       ))}
                     </select>
@@ -1602,7 +1671,7 @@ export default function App() {
                       : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300 shadow-sm'}`}
                 >
                   <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
-                  {habits.map(h => (
+                  {habits.filter(h => !archivedHabits.includes(h)).map(h => (
                     <option key={h} value={h} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{h}</option>
                   ))}
                 </select>
@@ -1700,7 +1769,7 @@ export default function App() {
                         : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-300 shadow-sm'}`}
                   >
                     <option value="all" className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>Overall</option>
-                    {habits.map(h => (
+                    {habits.filter(h => !archivedHabits.includes(h)).map(h => (
                       <option key={h} value={h} className={theme === 'dark' ? 'bg-slate-900' : 'bg-white'}>{h}</option>
                     ))}
                   </select>
@@ -1776,16 +1845,51 @@ export default function App() {
                     .filter(([k, v]) => v.note && v.note.trim())
                     .sort((a, b) => parseLocalDate(b[0]) - parseLocalDate(a[0])) // Sort by newest first (parseLocalDate avoids UTC timezone offset bugs)
                     .map(([dateKey, data]) => (
-                      <div key={dateKey} className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                      <div key={dateKey} className={`relative p-5 rounded-2xl border transition-colors ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                        {/* Top row: date badge + edit icon */}
                         <div className="flex items-center justify-between mb-3">
                           <span className={`text-[9px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'} bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20`}>
                             {new Date(dateKey).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
-                          <button onClick={() => { setEditingNoteDate(dateKey); setShowAllNotes(false); }} className={`text-[9px] font-black uppercase hover:text-emerald-500 transition-colors ${getTextMuted()}`}>Edit</button>
+                          {/* Edit icon — top right */}
+                          <button
+                            onClick={() => { setEditingNoteDate(dateKey); setShowAllNotes(false); }}
+                            title="Edit entry"
+                            className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-500 hover:text-emerald-400 hover:bg-slate-700' : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-200'}`}
+                          >
+                            <EditIcon />
+                          </button>
                         </div>
-                        <p className={`text-sm font-medium whitespace-pre-wrap leading-relaxed ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+
+                        {/* Note content */}
+                        <p className={`text-sm font-medium whitespace-pre-wrap leading-relaxed mb-4 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
                           {data.note}
                         </p>
+
+                        {/* Bottom row: delete icon — bottom right */}
+                        <div className="flex justify-end">
+                          {confirmDeleteNoteDate === dateKey ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className={`text-[9px] font-black uppercase ${theme === 'dark' ? 'text-rose-400' : 'text-rose-500'}`}>Sure?</span>
+                              <button
+                                onClick={() => setConfirmDeleteNoteDate(null)}
+                                className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border transition-all ${theme === 'dark' ? 'border-slate-600 text-slate-400 hover:bg-slate-700' : 'border-slate-200 text-slate-500 hover:bg-slate-100'}`}
+                              >Cancel</button>
+                              <button
+                                onClick={() => { deleteNote(dateKey); setConfirmDeleteNoteDate(null); }}
+                                className="text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                              >Delete</button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteNoteDate(dateKey)}
+                              title="Delete entry"
+                              className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-600 hover:text-rose-400 hover:bg-slate-700' : 'text-slate-300 hover:text-rose-500 hover:bg-rose-50'}`}
+                            >
+                              <TrashIcon />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))
                 ) : (
@@ -2263,7 +2367,7 @@ export default function App() {
                           <motion.div key={idx} whileTap={{ scale: 0.9 }} 
     onPointerDown={(e) => handleHabitPressStart(e, key, viewingHabitMap, v)} 
     onPointerUp={(e) => handleHabitPressEnd(e, key, viewingHabitMap, v)} 
-    className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none ${getButtonStyles(v, key)} ${isTodayCell ? 'ring-2 ring-emerald-400 ring-offset-2' : ''} ${isOtherMonth ? 'opacity-30' : ''}`}>
+    className={`aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all border-2 touch-none select-none ${getButtonStyles(v, key)} ${isTodayCell ? 'ring-2 ring-emerald-400 ring-offset-2' : ''} ${isOtherMonth ? 'opacity-30 pointer-events-none' : ''}`}>
                               <span className={`text-[8px] font-black pointer-events-none ${v > 0 ? 'text-white/60' : (theme === 'dark' ? 'text-slate-600' : 'text-slate-400')}`}>{day.getDate()}</span>
                               <span className={`text-xs font-black pointer-events-none ${v > 0 ? 'text-white' : (isPassedCell ? 'text-red-500' : 'text-white [text-shadow:_-1px_-1px_0_#000,1px_-1px_0_#000,-1px_1px_0_#000,1px_1px_0_#000]')} ${v > 0 && v < 100 ? 'text-[9px]' : ''}`}>
                                   {stepVal !== null ? stepVal : (v === 100 ? '✔' : (v > 0 ? `${Math.round(v)}%` : '✘'))}
@@ -2909,7 +3013,7 @@ export default function App() {
           <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setEditingNoteDate(null)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`${theme === 'dark' ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl`} onClick={e => e.stopPropagation()}>
               <h3 className={`text-xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-800'} mb-2`}>Daily Reflection</h3>
-              <textarea className={`w-full h-40 p-4 ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'} rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm`} placeholder="Add notes here..." value={trackerData[editingNoteDate]?.note || ""} onChange={(e) => saveNote(editingNoteDate, e.target.value)} />
+              <textarea className={`w-full h-40 p-4 ${theme === 'dark' ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'} rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm`} placeholder="Add notes here..." value={trackerData[editingNoteDate]?.note || ""} onChange={(e) => handleNoteChange(editingNoteDate, e.target.value)} />
               <button onClick={() => setEditingNoteDate(null)} className={`w-full mt-4 ${theme === 'dark' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-900 hover:bg-slate-800'} text-white p-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl`}>Save Reflection</button>
             </motion.div>
           </div>
@@ -2969,35 +3073,9 @@ export default function App() {
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes glow { 0% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } 50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); } 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.4); } }
-        .animate-glow { animation: glow 2s infinite ease-in-out; filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.6)); }
-        @keyframes glow-blue { 0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); } 50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); } 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.4); } }
-        .animate-glow-blue { animation: glow-blue 2s infinite ease-in-out; filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.6)); }
-        .rolling-digit-container { perspective: 1000px; transform-style: preserve-3d; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: ${theme === 'dark' ? '#0f172a' : '#f1f5f9'}; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: ${theme === 'dark' ? '#334155' : '#cbd5e1'}; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: ${theme === 'dark' ? '#475569' : '#94a3b8'}; }
-        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        tr[id^="row-"] { scroll-margin-top: 150px; scroll-margin-bottom: 150px; }
-        .tooltip-trigger { position: relative; display: flex; align-items: center; }
-        .tooltip-content {
-          position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
-          padding: 6px 10px; background: #000; color: #fff; font-size: 10px; font-weight: 900;
-          border-radius: 8px; white-space: nowrap; pointer-events: none; opacity: 0;
-          transition: all 0.2s ease; z-index: 100; text-transform: uppercase; letter-spacing: 0.05em;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-        .tooltip-trigger:hover .tooltip-content, .tooltip-trigger:active .tooltip-content {
-          opacity: 1; bottom: 140%;
-        }
-        /* Left positioned tooltip for top-right icons */
-        .tooltip-left .tooltip-content {
-          bottom: auto; left: auto; right: 125%; top: 50%; transform: translateY(-50%);
-        }
-        .tooltip-left:hover .tooltip-content, .tooltip-left:active .tooltip-content {
-          opacity: 1; right: 145%; bottom: auto;
-        }
       `}} />
     </div>
   );

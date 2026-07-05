@@ -25,11 +25,7 @@ export const loadConfettiScript = (callback) => {
     document.head.appendChild(script);
   }
   
-  const oldOnload = script.onload;
-  script.onload = (e) => {
-    if (oldOnload) oldOnload(e);
-    callback();
-  };
+  script.addEventListener('load', callback, { once: true });
 };
 
 export const solveFluidPath = (points) => {
