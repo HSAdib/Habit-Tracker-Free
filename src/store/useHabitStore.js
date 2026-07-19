@@ -4,6 +4,27 @@ import { auth, db } from '../firebase.config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
+// Fields that live ONLY in the UI layer — never persisted to IDB or Firestore
+const UI_ONLY_FIELDS = [
+  'isHydrating', 'user', 'isAuthenticated', 'authInitialized',
+  'isImpersonating', 'impersonatedUserName', 'adminSavedState',
+  'currentDate', 'viewingHabitMap', 'heatmapFilter', 'weeklyGraphFilter',
+  'dashboardGraphFilter', 'selectedCategory', 'editingHabitName',
+  'editingManageListHabitName',
+];
+
+// Returns a plain-data snapshot safe to write to IDB / Firestore
+const toPersistedData = (state) => {
+  const d = {};
+  const PERSIST_KEYS = [
+    'trackerData', 'habits', 'habitConfigs', 'categories', 'archivedHabits',
+    'theme', 'tableOrientation', 'textSizes', 'isMobileMode', 'savedLevel',
+    'guestName', 'manualXPOffset', 'manualStreakOffset', 'lastUpdated',
+  ];
+  PERSIST_KEYS.forEach(k => { d[k] = state[k]; });
+  return d;
+};
+
 const DEFAULT_HABITS = ["sleep 7h", "calisthenics", "meditation", "dept study", "coding", "vocab", "audiobook"];
 const DEFAULT_CONFIGS = {
   "sleep 7h": { steps: 1 },
@@ -155,20 +176,27 @@ export const useHabitStore = create((setStore, getStore) => ({
                 const remoteLastUpdated = remoteData.lastUpdated || 0;
                 
                 if (remoteLastUpdated > localLastUpdated) {
-                  // Remote is newer, update local store and IDB
-                  const mergedData = { ...getStore(), ...remoteData };
-                  if (mergedData.currentDate) {
-                    mergedData.currentDate = new Date(mergedData.currentDate);
+                  // Remote is newer — apply only persisted fields, never overwrite UI-only state
+                  const safeRemote = {};
+                  Object.keys(remoteData).forEach(k => {
+                    if (!UI_ONLY_FIELDS.includes(k)) safeRemote[k] = remoteData[k];
+                  });
+                  // currentDate is stored as a Firestore timestamp string
+                  if (safeRemote.currentDate) {
+                    safeRemote.currentDate = new Date(safeRemote.currentDate);
+                    if (isNaN(safeRemote.currentDate)) safeRemote.currentDate = new Date();
                   }
-                  setStore(mergedData);
-                  await set('adib_habit_data', mergedData);
+                  setStore(safeRemote);
+                  await set('adib_habit_data', { ...toPersistedData(getStore()), ...safeRemote });
                 } else if (localLastUpdated > remoteLastUpdated) {
                   // Local is newer, push to remote
-                  await setDoc(userDocRef, { ...getStore(), isHydrating: undefined, user: undefined, isAuthenticated: undefined, lastUpdated: localLastUpdated }, { merge: true });
+                  const localPersisted = toPersistedData(getStore());
+                  await setDoc(userDocRef, { ...localPersisted, displayName: user.displayName || '' }, { merge: true });
                 }
               } else {
                 // No remote data, push local data
-                await setDoc(userDocRef, { ...getStore(), isHydrating: undefined, user: undefined, isAuthenticated: undefined, lastUpdated: localLastUpdated }, { merge: true });
+                const localPersisted = toPersistedData(getStore());
+                await setDoc(userDocRef, { ...localPersisted, displayName: user.displayName || '' }, { merge: true });
               }
             }, (syncErr) => {
               console.error("Firebase sync failed, degrading to local only:", syncErr);
@@ -194,7 +222,7 @@ export const useHabitStore = create((setStore, getStore) => ({
 
   syncToCloud: async () => {
     const state = getStore();
-    const { user, isAuthenticated, trackerData, habits, habitConfigs, categories, archivedHabits, theme, tableOrientation, textSizes, isMobileMode, savedLevel, lastUpdated, guestName, manualXPOffset, manualStreakOffset, isImpersonating, impersonatedUserName } = state;
+    const { user, isAuthenticated, isImpersonating, impersonatedUserName } = state;
     if (!isAuthenticated || !user) return;
 
     try {
@@ -202,7 +230,7 @@ export const useHabitStore = create((setStore, getStore) => ({
       const targetDisplayName = isImpersonating ? impersonatedUserName : (user.displayName || "");
       const userDocRef = doc(db, 'users', targetUid);
       await setDoc(userDocRef, {
-        trackerData, habits, habitConfigs, categories, archivedHabits, theme, tableOrientation, textSizes, isMobileMode, savedLevel, lastUpdated, guestName, manualXPOffset, manualStreakOffset, displayName: targetDisplayName
+        ...toPersistedData(state), displayName: targetDisplayName
       }, { merge: true });
     } catch (err) {
       console.warn("Background cloud sync deferred:", err);
@@ -215,25 +243,46 @@ export const useHabitStore = create((setStore, getStore) => ({
     let newTrackerData = { ...state.trackerData };
     let newHabits = [...state.habits];
     let newHabitConfigs = { ...state.habitConfigs };
+    let newCategories = [...state.categories];
+    let newArchivedHabits = [...state.archivedHabits];
 
     if (strategy === 'overwrite') {
       newTrackerData = incomingPayload.trackerData || {};
       newHabits = incomingPayload.habits || [];
       newHabitConfigs = incomingPayload.habitConfigs || {};
+      if (Array.isArray(incomingPayload.categories)) newCategories = incomingPayload.categories;
+      if (Array.isArray(incomingPayload.archivedHabits)) newArchivedHabits = incomingPayload.archivedHabits;
     } else if (strategy === 'merge') {
       const incomingHabits = incomingPayload.habits || [];
       incomingHabits.forEach(h => {
         if (!newHabits.includes(h)) newHabits.push(h);
       });
 
+      // Bug fix: incoming configs should be the base, local overrides on top
+      // (local wins for habits that exist in both)
       const incomingConfigs = incomingPayload.habitConfigs || {};
       newHabitConfigs = { ...incomingConfigs, ...newHabitConfigs };
+
+      // Merge categories (add any new ones from incoming)
+      if (Array.isArray(incomingPayload.categories)) {
+        incomingPayload.categories.forEach(cat => {
+          if (!newCategories.includes(cat)) newCategories.push(cat);
+        });
+      }
+
+      // Merge archived habits
+      if (Array.isArray(incomingPayload.archivedHabits)) {
+        incomingPayload.archivedHabits.forEach(h => {
+          if (!newArchivedHabits.includes(h)) newArchivedHabits.push(h);
+        });
+      }
 
       const incomingTracker = incomingPayload.trackerData || {};
       Object.keys(incomingTracker).forEach(dateKey => {
         if (!newTrackerData[dateKey]) {
           newTrackerData[dateKey] = incomingTracker[dateKey];
         } else {
+          // Local data wins for existing day entries
           newTrackerData[dateKey] = { ...incomingTracker[dateKey], ...newTrackerData[dateKey] };
         }
       });
@@ -243,6 +292,8 @@ export const useHabitStore = create((setStore, getStore) => ({
       trackerData: newTrackerData,
       habits: newHabits,
       habitConfigs: newHabitConfigs,
+      categories: newCategories,
+      archivedHabits: newArchivedHabits,
       lastUpdated: timestamp,
     };
 
@@ -250,27 +301,13 @@ export const useHabitStore = create((setStore, getStore) => ({
   },
 
   saveToIDB: async (updates) => {
-    setStore(updates);
-    const state = { ...getStore(), ...updates };
     const now = Date.now();
-    setStore({ lastUpdated: now });
-    
-    const dataToSave = {
-      trackerData: state.trackerData,
-      habits: state.habits,
-      habitConfigs: state.habitConfigs,
-      categories: state.categories,
-      archivedHabits: state.archivedHabits,
-      theme: state.theme,
-      tableOrientation: state.tableOrientation,
-      textSizes: state.textSizes,
-      isMobileMode: state.isMobileMode,
-      savedLevel: state.savedLevel,
-      guestName: state.guestName,
-      manualXPOffset: state.manualXPOffset,
-      manualStreakOffset: state.manualStreakOffset,
-      lastUpdated: now
-    };
+    // Batch both the updates and the new lastUpdated into a single store write
+    setStore({ ...updates, lastUpdated: now });
+
+    // Read state AFTER the store update so all fields are fresh
+    const state = getStore();
+    const dataToSave = { ...toPersistedData(state), lastUpdated: now };
 
     if (state.isImpersonating) {
       if (state.isAuthenticated && state.user) {

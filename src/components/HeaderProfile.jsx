@@ -115,8 +115,8 @@ export default function HeaderProfile({ totalXP, bestStreak, handleLogin, handle
         await updateProfile(auth.currentUser, { displayName: newName });
         setStorePartial({ user: { ...auth.currentUser, displayName: newName } });
       } else {
+        // savePartialToIDB already calls setStore internally — no need for a separate setStorePartial
         savePartialToIDB({ guestName: newName });
-        setStorePartial({ guestName: newName });
       }
     } catch (err) {
       console.error("Failed to update name:", err);

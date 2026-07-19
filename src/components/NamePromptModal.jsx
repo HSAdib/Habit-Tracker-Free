@@ -12,7 +12,6 @@ export default function NamePromptModal() {
   const [error, setError] = useState('');
   const theme = useHabitStore(state => state.theme);
   const savePartialToIDB = useHabitStore(state => state.savePartialToIDB);
-  const setStorePartial = useHabitStore(state => state.setStorePartial);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,7 +27,6 @@ export default function NamePromptModal() {
     
     // Save locally to IndexedDB and update store
     savePartialToIDB({ guestName: trimmed });
-    setStorePartial({ guestName: trimmed });
   };
 
   if (typeof document === 'undefined') return null;

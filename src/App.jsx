@@ -265,15 +265,12 @@ export default function App() {
   const setHabitConfigs = (newConfigs) => setStorePartial({ habitConfigs: newConfigs });
   const setTrackerData = (newData) => setStorePartial({ trackerData: newData });
   const setCategories = (newCategories) => {
-    setStorePartial({ categories: newCategories });
     savePartialToIDB({ categories: newCategories });
   };
   const setArchivedHabits = (newArchived) => {
-    setStorePartial({ archivedHabits: newArchived });
     savePartialToIDB({ archivedHabits: newArchived });
   };
   const setTextSizes = (newSizes) => {
-    setStorePartial({ textSizes: newSizes });
     savePartialToIDB({ textSizes: newSizes });
   };
   
@@ -284,13 +281,11 @@ export default function App() {
   
   const toggleTableOrientation = () => {
     const newOrientation = tableOrientation === 'horizontal' ? 'vertical' : 'horizontal';
-    setStorePartial({ tableOrientation: newOrientation });
     savePartialToIDB({ tableOrientation: newOrientation });
   };
 
   const toggleMobileMode = () => {
     const newMode = !isMobileMode;
-    setStorePartial({ isMobileMode: newMode });
     savePartialToIDB({ isMobileMode: newMode });
     if (newMode) {
       setTextSizes({ ...textSizes, habit: 10, table1: 9, table2: 9, tabSize: 75 });
@@ -333,9 +328,9 @@ export default function App() {
         newConfigs[h].category = 'all';
       }
     });
-    setHabitConfigs(newConfigs);
-    if (selectedCategory === categoryToDelete) setSelectedCategory('all');
+    // Pass newConfigs directly to save; setHabitConfigs is redundant here
     save(trackerData, habits, newConfigs);
+    if (selectedCategory === categoryToDelete) setSelectedCategory('all');
     setCategoryToDelete(null);
   };
 
@@ -352,11 +347,10 @@ export default function App() {
         newConfigs[h].category = formattedName;
       }
     });
-    setHabitConfigs(newConfigs);
+    // Save configs directly without a redundant setHabitConfigs call (saves one extra IDB write)
+    save(trackerData, habits, newConfigs);
 
     if (selectedCategory === oldName) setSelectedCategory(formattedName);
-
-    save(trackerData, habits, newConfigs);
     setEditingCat(null);
   };
 
@@ -550,10 +544,12 @@ export default function App() {
         delete newData[k][oldName];
       }
     });
-    setHabits(newHabits);
-    setHabitConfigs(newConfigs);
-    setTrackerData(newData);
-    save(newData, newHabits, newConfigs);
+    // Single atomic save — avoids 3 separate setStorePartial calls + a save()
+    savePartialToIDB({
+      habits: newHabits,
+      habitConfigs: newConfigs,
+      trackerData: newData,
+    });
   };
 
   const deleteHabit = (name) => {
@@ -564,11 +560,13 @@ export default function App() {
     const newData = { ...trackerData };
     Object.keys(newData).forEach(k => { if (newData[k]) delete newData[k][name]; });
     const newArchived = archivedHabits.filter(h => h !== name);
-    setHabits(newHabits);
-    setHabitConfigs(newConfigs);
-    setTrackerData(newData);
-    setArchivedHabits(newArchived);
-    save(newData, newHabits, newConfigs);
+    // Single batched save — avoids two concurrent IDB/Firebase writes
+    savePartialToIDB({
+      habits: newHabits,
+      habitConfigs: newConfigs,
+      trackerData: newData,
+      archivedHabits: newArchived,
+    });
     setViewingHabitMap(null);
     setEditingHabitName(null);
     setShowDeleteConfirm(false);
@@ -582,7 +580,8 @@ export default function App() {
       newArchived = [...archivedHabits, name];
       setViewingHabitMap(null);
     }
-    setArchivedHabits(newArchived);
+    // Single atomic save — setArchivedHabits would fire two writes (setStorePartial + savePartialToIDB)
+    savePartialToIDB({ archivedHabits: newArchived });
   };
 
   const saveNote = (dateKey, noteText) => {
@@ -633,6 +632,8 @@ export default function App() {
       trackerData,
       habits,
       habitConfigs,
+      categories,
+      archivedHabits,
       version: 'v9',
       exportDate: new Date().toISOString()
     };
@@ -645,21 +646,26 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  const importStore = useHabitStore(state => state.importData);
+
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    // Reset file input so the same file can be re-imported if needed
+    e.target.value = '';
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const imported = JSON.parse(event.target.result);
-        if (imported && typeof imported === 'object' && imported.trackerData && typeof imported.trackerData === 'object' && Array.isArray(imported.habits)) {
-          setTrackerData(imported.trackerData);
-          setHabits(imported.habits);
-          setHabitConfigs(imported.habitConfigs && typeof imported.habitConfigs === 'object' ? imported.habitConfigs : {});
-          if (Array.isArray(imported.categories)) setCategories(imported.categories);
-          if (Array.isArray(imported.archivedHabits)) setArchivedHabits(imported.archivedHabits);
-          save(imported.trackerData, imported.habits, imported.habitConfigs && typeof imported.habitConfigs === 'object' ? imported.habitConfigs : {});
-          
+        if (
+          imported &&
+          typeof imported === 'object' &&
+          imported.trackerData &&
+          typeof imported.trackerData === 'object' &&
+          Array.isArray(imported.habits)
+        ) {
+          // Use the store action for a single, atomic save (avoids multiple concurrent writes)
+          await importStore(imported, 'overwrite');
           setImportStatus('success');
           setTimeout(() => setImportStatus(null), 3000);
         } else {
@@ -809,11 +815,10 @@ export default function App() {
     }
 
     // ৪. আপডেট লজিক: লেভেল বাড়ুক বা কমুক, বর্তমান অবস্থা সেভ করে রাখো।
-    // এটাই তোমার ট্রিক: লেভেল কমলে সিস্টেম 'নিচের লেভেল' সেভ করবে। 
-    // ফলে পরে আবার বাড়লে (current > prev) কন্ডিশন সত্য হবে এবং আবার ধামাকা হবে!
     if (xpStats.level !== prevLevelRef.current) {
       prevLevelRef.current = xpStats.level;
-      localStorage.setItem('adib_habit_saved_level', xpStats.level);
+      // Persist to IDB + Firebase (not just localStorage) so the level survives cross-device
+      savePartialToIDB({ savedLevel: xpStats.level });
     }
 
   }, [xpStats.level]);
@@ -931,9 +936,9 @@ export default function App() {
     habits.forEach(h => { streaks[h] = 0; currentStreaks[h] = 0; });
     const dayStats = [0,1,2,3,4,5,6].map(() => ({ earned: 0, total: 0 }));
     
-    // Convert keys to dates, handle invalid keys, sort chronologically
+    // Convert keys to dates using parseLocalDate to avoid UTC timezone offset bugs
     const sortedDates = Object.keys(trackerData)
-      .map(k => new Date(k))
+      .map(k => parseLocalDate(k))
       .filter(d => !isNaN(d.getTime()))
       .sort((a,b) => a.getTime() - b.getTime());
       
@@ -1937,7 +1942,7 @@ export default function App() {
                         {/* Top row: date badge + edit icon */}
                         <div className="flex items-center justify-between mb-3">
                           <span className={`text-[9px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'} bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20`}>
-                            {new Date(dateKey).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                            {parseLocalDate(dateKey).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                           {/* Edit icon — top right */}
                           <button
@@ -3172,8 +3177,7 @@ export default function App() {
                 <button 
                   onClick={() => {
                     const defaults = { habit: 14, table1: 12, table2: 11, tabSize: 110 };
-                    setTextSizes(defaults);
-                    localStorage.setItem('adib_text_sizes', JSON.stringify(defaults));
+                    setTextSizes(defaults); // setTextSizes already calls savePartialToIDB which persists to IDB + Firebase
                   }} 
                   title="Reset text sizes to default"
                   className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
